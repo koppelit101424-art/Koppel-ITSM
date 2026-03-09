@@ -1,0 +1,88 @@
+<?php
+include 'auth/auth.php';
+include 'db/db.php';
+
+// Fetch counts
+$itemCount = $conn->query("SELECT COUNT(*) as total FROM item_tb")->fetch_assoc()['total'];
+$userCount = $conn->query("SELECT COUNT(*) as total FROM user_tb")->fetch_assoc()['total'];
+$transactionCount = $conn->query("SELECT COUNT(*) as total FROM transaction_tb")->fetch_assoc()['total'];
+$requestCount = $conn->query("SELECT COUNT(*) as total FROM request_tb")->fetch_assoc()['total'];
+$ticketCount = $conn->query("SELECT COUNT(*) as total FROM ticket_tb WHERE status = 'open'")->fetch_assoc()['total'];
+
+// Growth calculation
+$currentMonth = date('Y-m-01');
+$lastMonth = date('Y-m-01', strtotime('-1 month'));
+
+$currentTransactions = $conn->query("
+    SELECT COUNT(*) as total FROM transaction_tb 
+    WHERE action_date >= '$currentMonth'
+")->fetch_assoc()['total'];
+
+$lastMonthTransactions = $conn->query("
+    SELECT COUNT(*) as total FROM transaction_tb 
+    WHERE action_date >= '$lastMonth' AND action_date < '$currentMonth'
+")->fetch_assoc()['total'];
+
+$growth = $lastMonthTransactions > 0
+    ? round((($currentTransactions - $lastMonthTransactions) / $lastMonthTransactions) * 100, 1)
+    : ($currentTransactions > 0 ? 100 : 0);
+
+$growth = max($growth, 0);
+?>
+
+<!-- Stats Cards -->
+<div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-xl-5 g-3">
+
+    <div class="col">
+        <a href="inventory.php" class="stats-card-link">
+            <div class="card stats-card h-100">
+                <i class="fas fa-boxes"></i>
+                <h3><?= number_format($itemCount) ?></h3>
+                <p>Inventory Items</p>
+            </div>
+        </a>
+    </div>
+
+    <div class="col">
+        <a href="users.php" class="stats-card-link">
+            <div class="card stats-card h-100">
+                <i class="fas fa-users"></i>
+                <h3><?= number_format($userCount) ?></h3>
+                <p>Users</p>
+            </div>
+        </a>
+    </div>
+
+    <div class="col">
+        <a href="tickets.php" class="stats-card-link">
+            <div class="card stats-card h-100">
+                <i class="fas fa-ticket"></i>
+                <h3><?= number_format($ticketCount) ?></h3>
+                <p>Tickets</p>
+            </div>
+        </a>
+    </div>
+
+    <div class="col">
+        <a href="requests.php" class="stats-card-link">
+            <div class="card stats-card h-100">
+                <i class="fas fa-chart-line"></i>
+                <h3><?= number_format($requestCount) ?></h3>
+                <p>Requests</p>
+            </div>
+        </a>
+    </div>
+
+    <div class="col">
+        <a href="transactions.php" class="stats-card-link">
+            <div class="card stats-card h-100">
+                <i class="fas fa-file-invoice-dollar"></i>
+                <h3><?= number_format($transactionCount) ?></h3>
+                <p>Transactions</p>
+            </div>
+        </a>
+    </div>
+
+</div>
+<br>
+<link rel="stylesheet" href="asset/css/stats_card.css">

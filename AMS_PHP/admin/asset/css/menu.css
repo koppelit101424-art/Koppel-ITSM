@@ -1,0 +1,22 @@
+
+.custom-menu {
+    display: none;
+    position: absolute;
+    background: white;
+    border: 1px solid #ccc;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    z-index: 1000;
+    min-width: 140px;
+    border-radius: 4px;
+    padding: 5px 0;
+}
+.custom-menu a {
+    display: block;
+    padding: 8px 16px;
+    color: #333;
+    text-decoration: none;
+    font-size: 0.9rem;
+}
+.custom-menu a:hover {
+    background-color: #f1f1f1;
+}

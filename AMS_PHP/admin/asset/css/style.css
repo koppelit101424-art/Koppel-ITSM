@@ -1,0 +1,53 @@
+body {
+    font-family: Arial, sans-serif;
+}
+/* .sidebar {
+    height: 100vh;
+    background-color: #343a40;
+    padding-top: 20px;
+}
+.sidebar a {
+    color: #fff;
+    padding: 12px;
+    display: block;
+    text-decoration: none;
+}
+.sidebar a:hover {
+    background-color: #495057;
+} */
+
+.sidebar {
+    background-color: #476EAE; 
+    min-height: 100%;         
+    padding: 15px 0;
+}
+
+.sidebar a {
+    display: block;
+    padding: 10px 20px;
+    color: #ddd;
+    text-decoration: none;
+}
+
+.sidebar a:hover {
+    background-color: white;
+    color: #fff;
+}
+
+.main {
+    padding: 20px;
+}
+
+/* Make table font smaller and rows tighter */
+#inventoryTable, #transactionTable, #usersTable{
+    font-size: 0.875rem; /* smaller font (14px instead of 16px) */
+}
+
+#inventoryTable th, #transactionTable th, #usersTable th
+#inventoryTable td, #transactionTable td, #usersTable td{
+    padding: 6px 10px; /* reduce cell padding */
+}
+.dataTables_wrapper .dataTables_paginate .paginate_button {
+    font-size: 0.8rem;
+    padding: 2px 6px;
+}

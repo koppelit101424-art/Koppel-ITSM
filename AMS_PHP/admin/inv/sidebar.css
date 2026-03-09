@@ -1,0 +1,102 @@
+
+/* ===== ACTIVE STATE STYLING ===== */
+.sidebar {
+    height: 100vh;
+    width: 250px;
+    background-color: #212529;
+
+    overflow-y: auto;     /* enable vertical scroll */
+    overflow-x: hidden;   /* prevent horizontal scroll */
+
+    /* Hide scrollbar - Firefox */
+    scrollbar-width: none;
+
+    /* Hide scrollbar - IE/Edge */
+    -ms-overflow-style: none;
+}
+
+/* Hide scrollbar - Chrome, Safari */
+.sidebar::-webkit-scrollbar {
+    display: none;
+}
+.sidebar a.active{
+    color: white !important;
+    padding-left: 2.5rem !important;
+    transition: all 0.2s ease;
+    
+}
+
+.sidebar a {
+    position: relative;
+    display: flex;
+    align-items: center;
+    padding: 12px 20px !important;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    border-left: 3px solid transparent;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.sidebar a i {
+    width: 20px;
+    margin-right: 10px;
+    text-align: center;
+}
+
+.submenu-container {
+    overflow: hidden;
+    transition: max-height 0.35s ease-in-out, opacity 0.25s ease;
+    opacity: 1;
+    max-height: 500px;
+    background: #b9d5fa;
+}
+.submenu-container.collapsed {
+    max-height: 0 !important;
+    opacity: 0;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+}
+.submenu-container.open {
+    max-height: 1000px; /* enough to fit all items */
+    padding-left: 1rem;
+    
+}
+.submenu-container a {
+    display: block;
+    padding-left: 2.5rem !important;
+    font-size: 0.92rem !important;
+    opacity: 0.9;
+    margin: 0 !important;
+    
+}
+.submenu-container a:hover {
+    opacity: 1 !important;
+
+}
+.submenu-item {
+    display: flex;
+    align-items: center;
+    padding: 8px 20px;
+    font-size: 0.92rem;
+    opacity: 0.9;
+    text-decoration: none;
+    transition: background 0.2s, opacity 0.2s;
+
+}
+.submenu-item.active, .submenu-item:hover {
+    background-color: #0d6efd;
+    
+    color: white;
+    opacity: 1;
+    
+}
+.toggle-icon {
+    transition: transform 0.3s ease;
+    margin-left: auto !important;
+}
+.toggle-icon.open {
+    transform: rotate(180deg);
+}
