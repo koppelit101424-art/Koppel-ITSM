@@ -1,5 +1,5 @@
 <?php
-define('BASE_URL', 'http://115.88.1.11/System/AMS_PHP');
+define('BASE_URL', 'http://115.88.1.63/Koppel-ITSM/AMS_PHP');
 
 // define('BASE_URL', 'https://localhost/System/AMS_PHP');
 // define('BASE_URL', 'https://localhost/System/ITSM');

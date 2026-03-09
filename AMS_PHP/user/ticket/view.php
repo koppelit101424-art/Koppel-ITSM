@@ -363,9 +363,9 @@ p{
     // }
 
     // Auto-refresh every 2 seconds
-    setInterval(activityLogs, 2000);
+    setInterval(activityLogs, 1000);
     // setInterval(logDetails, 2000);
-    setInterval(reloadChat, 2000);
+    setInterval(reloadChat, 1000);
     fetch('update_ticket_status.php', {
     method: 'POST',
     headers: {'Content-Type':'application/x-www-form-urlencoded'},
