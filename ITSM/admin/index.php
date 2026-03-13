@@ -1,13 +1,9 @@
 <?php
 session_start();
 
-if(!isset($_SESSION['user_id'])){
-    header("Location: ?page=login");
-    exit;
-}
-
 $page = $_GET['page'] ?? 'dashboard';
 
+include "../includes/auth.php";
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -32,20 +28,37 @@ $page = $_GET['page'] ?? 'dashboard';
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
 <link rel="stylesheet" href="../assets/css/main.css">
-<!-- <link rel="stylesheet" href="../assets/css/login.css"> -->
 <link rel="stylesheet" href="../assets/css/mobile_sidebar.css">
 <link rel="stylesheet" href="../assets/css/header.css">
 </head>
 
 <body>
-
+<?php 
+if(isset($_GET['ajax'])){
+    switch($_GET['ajax']){
+        case "fetch_ticket_logs":
+            include "ticket/includes/fetch_ticket_logs.php";
+            exit;
+        case "fetch_ticket_chat":
+            include "ticket/includes/fetch_ticket_chat.php";
+            exit;
+        case "sla_ticket_logs":
+            include "ticket/sla_ticket_logs.php";
+            exit;
+    }
+}
+?>
+<?php if($page != "login"): ?>
 <?php include "sidebar.php"; ?>
 <div class="main">
-    <?php include "header.php"; ?>
+<?php include "header.php"; ?>
+<?php endif; ?>
         <div class="content">
             <?php
                 switch($page){
-
+                        case "login":
+                        include "login.php";
+                        break;
                     // Inventory pages
                     case "inventory/all_assets":
                         include "inventory/all_assets.php";
@@ -69,6 +82,10 @@ $page = $_GET['page'] ?? 'dashboard';
 
                     case "inventory/ip_phones":
                         include "inventory/ip_phones.php";
+                        break;
+
+                    case "inventory/tablets":
+                        include "inventory/tablets.php";
                         break;
 
                     case "inventory/biometrics":
@@ -183,6 +200,43 @@ $page = $_GET['page'] ?? 'dashboard';
                         include "ticket/sla_settings.php";  
                         break;
 
+                    case "ticket/sla_ticket_logs":
+                        include "ticket/sla_ticket_logs.php";
+                        break;
+
+                    case "ticket/view_ticket":
+                        include "ticket/view_ticket.php";
+                        break;
+                    
+                    case "ticket/includes/admin_tickets":
+                        include "ticket/includes/admin_tickets.php";
+                        break;
+                    case "ticket/includes/send_message":
+                        include "ticket/includes/send_message.php";
+                        break;
+                    case "ticket/includes/update_ticket_field":
+                        include "ticket/includes/update_ticket_field.php";
+                        break;
+                    case "ticket/includes/update_ticket_status":
+                        include "ticket/includes/update_ticket_status.php";
+                        break;
+                    case "ticket/includes/reassign_ticket":
+                        include "ticket/includes/reassign_ticket.php";
+                        break;
+
+                    case "ticket/includes/image_modal":
+                        include "ticket/includes/image_modal.php";
+                        break;
+
+                    case "ticket/crud/add_request":
+                        include "ticket/crud/add_request.php";
+                        break;
+                    case "ticket/crud/edit_request":
+                        include "ticket/crud/edit_request.php";
+                        break;
+                    case "ticket/crud/delete_request":
+                        include "ticket/crud/delete_request.php";
+                        break;
                     // Organization
 
                     case "organization/company":
@@ -222,7 +276,9 @@ $page = $_GET['page'] ?? 'dashboard';
                 }
             ?>
         </div>
-    </div>
+<?php if($page != "login"): ?>
+</div>
+<?php endif; ?>
 <!-- <script>
     document.addEventListener("DOMContentLoaded", function(){
 

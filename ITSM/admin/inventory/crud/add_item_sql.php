@@ -30,7 +30,18 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $count = $row['total'] + 1; // +1 for new item
     $stmt_count->close();
 
-    $item_code = $prefix . $last4 . $count;
+    $itemNumber = str_pad($count, 2, "0", STR_PAD_LEFT);
+    $item_code = $prefix . $last4 . $itemNumber;
+
+    $check = $conn->prepare("SELECT item_id FROM item_tb WHERE serial_number = ?");
+    $check->bind_param("s", $serial);
+    $check->execute();
+    $check->store_result();
+
+    if ($check->num_rows > 0) {
+        $message = "❌ Serial Number already exists.";
+        return;
+    }
 
     // Insert
     $sql = "INSERT INTO item_tb (item_code, name, brand, model, serial_number, description, quantity, date_received, type_id) 

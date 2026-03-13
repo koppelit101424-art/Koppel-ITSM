@@ -1,7 +1,7 @@
 <?php
 $inventory_pages = [
 'inventory/all_assets','inventory/transactions','inventory/desktops','inventory/laptops','inventory/printers',
-'inventory/ip_phones','inventory/biometrics','inventory/networks','inventory/servers','inventory/credentials'
+'inventory/ip_phones','inventory/tablets','inventory/biometrics','inventory/networks','inventory/servers','inventory/credentials'
 ];
 
 $tickets_pages = [
@@ -75,6 +75,12 @@ System
 <i class="bi bi-telephone"></i> 
 <span class="menu-text">IP Phones</span>
 </a>
+
+<a data-title="Tablets" class="<?= ($page=='inventory/tablets') ? 'active' : '' ?>" href="?page=inventory/tablets">
+<i class="fa-solid fa-tablet"></i>
+<span class="menu-text">Tablets</span>
+</a>
+
 
 <a data-title="Biometrics" class="<?= ($page=='inventory/biometrics') ? 'active' : '' ?>" href="?page=inventory/biometrics">
 <i class="bi bi-fingerprint"></i>

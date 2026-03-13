@@ -1,5 +1,5 @@
 <?php
-
+include __DIR__ . '/../../../includes/db.php';
 // Validate user_id from URL
 if (!isset($_GET['user_id']) || !is_numeric($_GET['user_id'])) {
     header("Location: ../users.php");
@@ -59,7 +59,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     <div class="main-content" id="mainContent">
         <div class="card shadow-sm">
-            <div class="card-header bg-primary text-blue">
+            <div class="card-header bg-primary text-white">
                 Change Password for <?= htmlspecialchars($user['fullname']) ?>
             </div>
             <div class="card-body">
@@ -68,7 +68,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <div class="alert alert-success">
                         Password updated successfully.
                     </div>
-                    <a href="../users.php" class="btn btn-secondary">Back to Users</a>
+                    <a href="?page=organization/users" class="btn btn-secondary">Back to Users</a>
                 <?php else: ?>
 
                     <?php if ($error): ?>
@@ -88,7 +88,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                         <div >
                             <button type="submit" class="btn btn-primary">Update Password</button>
-                            <a href="../users.php" class="btn btn-secondary">Cancel</a>
+                            <a href="#" onclick="window.history.back(); return false;" class="btn btn-secondary">Back</a>
                         </div>
                     </form>
 

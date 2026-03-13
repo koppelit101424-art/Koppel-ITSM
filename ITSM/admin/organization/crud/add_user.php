@@ -14,6 +14,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $date_hired = !empty($_POST['date_hired']) ? $_POST['date_hired'] : NULL;
     $user_type  = $_POST['user_type'];
 
+    $check = $conn->prepare("SELECT user_id FROM user_tb WHERE emp_id = ?");
+    $check->bind_param("s", $emp_id);
+    $check->execute();
+    $check->store_result();
+
+    if($check->num_rows > 0){
+        echo "<div class='alert alert-danger'>Employee ID already exists.</div>";
+        exit;
+    }
     $sql = "INSERT INTO user_tb (emp_id, fullname, position, email, department, company, area, user_type, date_hired, created_at) 
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
     $stmt = $conn->prepare($sql);
@@ -44,7 +53,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
           <div class="row mb-3">
             <div class="col-md-6">
               <label class="form-label">Employee ID</label>
-              <input type="text" name="emp_id" class="form-control" required>
+                <input type="text" name="emp_id" id="emp_id" class="form-control" required>
+              <small id="empid_msg"></small>
             </div>
             <div class="col-md-6">
               <label class="form-label">Full Name</label>
@@ -100,13 +110,62 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             </div>
           </div>
 
-          <button type="submit" class="btn btn-primary">Save User</button>
+          <button type="submit" id="saveBtn" class="btn btn-primary">Save User</button>
         <a href="#" onclick="window.history.back(); return false;" class="btn btn-secondary">Back</a>
          
         </form>
     </div>
   </div></div>
 
+<script>
+  const empInput = document.getElementById("emp_id");
+const msg = document.getElementById("empid_msg");
+const saveBtn = document.getElementById("saveBtn");
+
+let timer;
+
+empInput.addEventListener("input", function(){
+
+    clearTimeout(timer);
+
+    timer = setTimeout(() => {
+
+        const emp_id = empInput.value;
+
+        if(emp_id.length === 0){
+            msg.innerHTML = "";
+            saveBtn.disabled = false;
+            return;
+        }
+
+        fetch("./organization/crud/check_empid.php", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded"
+            },
+            body: "emp_id=" + encodeURIComponent(emp_id)
+        })
+        .then(res => res.text())
+        .then(data => {
+
+            if(data.trim() === "taken"){
+
+                msg.innerHTML = "<span style='color:red'>Employee ID already taken</span>";
+                saveBtn.disabled = true;
+
+            } else {
+
+                msg.innerHTML = "<span style='color:green'>Employee ID available</span>";
+                saveBtn.disabled = false;
+
+            }
+
+        });
+
+    }, 400);
+
+});
+</script>
 </body>
 </html>
 <?php $conn->close(); ?>

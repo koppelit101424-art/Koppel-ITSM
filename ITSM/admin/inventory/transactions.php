@@ -284,7 +284,7 @@ $result = $stmt->get_result();
                 </div>
             </div>
         </div>
-        
+            </div>
 <?php include __DIR__.'/includes/trans_modal.php'; ?>
 <?php if (isset($_SESSION['user_type']) && $_SESSION['user_type'] === 'admin'): ?>
 <?php include "inventory/includes/trans_menu.php"; ?>

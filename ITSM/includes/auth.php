@@ -1,62 +1,42 @@
 <?php
-// Only start session if not already active
-// if (session_status() === PHP_SESSION_NONE) {
-//     session_start();
-// }
-
-// Require login
-// if (!isset($_SESSION['user_id'])) {
-//     header("Location: login.php");
-//     exit;
-// }
-
-// Require admin (optional, only if this file is for admin-only pages)
-// if (isset($_SESSION['user_type']) && $_SESSION['user_type'] !== 'admin') {
-//     header("Location: index.php");
-//     exit;
-// }
-
-?>
-
-<?php
-// Only start session if not already active
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
-$isLoggedIn = false;
 
-if (isset($_SESSION['user_id'])) {
-    $isLoggedIn = true;
+$timeout = 900; // 15 minutes
+
+$currentPage = $_GET['page'] ?? '';
+
+/* ALLOW LOGIN PAGE */
+if ($currentPage == 'login') {
+    return;
 }
-//$timeout = 900;  15 minutes = 900 seconds
 
-// Check if logged in
+/* USER NOT LOGGED IN */
 if (!isset($_SESSION['user_id'])) {
-    header("Location: login.php");
+    header("Location: index.php?page=login");
     exit;
 }
 
-// ---- INACTIVITY CHECK ----
-// if (isset($_SESSION['LAST_ACTIVITY'])) {
-//     if (time() - $_SESSION['LAST_ACTIVITY'] > $timeout) {
+/* CHECK INACTIVITY */
+if (isset($_SESSION['LAST_ACTIVITY']) && (time() - $_SESSION['LAST_ACTIVITY']) > $timeout) {
 
-//         // Destroy session if idle too long
-//         session_unset();
-//         session_destroy();
+    session_unset();
+    session_destroy();
 
-//         header("Location: login.php?msg=timeout");
-//         exit;
-//     }
-// }
-
-// Update activity timestamp
-// $_SESSION['LAST_ACTIVITY'] = time();
-// --------------------------
-
-// Require admin (only for admin pages)
-if (isset($_SESSION['user_type']) && !in_array($_SESSION['user_type'], ['admin', 'agent', 'manager'])) {
-    // If the user is NOT admin, agent, or manager, redirect
-    header("Location: index.php");
+    header("Location: index.php?page=login&msg=timeout");
     exit;
 }
-?>
+
+/* UPDATE ACTIVITY */
+$_SESSION['LAST_ACTIVITY'] = time();
+
+/* ROLE CHECK */
+if (!in_array($_SESSION['user_type'], ['admin','agent','manager'])) {
+
+    session_unset();
+    session_destroy();
+
+    header("Location: index.php?page=login");
+    exit;
+}

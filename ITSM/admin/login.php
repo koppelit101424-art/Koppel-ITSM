@@ -1,9 +1,10 @@
 <?php
-session_start(); 
+// session_start(); 
 include '../includes/db.php';
+// include '../includes/auth.php';
 
 $message = "";
-$_SESSION['LAST_ACTIVITY'] = time();
+// $_SESSION['LAST_ACTIVITY'] = time();
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
@@ -34,6 +35,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $_SESSION['user_id'] = $user['user_id'];
             $_SESSION['fullname'] = $user['fullname'];
             $_SESSION['user_type'] = $user['user_type'];
+            $_SESSION['LAST_ACTIVITY'] = time();
 
             // after successful login
             header("Location: index.php?page=dashboard"); // redirect to router
@@ -60,25 +62,19 @@ $conn->close();
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ITSM - Admin Login</title>
   <link rel="icon" type="image/x-icon" href="../assets/img/Koppel_bip.ico">
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <!-- <link rel="stylesheet" href="../assets/css/login.css"> -->
 </head>
 <style>
-
-    body {
-        background: white;
-        min-height: 100vh;
-        display: flex;
-        align-items: center;
-        padding: 20px;
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    body{
+        min-height:100vh;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        padding:20px;
     }
 
-    .login-container {
-        max-width: 450px;
-        width: 100%;
-        margin: 0 auto;
+    .login-container{
+        max-width:450px;
+        width:100%;
     }
 
     .login-card {

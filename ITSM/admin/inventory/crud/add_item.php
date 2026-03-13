@@ -17,7 +17,8 @@
         <div class="row mb-3">
           <div class="col-md-4">
             <label class="form-label">Item Code (Auto Generated)</label>
-            <input type="text" id="item_code" class="form-control" >
+            <!-- <input type="text" id="item_code" class="form-control" > -->
+             <input type="text" id="item_code" name="item_code" class="form-control" readonly>
           </div>
 
           <div class="col-md-4">
@@ -37,7 +38,8 @@
           </div>
           <div class="col-md-6">
             <label class="form-label">Serial Number</label>
-            <input type="text" name="serial_number" class="form-control">
+          <input type="text" name="serial_number" id="serial_number" class="form-control">
+          <small id="serial_msg"></small>
           </div>
         </div>
 
@@ -69,7 +71,7 @@
           </div>
         </div>
 
-        <button type="submit" class="btn btn-primary">Save Item</button>
+        <button type="submit" id="saveBtn" class="btn btn-primary">Save Item</button>
         <a href="#" onclick="window.history.back(); return false;" class="btn btn-secondary">Back</a>
         </form>
     </div>
@@ -79,29 +81,81 @@
     <!-- Add Item -->
     <script>
     document.addEventListener("DOMContentLoaded", function() {
-      const itemInput   = document.querySelector("input[name='name']");
-      const serialInput = document.querySelector("input[name='serial_number']");
-      const codeInput   = document.getElementById("item_code");
 
-      async function generateCode() {
-        const item   = itemInput.value.trim();
-        const serial = serialInput.value.trim();
+    const itemInput   = document.querySelector("input[name='name']");
+    const serialInput = document.querySelector("input[name='serial_number']");
+    const codeInput   = document.getElementById("item_code");
+    const saveBtn     = document.getElementById("saveBtn");
+    const serialMsg   = document.getElementById("serial_msg");
 
-        if (item.length >= 3) {
-          let prefix = item.substring(0,3).toUpperCase();
-          let last4  = (serial && serial.toUpperCase() !== "N/A") ? serial.slice(-4) : "0000";
+    async function generateCode() {
 
-          // Fetch count PER ITEM NAME
-          let count = await fetch("get_item_count.php?item=" + encodeURIComponent(item))
-            .then(res => res.json())
-            .then(data => data.count + 1) // next stock
-            .catch(() => 1);
+      const item   = itemInput.value.trim();
+      const serial = serialInput.value.trim();
 
-          codeInput.value = prefix + last4 + count;
-        }
+      if (item.length >= 1) {
+
+        let prefix = item.substring(0,3).toUpperCase();
+
+        let last4 = (serial && serial.toUpperCase() !== "N/A")
+          ? serial.slice(-4)
+          : "0000";
+
+        let count = await fetch("get_item_count.php?item=" + encodeURIComponent(item))
+          .then(res => res.json())
+          .then(data => data.count + 1)
+          .catch(() => 1);
+
+        let itemNumber = String(count).padStart(2,'0');
+
+        codeInput.value = prefix + last4 + itemNumber;
       }
+    }
 
-      itemInput.addEventListener("input", generateCode);
-      serialInput.addEventListener("input", generateCode);
+    itemInput.addEventListener("input", generateCode);
+    serialInput.addEventListener("input", generateCode);
+
+    let serialTimer;
+
+    serialInput.addEventListener("input", function(){
+
+        clearTimeout(serialTimer);
+
+        serialTimer = setTimeout(() => {
+
+            let serial = serialInput.value.trim();
+
+            if(serial.length === 0){
+                serialMsg.innerHTML = "";
+                return;
+            }
+
+            fetch("./inventory/crud/check_serial.php", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded"
+                },
+                body: "serial=" + encodeURIComponent(serial)
+            })
+            .then(res => res.text())
+            .then(data => {
+
+                if(data.trim() === "taken"){
+                    serialMsg.innerHTML = "<span style='color:red'>Serial number already exists</span>";
+                    serialInput.classList.add("is-invalid");
+                    saveBtn.disabled = true;
+                }else{
+                    serialMsg.innerHTML = "<span style='color:green'>Serial number available</span>";
+                    serialInput.classList.remove("is-invalid");
+                    saveBtn.disabled = false;
+                }
+
+            });
+
+        }, 400);
+
     });
+
+  });
     </script>
+    

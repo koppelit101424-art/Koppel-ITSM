@@ -32,7 +32,7 @@
 
             // Change Password
             $('#changePasswordLink').attr('href',
-                '?page=organization/crud/change_password.php&user_id=' + encodeURIComponent(selectedUserId)
+                '?page=organization/crud/change_password&user_id=' + encodeURIComponent(selectedUserId)
             );
 
             // Enable / Disable
