@@ -294,7 +294,7 @@ $conn->close();
     </div>
     
     <div class="text-center text-white mt-4 opacity-75">
-      <small>© <?= date('Y') ?> Asset Management System. All rights reserved.</small>
+      <small>© <?= date('Y') ?> IT System Management. All rights reserved.</small>
     </div>
   </div>
   <!-- Add shake animation to error message -->

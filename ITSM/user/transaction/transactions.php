@@ -161,7 +161,7 @@ display: block;           /* Ensure it behaves like a block element */
                                 <div class="col-4"><strong>Returned:</strong> 
                                     <?= !empty($row['date_returned']) && $row['date_returned'] != '0000-00-00 00:00:00' 
                                         ? date('m-d-Y', strtotime($row['date_returned'])) 
-                                        : '<span class="text-danger">Not Returned</span>' ?>
+                                        : '<span class="text-danger">Issued</span>' ?>
                                 </div>
                                 <div class="col-4"><strong>Serial No.:</strong> <?= htmlspecialchars($row['serial_number']) ?></div>
                                 <div class="col-8"><strong>Remarks:</strong> <?= htmlspecialchars($row['remarks'] ?? '-') ?></div>
