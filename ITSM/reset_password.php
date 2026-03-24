@@ -51,7 +51,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && $showForm) {
             $message = "<div class='alert alert-success'>Password reset successful. Redirecting to login...</div>";
             $success = true;
             $showForm = false;
-            header("refresh:1;url=?page=admin/login.php"); 
+            header("refresh:1;url=../ITSM/user/index.php?page=login"); 
             // Redirect after 3 seconds
         } else {
             $message = "<div class='alert alert-danger'>Failed to reset password. Try again.</div>";

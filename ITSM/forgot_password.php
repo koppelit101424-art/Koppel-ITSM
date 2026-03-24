@@ -36,7 +36,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $update->bind_param("sss", $token, $expiry, $email);
         $update->execute();
 
-        $resetLink = "http://115.88.1.11/System/ITSM/reset_password.php?token=" . $token;
+        $resetLink = "http://115.88.1.63/koppel-itsm/ITSM/reset_password.php?token=" . $token;
 
 
         // SEND EMAIL
