@@ -6,22 +6,25 @@ $created_by = $_SESSION['user_id'];
 
 // Fetch all requests by the logged-in user
 $sql = "
-    SELECT 
-        request_id,
-        lmr_no,
-        department,
-        item,
-        description,
-        quantity,
-        UoM,
-        date_needed,
-        remarks,
-        date_created,
-        status,
-        created_by
-    FROM request_tb
-    WHERE created_by = ?
-    ORDER BY date_created DESC
+SELECT 
+    r.request_id,
+    r.lmr_no,
+    r.department,
+    r.item,
+    r.description,
+    r.quantity,
+    r.UoM,
+    r.date_needed,
+    r.remarks,
+    r.date_created,
+    r.status,
+    r.created_by AS admin_id,
+    t.user_id
+FROM request_tb r
+INNER JOIN ticket_tb t 
+    ON r.ticket_id = t.ticket_id
+WHERE t.user_id = ?
+ORDER BY r.date_created DESC
 ";
 
 $stmt = $conn->prepare($sql);
@@ -133,7 +136,7 @@ $requests = $stmt->get_result();
                                                 default: $statusClass = 'badge-pending'; break;
                                             }
                                         ?>
-                                        <span class="badge <?= $statusClass ?>">
+                                        <span class="badge <?= $statusClass ?> text-white" style="width: 100%;">
                                             <?= ucfirst($row['status']) ?>
                                         </span>
                                     </td>

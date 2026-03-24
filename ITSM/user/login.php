@@ -224,7 +224,7 @@ $conn->close();
           <i class="fas fa-boxes"></i>
         </div>
         <h1>Asset Management System</h1>
-        <p>Admin Portal</p>
+        <p>User Portal</p>
       </div>
       
       <div class="login-body">
