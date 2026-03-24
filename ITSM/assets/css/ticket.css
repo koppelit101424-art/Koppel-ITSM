@@ -1,0 +1,44 @@
+
+.table-hover tbody tr:hover {
+    background-color: #f1f1f1;
+    cursor: pointer;
+}
+
+/* PRIORITY COLORS */
+.badge-priority-highest { background-color: #8b0a17; width: 100%; }
+.badge-priority-high { background-color: #dc3545; width: 100%;}
+.badge-priority-medium { background-color: #ffc107; width: 100%;}
+.badge-priority-low { background-color: #0d6efd; width: 100%;}
+.badge-priority-lowest { background-color: #6ea8fe; width: 100%;}
+
+/* STATUS COLORS */
+.badge-status-reopened,
+.badge-status-waiting-for-support,
+.badge-status-waiting-for-customer,
+.badge-status-in-progress,
+.badge-status-escalated,
+.badge-status-pending {
+    background-color: #0d6efd;
+}
+
+.badge-status-canceled,
+.badge-status-closed {
+    background-color: grey;
+}
+.badge-status-resolved{
+    background-color: #198754;
+}
+.select-unassigned {
+    background-color: white !important;
+      
+}
+.status-waiting-for-support { background-color: #0d6efd; color: white; }
+.status-waiting-for-customer { background-color: #0d6efd; color: white; }
+.status-in-progress { background-color: #0d6efd; color: white; }
+.status-pending { background-color: #ffc107; color: white; }
+.status-escalated { background-color: #0d6efd; color: white; }
+
+.status-resolved { background-color: #198754; color: white; }
+.status-canceled { background-color: grey; color: white; }
+.status-closed { background-color: grey; color: white; }
+.status-reopened { background-color: #0d6efd; color: white; }
