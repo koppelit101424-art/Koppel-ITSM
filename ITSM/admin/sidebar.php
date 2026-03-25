@@ -13,6 +13,14 @@ $organization_pages = [
 
 'announcement/announcements';
 
+$fullname = $_SESSION['fullname'] ?? 'John Doe';
+
+$nameParts = explode(" ", $fullname);
+
+$initials = strtoupper(
+    substr($nameParts[0],0,1) .
+    (isset($nameParts[1]) ? substr($nameParts[1],0,1) : '')
+);
 ?>
 
 <div class="sidebar <?= $sidebar_collapsed ? 'collapsed' : 'open' ?>" id="sidebar">
@@ -223,7 +231,9 @@ Administration
         <span class="menu-text">Settings</span>
     </a>
 <?php endif; ?>
-
+<a class="text-danger" href="logout.php" >
+    <i class="bi bi-box-arrow-right me-2"></i> Logout
+</a>
 <div class="sidebar-footer text-center">
     Developed by
 <strong class="footer-text">Aljon Cardeno</strong>

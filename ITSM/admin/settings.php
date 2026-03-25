@@ -268,7 +268,7 @@ $itemTypes = $conn->query("SELECT type_id, type_name FROM item_type ORDER BY typ
                     <div class="col-md-6">
                         <h6>Backup Database</h6>
                         <p class="text-muted">Download a full backup of your system data</p>
-                        <a href="backup.php" class="btn btn-outline-primary">
+                        <a href="settings/backup.php" class="btn btn-outline-primary">
                             <i class="fas fa-download me-1"></i> Create Backup
                         </a>
                     </div>

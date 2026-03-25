@@ -42,11 +42,11 @@ $initials = strtoupper(
 <?= $fullname ?>
 </span>
 
-<i class="bi bi-chevron-down small user-arrow"></i>
+<!-- <i class="bi bi-chevron-down small user-arrow"></i> -->
 
 </button>
 
-<ul class="dropdown-menu dropdown-menu-end shadow">
+<!-- <ul class="dropdown-menu dropdown-menu-end shadow">
 
 <li>
 <a class="dropdown-item" href="?page=profile">
@@ -62,7 +62,7 @@ $initials = strtoupper(
 </a>
 </li>
 
-</ul>
+</ul> -->
 
 </div>
 

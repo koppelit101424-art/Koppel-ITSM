@@ -32,15 +32,18 @@ ADMIN
     view modal desktop- 3/21/26
     context menu modal fix- 3/21/26
     header blocking modal fix - 3/21/26
+    print LMR, Issuance form - 3/21/26
 
+    database whole backup
     fix modal on announcement
     ticket pause on weekends
     Inventory image 
 
     print and export xls function (filtered assets, all issued assets)
-    print LMR, Issuance form, list filtered lmr, filtered sla tally, list of filtered users
+    print list filtered lmr, filtered sla tally, list of filtered users
     export credentials
 
+    agent on tickets
     chat UI, auto reset text area after enter
     clickable request, chat inside request
     NoTification
