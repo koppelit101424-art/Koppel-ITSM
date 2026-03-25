@@ -123,6 +123,7 @@ $sql = "SELECT
     $ticketCreated = new DateTime($ticket['date_created']);
     $deadline = clone $ticketCreated;
     $deadline->modify("+{$slaHours} hours");
+    
 
     // Use closed time if ticket is closed
     $now = $ticketClosedTime ?? new DateTime();
@@ -903,6 +904,7 @@ document.addEventListener("DOMContentLoaded", function () {
     if (remainingEl) {
         const deadline = new Date(remainingEl.dataset.deadline);
 
+
     function updateRemaining() {
         const statusSelect = document.getElementById('statusSelect');
         const currentStatus = statusSelect ? statusSelect.value.toLowerCase() : '';
@@ -960,19 +962,40 @@ document.addEventListener("DOMContentLoaded", function () {
 
         if (diff <= 0) {
             remainingEl.textContent = "00:00:00 (SLA Exceeded)";
-            return;
+
+            // Auto-close ticket if not closed
+            if (statusSelect && statusSelect.value !== 'closed') {
+                fetch('?page=ticket/includes/update_ticket_field', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        ticket_id: <?= $ticket_id ?>,
+                        field: 'status',
+                        value: 'closed',
+                        comment: 'Ticket Automatically Closed',
+                        is_public: 0
+                    })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        statusSelect.value = 'closed';
+                        reloadActivityLog();
+                    }
+                });
+            }
+        } else {
+            const hours = Math.floor(diff / 3600);
+            const minutes = Math.floor((diff % 3600) / 60);
+            const seconds = diff % 60;
+
+            remainingEl.textContent = 
+                String(hours).padStart(2, '0') + ":" +
+                String(minutes).padStart(2, '0') + ":" +
+                String(seconds).padStart(2, '0');
+
+            remainingEl.dataset.paused = remainingEl.textContent;
         }
-
-        const hours = Math.floor(diff / 3600);
-        const minutes = Math.floor((diff % 3600) / 60);
-        const seconds = diff % 60;
-
-        remainingEl.textContent =
-            String(hours).padStart(2, '0') + ":" +
-            String(minutes).padStart(2, '0') + ":" +
-            String(seconds).padStart(2, '0');
-
-        remainingEl.dataset.paused = remainingEl.textContent;
     }
 
     updateRemaining();
