@@ -661,7 +661,9 @@ border-radius:50px;
 .text-primary{
     color: #1E3A8A !important;
 }
-
+.text-blue{ 
+    color: #0c3b63;
+}
 /* desktop modal */
 #desktopTable th,
 #desktopTable td {

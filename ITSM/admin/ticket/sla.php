@@ -271,7 +271,7 @@ $percent=$data['total']>0?round(($data['met']/$data['total'])*100,2):0;
 <tr>
 <td><?= $admin ?></td>
 
-<td class="fw-bold text-warning">
+<td class="fw-bold text-primary">
 <?= $ongoingStats[$admin] ?? 0 ?>
 </td>
 <td><?= $data['total'] ?></td>
