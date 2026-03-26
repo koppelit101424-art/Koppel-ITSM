@@ -77,13 +77,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $stmt = $conn->prepare("SELECT subject FROM ticket_subject WHERE subject_id = ?");
     $stmt->bind_param("i", $_POST['subject_id']);
     $stmt->execute();
-    $subject = $stmt->get_result()->fetch_assoc()['subject'];
+    // $subject = $stmt->get_result()->fetch_assoc()['subject'];
+    $row = $stmt->get_result()->fetch_assoc();
+    $subject = $row['subject'] ?? 'Unknown';
 
     /* SUBJECT DETAIL NAME */
     $stmt = $conn->prepare("SELECT name FROM subject_details WHERE subject_details_id = ?");
     $stmt->bind_param("i", $_POST['subject_details_id']);
     $stmt->execute();
-    $subject_details = $stmt->get_result()->fetch_assoc()['name'];
+    // $subject_details = $stmt->get_result()->fetch_assoc()['name'];
+    $row = $stmt->get_result()->fetch_assoc();
+    $subject_details = $row['subject_details'] ?? 'Unknown';
 
     $stmt = $conn->prepare("
         INSERT INTO ticket_tb (
@@ -115,6 +119,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 if ($stmt->execute()) {
 
+ include 'ticket_email.php';
     // GET THE CREATED TICKET ID
     $ticket_id = $stmt->insert_id;
 
@@ -166,7 +171,7 @@ if ($stmt->execute()) {
             }
         }
     }
-
+   
     // REDIRECT AFTER EVERYTHING IS SAVED
     // header("Location: ?page=ticket/all_tickets.php&success=1");
     echo "<script>

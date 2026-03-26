@@ -203,7 +203,7 @@ p{
 <!-- LEFT COLUMN -->
 <div class="col-md-8">
 <label class="fw-bold">Subject</label>
-<div class="mb-3"><?= nl2br(htmlspecialchars($ticket['subject_details'])) ?></div>
+<div class="mb-3"><?= nl2br(htmlspecialchars($ticket['subject'])) ?></div>
 
 <label class="fw-bold">Issue Description</label>
 <div class="mb-4"><?= nl2br(htmlspecialchars($ticket['issue'])) ?></div>
