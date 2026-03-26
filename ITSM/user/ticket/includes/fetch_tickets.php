@@ -45,7 +45,8 @@ while ($ticket = $tickets->fetch_assoc()):
         </span>
     </td>
 
-    <td><?= date('m-d-Y', strtotime($ticket['created_at'] ?? $ticket['date_created'])) ?></td>
+<td><?= date('m-d-Y', strtotime($ticket['date_created'])) ?></td>
+<td><?= date('h:i A', strtotime($ticket['date_created'])) ?></td>
 </tr>
 
 <?php endwhile; else: ?>

@@ -24,10 +24,10 @@ $initials = strtoupper(
 <div class="ms-auto d-flex align-items-center gap-2">
 
 <!-- NOTIFICATION -->
-<button class="btn btn-light position-relative">
+<!-- <button class="btn btn-light position-relative">
 <i class="bi bi-bell"></i>
 <span class="notification-badge">3</span>
-</button>
+</button> -->
 
 <!-- USER DROPDOWN -->
 <div class="dropdown">

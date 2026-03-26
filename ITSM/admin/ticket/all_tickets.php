@@ -201,7 +201,8 @@ include __DIR__ . '/../../includes/db.php';
                 <th>Subject</th>
                 <th style="width: 135px;">Assigned To</th>
                 <th style="width: 160px;">Status</th>
-                <th style="width: 105px;">Date Created</th>
+                <th>Date</th>
+                <th>Time</th>
             </tr>
         </thead>
         <!-- id="adminTicketsBody" -->
@@ -270,8 +271,8 @@ include __DIR__ . '/../../includes/db.php';
                 <?php endforeach; ?>
             </select>
         </td>
-
             <td><?= date('m-d-Y', strtotime($ticket['date_created'])) ?></td>
+            <td><?= date('h:i A', strtotime($ticket['date_created'])) ?></td>
         </tr>
         <?php endwhile; ?>
         </tbody>

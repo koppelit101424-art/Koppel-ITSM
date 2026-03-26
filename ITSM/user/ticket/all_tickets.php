@@ -81,7 +81,8 @@ $tickets = $stmt->get_result();
     <th>Subject</th>
     <th>Assigned To</th>
     <th style="width: 10%;">Status</th>
-    <th>Date Created</th>
+    <th>Date</th>
+    <th>Time</th>
 </tr>
 </thead>
 <tbody id="ticketsBody">
@@ -111,7 +112,8 @@ $tickets = $stmt->get_result();
         </span>
     </td>
 
-    <td><?= date('m-d-Y', strtotime($ticket['created_at'] ?? $ticket['date_created'])) ?></td>
+    <td><?= date('m-d-Y', strtotime($ticket['date_created'])) ?></td>
+    <td><?= date('h:i A', strtotime($ticket['date_created'])) ?></td>
 </tr>
 <?php endwhile; ?>
 <?php else: ?>
