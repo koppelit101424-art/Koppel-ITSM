@@ -55,6 +55,34 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
         $item_id = $stmt->insert_id; // Get inserted item ID
 
+         // ✅ GENERATE QR
+        require_once __DIR__ . '/../../../phpqrcode/qrlib.php';
+
+        // 🔥 IMPORTANT: QR contains link to item
+        $qr_value = "http://115.88.1.63/koppel-itsm/ITSM/admin/item_view.php?id=" . $item_id;
+
+        // Folder
+        $qr_folder = __DIR__ . "/../qrcodes/";
+        if (!file_exists($qr_folder)) {
+            mkdir($qr_folder, 0777, true);
+        }
+
+        $qr_file = $qr_folder . "item_" . $item_id . ".png";
+
+        QRcode::png($qr_value, $qr_file, QR_ECLEVEL_L, 5);
+
+        $qr_db_path = "qrcodes/item_" . $item_id . ".png";
+
+        // ✅ INSERT INTO qr_tb
+        $qr_stmt = $conn->prepare("INSERT INTO qr_tb (item_id, qr_code_path, qr_value) VALUES (?, ?, ?)");
+        $qr_stmt->bind_param("iss", $item_id, $qr_db_path, $qr_value);
+
+        if (!$qr_stmt->execute()) {
+            die("QR Insert Error: " . $qr_stmt->error);
+        }
+
+        $qr_stmt->close();
+
         // ===== Insert Laptop/System Unit specs if applicable =====
         $item_lower = strtolower($name);
         if (strpos($item_lower, "laptop") !== false || strpos($item_lower, "system unit") !== false) {

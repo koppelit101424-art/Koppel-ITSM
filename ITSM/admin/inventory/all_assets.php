@@ -113,6 +113,7 @@ include __DIR__ . '/includes/inv_sql.php';
                 <thead class="table-light">
                     <tr>
                         <th style="display:none;">ID</th>
+                        <th>QR</th>
                         <th>Code</th>
                         <th>Item</th>
                         <th>Brand</th>
@@ -149,8 +150,19 @@ include __DIR__ . '/includes/inv_sql.php';
                       data-key="<?= htmlspecialchars($row['key'] ?? '') ?>"
                       data-antivirus="<?= htmlspecialchars($row['antivirus'] ?? '') ?>"
                       data-compname="<?= htmlspecialchars($row['comp_name'] ?? '') ?>"
+                      data-qr="<?= htmlspecialchars($row['qr_code_path'] ?? '') ?>"
                       >
                             <td style="display:none;"><?= $row['item_id'] ?></td>
+                            <td>
+                            <?php if (!empty($row['qr_code_path'])): ?>
+                                <a href="inventory/<?= htmlspecialchars($row['qr_code_path']) ?>" target="_blank">
+                                    <img src="inventory/<?= htmlspecialchars($row['qr_code_path']) ?>" width="50">
+                                </a>
+                            <?php else: ?>
+                                <span class="text-muted">No QR</span>
+                            <?php endif; ?>
+                            </td>
+                            
                             <td><?= $row['item_code'] ?></td>
                             <td><?= $row['name'] ?></td>
                             <td><?= $row['brand'] ?></td>

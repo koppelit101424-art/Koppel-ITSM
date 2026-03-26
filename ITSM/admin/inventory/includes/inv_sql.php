@@ -42,7 +42,8 @@ $sql = "SELECT
             s.`key`,
             s.antivirus,
             s.comp_name,
-            c.condition_name
+            c.condition_name,
+            q.qr_code_path
 
         FROM item_tb i
 
@@ -54,6 +55,8 @@ $sql = "SELECT
 
         LEFT JOIN item_condition_tb c 
              ON i.condition_id = c.condition_id
+            
+        LEFT JOIN qr_tb q ON i.item_id = q.item_id
 
         WHERE 1=1";
 
@@ -98,15 +101,19 @@ if($dateFrom && $dateTo){
 }
 
 $sql .= " ORDER BY i.date_received DESC";
-
 $stmt = $conn->prepare($sql);
 
-if(!empty($params)){
-$stmt->bind_param($types, ...$params);
+if (!$stmt) {
+    die("SQL Error: " . $conn->error);
 }
 
-$stmt->execute();
-$result = $stmt->get_result();
+if (!empty($params)) {
+    $stmt->bind_param($types, ...$params);
+}
+
+$stmt->execute(); // ✅ REQUIRED
+
+$result = $stmt->get_result(); // ✅ NOW VALID
 
   
   // Fetch item types ORDER BY i.date_received DESC 
