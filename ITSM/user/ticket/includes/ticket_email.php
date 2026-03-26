@@ -19,6 +19,7 @@ try {
 
     $mail->setFrom('koppelit101424@gmail.com', 'IT Support');
     $mail->addAddress($user['email'], $user['fullname']);
+    $mail->addCC('itticketing@koppel.ph');
 
     $mail->isHTML(true);
     $mail->Subject = "$ticket_number {$subject} (". ucfirst($_POST['priority']).")";

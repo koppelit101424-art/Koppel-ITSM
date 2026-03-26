@@ -34,8 +34,11 @@ ADMIN
     header blocking modal fix - 3/21/26
     print LMR, Issuance form - 3/21/26
     database whole backup- 3/25/26
+    notif on email- 3/26/26
 
-    notif on email
+    cc email
+    loader on add ticket
+    notif each status change
     fix modal on announcement
     ticket pause on weekends
     Inventory image 
