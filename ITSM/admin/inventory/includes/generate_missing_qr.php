@@ -13,7 +13,14 @@ if (!is_dir($qrFolder)) {
 $sql = "SELECT i.item_id
 FROM item_tb i
 LEFT JOIN qr_tb q ON i.item_id = q.item_id
-WHERE i.item_id = 342";
+WHERE i.item_id = 318";
+
+// $sql = "
+// SELECT i.item_id
+// FROM item_tb i
+// LEFT JOIN qr_tb q ON i.item_id = q.item_id
+// WHERE q.item_id IS NULL
+// ";
 
 $result = $conn->query($sql);
 
@@ -29,11 +36,11 @@ while ($row = $result->fetch_assoc()) {
 
     // 🔗 URL that QR will open
     $qrValue = "http://115.88.1.63/koppel-itsm/ITSM/admin/item_view.php?id=" . $item_id;
-
+    $folder = "qrcodes/";
     // 📁 File name
-    $fileName = "qrcodes/item_" . $item_id . ".png";
+    $fileName = "item_" . $item_id . ".png";
     $filePath = $qrFolder . $fileName;
-
+    $qrCodePath = $folder . $fileName;
     // Generate QR
     QRcode::png($qrValue, $filePath, QR_ECLEVEL_L, 5);
 
