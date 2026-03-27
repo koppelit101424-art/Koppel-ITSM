@@ -107,7 +107,7 @@ include 'add_item_sql.php';
                     </div>
                 </div>
                 <div class="col-md-4">
-                    <label class="form-label">QR Code</label><br>
+                    <!-- <label class="form-label">QR Code</label><br> -->
                     <img id="qr_code_img" src="" style="max-width:150px; display:none;">
                 </div>
                 <button type="submit" id="saveBtn" class="btn btn-primary">Save Item</button>

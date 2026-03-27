@@ -84,17 +84,17 @@ System
 <span class="menu-text">Barcode Scanners</span>
 </a> -->
 
-<a data-title="Biometrics" class="<?= ($page=='inventory/biometrics') ? 'active' : '' ?>" href="?page=inventory/biometrics">
+<!-- <a data-title="Biometrics" class="<?= ($page=='inventory/biometrics') ? 'active' : '' ?>" href="?page=inventory/biometrics">
 <i class="bi bi-fingerprint"></i>
 <span class="menu-text"> Biometrics</span>
-</a>
+</a> -->
 
 <a data-title="Desktops" class="<?= ($page=='inventory/desktops') ? 'active' : '' ?>" href="?page=inventory/desktops">
     <i class="bi bi-pc-display"></i>
     <span class="menu-text">Desktops</span>
 </a>
 
-<a data-title="IP Phones" class="<?= ($page=='inventory/ip_phones') ? 'active' : '' ?>" href="?page=inventory/ip_phones">
+<!-- <a data-title="IP Phones" class="<?= ($page=='inventory/ip_phones') ? 'active' : '' ?>" href="?page=inventory/ip_phones">
     <i class="bi bi-telephone"></i> 
     <span class="menu-text">IP Phones</span>
 </a>
@@ -117,17 +117,17 @@ System
 <a data-title="Servers" class="<?= ($page=='inventory/servers') ? 'active' : '' ?>" href="?page=inventory/servers">
     <i class="bi bi-hdd-network"></i> 
     <span class="menu-text">Servers</span>
-</a>
+</a> -->
 
 <!-- <a data-title="Phones" class="<?= ($page=='inventory/phones') ? 'active' : '' ?>" href="?page=inventory/phones">
     <i class="fa-thin fa-mobile-button"></i>
     <span class="menu-text">Smart Phones</span>
 </a> -->
 
-<a data-title="Tablets" class="<?= ($page=='inventory/tablets') ? 'active' : '' ?>" href="?page=inventory/tablets">
+<!-- <a data-title="Tablets" class="<?= ($page=='inventory/tablets') ? 'active' : '' ?>" href="?page=inventory/tablets">
     <i class="fa-thin fa-tablet-button"></i>
     <span class="menu-text">Tablets</span>
-</a>
+</a> -->
 
 </div>
 <!-- OTHER MENU -->

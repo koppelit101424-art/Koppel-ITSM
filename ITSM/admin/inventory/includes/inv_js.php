@@ -5,10 +5,10 @@ $(document).ready(function() {
         "pageLength": 25,
         "lengthMenu": [10, 25, 50, 100, 250, 500],
         "columnDefs": [
-            { "visible": false, "targets": [0, 6, 10] },
-            { "orderable": false, "targets": [9] }
+            { "visible": false, "targets": [0, 7, 11] },
+            { "orderable": false, "targets": [10] }
         ],
-        "order": [[8, 'desc']],
+        "order": [[10, 'desc']],
         "autoWidth": false,
         "language": {
             "search": "Search within table:"
