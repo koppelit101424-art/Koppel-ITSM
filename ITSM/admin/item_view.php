@@ -1,30 +1,30 @@
 <?php
-// include __DIR__ . '/../includes/auth.php'; // removed for public access
 include __DIR__ . '/../includes/db.php';
 
-// Fetch qr_code_path from GET
-$qr_code_path = $_GET['item_id'] ?? null;
+// Get QR path from URL
+$item_id = $_GET['id'] ?? null;
 
+// Query: get item using QR path
+$sql = "SELECT i.*, q.qr_code_path 
+FROM qr_tb q
+JOIN item_tb i ON i.item_id = q.item_id
+WHERE q.item_id = ?";
 
-// Fetch the item from DB with LEFT JOIN
-$sql = "
-SELECT i.*, q.qr_code_path 
-FROM item_tb i
-LEFT JOIN qr_tb q ON q.item_id = i.item_id
-WHERE i.item_id = ?
-";
 $stmt = $conn->prepare($sql);
 if (!$stmt) {
     die("Database error: " . $conn->error);
 }
 
-// Bind as string
-$stmt->bind_param("s", $qr_code_path);
+// QR path is STRING
+$stmt->bind_param("s", $item_id);
 $stmt->execute();
+
 $result = $stmt->get_result();
 $item = $result->fetch_assoc();
 
-
+if (!$item) {
+    die("Item not found.");
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -43,7 +43,7 @@ $item = $result->fetch_assoc();
     <h2>Item Details</h2>
     <table class="table table-bordered">
 
-        <tr><th>Item ID</th><td><?= $item ?><?php echo $qr_code_path;?></td></tr>
+      <tr><th>Item ID</th><td><?= htmlspecialchars($item['item_id']) ?></td></tr>
         <tr><th>Item Code</th><td><?= htmlspecialchars($item['item_code']) ?></td></tr>
         <tr><th>Name</th><td><?= htmlspecialchars($item['name']) ?></td></tr>
         <tr><th>Brand</th><td><?= htmlspecialchars($item['brand']) ?></td></tr>
