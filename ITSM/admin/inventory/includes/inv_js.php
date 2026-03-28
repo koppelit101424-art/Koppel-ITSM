@@ -3,7 +3,7 @@ $(document).ready(function() {
     // Initialize DataTable
     var table = $('#inventoryTable').DataTable({
         "pageLength": 25,
-        "lengthMenu": [10, 25, 50, 100, 250, 500],
+        "lengthMenu": [10, 25, 50, 100, 250, 500, 1000, 3000, 5000],
         "columnDefs": [
             { "visible": false, "targets": [0, 7, 11] },
             { "orderable": false, "targets": [10] }

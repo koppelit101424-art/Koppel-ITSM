@@ -38,17 +38,19 @@ ADMIN
     QR on asset - 3/27/26
     cc email- 3/27/26
     loader on add ticket- 3/27/26
-    fetch qr on modal 
+    fetch qr on modal - 3/28/26
+    print function filtered assets  - 3/28/26
+    
     notif each status change
     fix modal on announcement
     ticket pause on weekends
     Inventory image 
 
-    print and export xls function (filtered assets, all issued assets)
-    print list filtered lmr, filtered sla tally, list of filtered users
-    export credentials
+    print and export xls function (all issued assets)
 
-    agent on tickets
+    print list filtered lmr, filtered sla tally, list of filtered users
+    print & export credentials
+
     chat UI, auto reset text area after enter
     clickable request, chat inside request
     On select filter

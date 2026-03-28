@@ -22,9 +22,12 @@ include __DIR__ . '/includes/inv_sql.php';
     <button type="button" onclick="printInventory()" class="btn btn-success btn-sm">
         <i class="fas fa-print me-1"></i> Print
     </button>
+    <button type="button" onclick="exportInventoryCSV()" class="btn btn-info btn-sm">
+        <i class="fas fa-file-csv me-1"></i> Export CSV
+    </button>
     <button type="button" onclick="printQRStickers()" class="btn btn-dark btn-sm">
     <i class="fas fa-qrcode me-1"></i> Print QR Codes
-</button>
+    </button>
     </div>
   </div>
 
@@ -494,5 +497,63 @@ function printQRStickers() {
 
     win.document.close();
     win.print();
+}
+</script>
+<!-- Export CSV -->
+<script>
+function exportInventoryCSV() {
+    const rows = document.querySelectorAll("#inventoryTable tbody tr");
+
+    // Header for CSV
+    const headers = ["Code", "Item", "Brand", "Model", "Serial", "Description / Specifications", "Qty", "Date Received"];
+    const csv = [headers.join(",")];
+
+    rows.forEach(row => {
+        // skip hidden rows (important if using filters/datatables)
+        if (row.offsetParent === null) return;
+
+        const code = `"${row.dataset.code || ""}"`;
+        const item = `"${row.dataset.name || ""}"`;
+        const brand = `"${row.dataset.brand || ""}"`;
+        const model = `"${row.dataset.model || ""}"`;
+        const serial = `"${row.dataset.serial || ""}"`;
+
+        let description = row.dataset.desc || "";
+
+        const cpu = row.dataset.cpu || "";
+        const ram = row.dataset.ram || "";
+        const rom = row.dataset.rom || "";
+        const motherboard = row.dataset.motherboard || "";
+        const os = row.dataset.os || "";
+        const key = row.dataset.key || "";
+        const antivirus = row.dataset.antivirus || "";
+        const compname = row.dataset.compname || "";
+
+        if (cpu || ram || rom || motherboard || os || key || antivirus || compname) {
+            description += `\nSpecifications:`;
+            if(cpu) description += ` CPU: ${cpu}`;
+            if(ram) description += ` RAM: ${ram}`;
+            if(rom) description += ` ROM: ${rom}`;
+            if(motherboard) description += ` Motherboard: ${motherboard}`;
+            if(os) description += ` OS: ${os}`;
+            if(key) description += ` Key: ${key}`;
+            if(antivirus) description += ` Antivirus: ${antivirus}`;
+            if(compname) description += ` Computer Name: ${compname}`;
+        }
+
+        description = `"${description.replace(/"/g, '""')}"`; // escape double quotes for CSV
+
+        const qty = `"${row.dataset.qty || ""}"`;
+        const received = `"${row.dataset.received || ""}"`;
+
+        csv.push([code, item, brand, model, serial, description, qty, received].join(","));
+    });
+
+    // Create a Blob and download
+    const blob = new Blob([csv.join("\n")], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `inventory_export_${new Date().toISOString().slice(0,10)}.csv`;
+    link.click();
 }
 </script>
