@@ -72,6 +72,9 @@ if(isset($_GET['ajax'])){
         case "get_desktop_details":
             include "inventory/includes/get_desktop_details.php";
             break;
+        case "get_models":
+            include "includes/get_models.php";
+            exit;
     }
 }
 ?>

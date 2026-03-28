@@ -26,8 +26,17 @@ $brandResult = $brandQuery->get_result();
 while ($b = $brandResult->fetch_assoc()) $brandsArr[] = $b['brand'];
 
 $modelsArr = [];
-$modelQuery = $conn->prepare("SELECT DISTINCT model FROM item_tb WHERE name=? ORDER BY model ASC");
-$modelQuery->bind_param("s", $itemName);
+
+if ($filterBrand) {
+    // fetch only models under the selected brand
+    $modelQuery = $conn->prepare("SELECT DISTINCT model FROM item_tb WHERE name=? AND brand=? ORDER BY model ASC");
+    $modelQuery->bind_param("ss", $itemName, $filterBrand);
+} else {
+    // fetch all models for the item type
+    $modelQuery = $conn->prepare("SELECT DISTINCT model FROM item_tb WHERE name=? ORDER BY model ASC");
+    $modelQuery->bind_param("s", $itemName);
+}
+
 $modelQuery->execute();
 $modelResult = $modelQuery->get_result();
 while ($m = $modelResult->fetch_assoc()) $modelsArr[] = $m['model'];
@@ -526,4 +535,32 @@ function printQRStickers() {
     win.document.close();
     win.print();
 }
+</script>
+<!-- ajax -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+
+    const brandSelect = document.querySelector('select[name="brand"]');
+    const modelSelect = document.querySelector('select[name="model"]');
+const type = "<?= addslashes($itemName) ?>"; // item type (Laptop, etc.)
+
+brandSelect.addEventListener('change', function() {
+    const brand = this.value;
+
+    fetch(`?ajax=get_models&type=${encodeURIComponent(type)}&brand=${encodeURIComponent(brand)}`)
+        .then(res => res.json())
+        .then(data => {
+            // clear current model options
+            modelSelect.innerHTML = '<option value="">All Models</option>';
+            data.forEach(model => {
+                const option = document.createElement('option');
+                option.value = model;
+                option.textContent = model;
+                modelSelect.appendChild(option);
+            });
+        })
+        .catch(err => console.error('Error fetching models:', err));
+});
+
+});
 </script>
