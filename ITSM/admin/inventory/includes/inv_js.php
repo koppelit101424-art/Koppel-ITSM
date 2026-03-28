@@ -71,7 +71,19 @@ $(document).ready(function() {
             : '<span class="status-inactive">In Use</span>';
 
         $('#modalItemStatus').html(statusHtml);
+            // ✅ QR CODE
+            var qr = $row.data('qr');
 
+            if(qr){
+                $('#modalQrImage')
+                    .attr('src', 'inventory/' + qr)
+                    .show();
+
+                $('#modalQrEmpty').hide();
+            }else{
+                $('#modalQrImage').hide();
+                $('#modalQrEmpty').show();
+            }
         var modal = new bootstrap.Modal(document.getElementById('itemDetailsModal'));
                 // Laptop / PC Specs
         var cpu = $row.data('cpu');

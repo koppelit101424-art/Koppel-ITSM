@@ -38,7 +38,7 @@ ADMIN
     QR on asset - 3/27/26
     cc email- 3/27/26
     loader on add ticket- 3/27/26
-
+    fetch qr on modal 
     notif each status change
     fix modal on announcement
     ticket pause on weekends
@@ -51,9 +51,6 @@ ADMIN
     agent on tickets
     chat UI, auto reset text area after enter
     clickable request, chat inside request
-    NoTification
-
-Improvement
     On select filter
 
  

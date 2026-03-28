@@ -14,7 +14,21 @@
         <div class="row g-4">
 
           <!-- LEFT -->
-          <div class="col-md-6">
+          <div class="col-md-4">
+              <!-- QR CODE -->
+            <div class="detail-card p-3 rounded-3 bg-light-subtle">
+              <h6 class="text-primary fw-bold border-bottom pb-2 mb-3">
+                <i class="fa-solid fa-qrcode"></i> QR Code
+              </h6>
+
+              <img id="modalQrImage" src="" alt="QR Code" class="mb-4"
+                  style="max-width:200px; display:none; border:1px solid #ddd; padding:2px;">
+
+              <p id="modalQrEmpty" class="text-muted mb-0">No QR available</p>
+            </div>
+          </div>
+
+          <div class="col-md-4">
             <div class="detail-card p-3 rounded-3 bg-light-subtle">
               <h6 class="text-primary fw-bold border-bottom pb-2 mb-3">
                 <i class="fas fa-tag me-2"></i>Basic Information
@@ -43,7 +57,7 @@
           </div>
 
           <!-- RIGHT -->
-          <div class="col-md-6">
+          <div class="col-md-4">
             <div class="detail-card p-3 rounded-3 bg-light-subtle">
               <h6 class="text-primary fw-bold border-bottom pb-2 mb-3">
                 <i class="fas fa-cube me-2"></i>Inventory Details
@@ -128,13 +142,15 @@
           <!-- DESCRIPTION -->
           <div class="col-12 mt-2">
             <div class="detail-card p-3 rounded-3 bg-light-subtle">
-              <h6 class="text-primary mb-3 fw-bold border-bottom pb-2">
-                <i class="fas fa-align-left me-2"></i>Description
+              <h6 class="text-primary mb-3 fw-bold border-bottom pb-2 d-flex justify-content-between align-items-center">
+                  <span>
+                      <i class="fas fa-align-left me-2"></i>Description
+                  </span>
+
+                  <!-- <span id="modalItemStatus">—</span> -->
               </h6>
               <p class="mb-0" id="modalItemDesc" style="white-space: pre-wrap; line-height: 1.6;">—</p>
                 <div class="mt-3">
-                <label class="text-muted small">Status</label>
-                <span id="modalItemStatus">—</span>
               </div>
             </div>
           </div>
