@@ -13,7 +13,7 @@ if (!is_dir($qrFolder)) {
 $sql = "SELECT i.item_id
 FROM item_tb i
 LEFT JOIN qr_tb q ON i.item_id = q.item_id
-WHERE i.item_id = 318";
+WHERE q.item_id IS NULL";
 
 // $sql = "
 // SELECT i.item_id
@@ -50,7 +50,7 @@ while ($row = $result->fetch_assoc()) {
         VALUES (?, ?, ?, NOW())
     ");
 
-    $stmt->bind_param("iss", $item_id, $fileName, $qrValue);
+    $stmt->bind_param("iss", $item_id, $qrCodePath, $qrValue);
     $stmt->execute();
 
     $count++;

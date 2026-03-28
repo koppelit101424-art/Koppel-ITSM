@@ -231,7 +231,7 @@ Administration
         <span class="menu-text">Settings</span>
     </a>
 <?php endif; ?>
-<a class="text-danger" href="logout.php" >
+<a class="text-danger" href="logout.php" data-title="Logout">
     <i class="bi bi-box-arrow-right me-2"></i> Logout
 </a>
 <div class="sidebar-footer text-center">

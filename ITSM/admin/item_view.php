@@ -256,7 +256,7 @@ h6 {
                     <h6 class="text-primary fw-bold border-bottom pb-2 mb-3">
                         <i class="fas fa-align-left me-2"></i>Description
                     </h6>
-                    <p style="white-space: pre-wrap;">
+                    <p style="text-align: justify;">
                         <?= htmlspecialchars($item['description']) ?>
                     </p>
                 </div>
