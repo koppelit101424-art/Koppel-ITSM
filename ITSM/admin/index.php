@@ -99,12 +99,14 @@ if(isset($_GET['ajax'])){
                     case "inventory/transactions":
                         include "inventory/transactions.php";
                         break;
-                    case 'inventory/asset_listing':
-                        include 'inventory/asset_listing.php';
-                        break;
-
                     case "inventory/desktops":
                         include "inventory/desktops.php";
+                        break;
+                    case "inventory/credentials":
+                        include "inventory/credentials.php";
+                        break;
+                    case 'inventory/asset_listing':
+                        include 'inventory/asset_listing.php';
                         break;
 
                     case "inventory/laptops":
@@ -133,10 +135,6 @@ if(isset($_GET['ajax'])){
 
                     case "inventory/servers":
                         include "inventory/servers.php";
-                        break;
-
-                    case "inventory/credentials":
-                        include "inventory/credentials.php";
                         break;
 
                     // Crud

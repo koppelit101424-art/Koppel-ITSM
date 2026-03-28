@@ -731,7 +731,7 @@ border-radius:50px;
 
 /* When open */
 .submenu.show {
-    max-height: 500px; /* enough to fit items */
+    max-height: 1000px; /* enough to fit items */
 }
 
 /* Nested submenu (slightly indented optional) */

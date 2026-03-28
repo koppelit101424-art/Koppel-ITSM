@@ -73,7 +73,7 @@ $type = $_GET['type'] ?? '';
 <span class="menu-text">All Assets</span>
 </a>
 
-<a class="<?= ($page=='inventory/asset_listing' && $type=='Scanners') ? 'active' : '' ?>" href="?page=inventory/asset_listing&type=Scanners">
+<a class="<?= ($page=='inventory/asset_listing' && $type=='Scanner') ? 'active' : '' ?>" href="?page=inventory/asset_listing&type=Scanner">
 <i class="fa-solid fa-mobile-screen"></i>
 <span class="menu-text">Barcode Scanners</span>
 </a>
@@ -83,17 +83,7 @@ $type = $_GET['type'] ?? '';
 <span class="menu-text">Biometrics</span>
 </a>
 
-<a class="<?= ($page=='inventory/desktops' && $type=='Desktops') ? 'active' : '' ?>" href="?page=inventory/desktops">
-<i class="bi bi-pc-display"></i>
-<span class="menu-text">Desktops</span>
-</a>
-<a data-title="Desktops" class="<?= ($page=='inventory/desktops') ? 'active' : '' ?>" href="?page=inventory/desktops">
-    <i class="bi bi-pc-display"></i>
-    <span class="menu-text">Desktops</span>
-</a>
-
-
-<a class="<?= ($page=='inventory/asset_listing' && $type=='IP Phones') ? 'active' : '' ?>" href="?page=inventory/asset_listing&type=IP Phones">
+<a class="<?= ($page=='inventory/asset_listing' && $type=='IP Phone') ? 'active' : '' ?>" href="?page=inventory/asset_listing&type=IP Phone">
 <i class="bi bi-telephone"></i>
 <span class="menu-text">IP Phones</span>
 </a>
@@ -103,27 +93,27 @@ $type = $_GET['type'] ?? '';
 <span class="menu-text">Laptops</span>
 </a>
 
-<a class="<?= ($page=='inventory/asset_listing' && $type=='Networks') ? 'active' : '' ?>" href="?page=inventory/asset_listing&type=Networks">
-<i class="bi bi-diagram-3"></i>
-<span class="menu-text">Networks</span>
-</a>
-
 <a class="<?= ($page=='inventory/asset_listing' && $type=='Printer') ? 'active' : '' ?>" href="?page=inventory/asset_listing&type=Printer">
 <i class="bi bi-printer"></i>
 <span class="menu-text">Printers</span>
 </a>
 
-<a class="<?= ($page=='inventory/asset_listing' && $type=='Servers') ? 'active' : '' ?>" href="?page=inventory/asset_listing&type=Servers">
+<a class="<?= ($page=='inventory/asset_listing' && $type=='Server') ? 'active' : '' ?>" href="?page=inventory/asset_listing&type=Server">
 <i class="bi bi-hdd-network"></i>
 <span class="menu-text">Servers</span>
 </a>
 
-<a class="<?= ($page=='inventory/asset_listing' && $type=='Phones') ? 'active' : '' ?>" href="?page=inventory/asset_listing&type=Phones">
-<i class="fa-thin fa-mobile-button"></i>
-<span class="menu-text">Smart Phones</span>
+<a class="<?= ($page=='inventory/asset_listing' && $type=='Switch') ? 'active' : '' ?>" href="?page=inventory/asset_listing&type=Switch">
+<i class="bi bi-diagram-3"></i>
+<span class="menu-text">Switches</span>
 </a>
 
-<a class="<?= ($page=='inventory/asset_listing' && $type=='Tablets') ? 'active' : '' ?>" href="?page=inventory/asset_listing&type=Tablets">
+<!-- <a class="<?= ($page=='inventory/asset_listing' && $type=='Phones') ? 'active' : '' ?>" href="?page=inventory/asset_listing&type=Phones">
+<i class="fa-thin fa-mobile-button"></i>
+<span class="menu-text">Smart Phones</span>
+</a> -->
+
+<a class="<?= ($page=='inventory/asset_listing' && $type=='Tablet') ? 'active' : '' ?>" href="?page=inventory/asset_listing&type=Tablet">
 <i class="fa-thin fa-tablet-button"></i>
 <span class="menu-text">Tablets</span>
 </a>
@@ -131,14 +121,19 @@ $type = $_GET['type'] ?? '';
 </div>
 
 <!-- OTHER -->
+ <a class="<?= ($page=='inventory/desktops') ? 'active' : '' ?>" href="?page=inventory/desktops">
+    <i class="bi bi-pc-display"></i>
+    <span class="menu-text">Desktops</span>
+</a>
+
 <a class="<?= ($page=='inventory/transactions') ? 'active' : '' ?>" href="?page=inventory/transactions">
-<i class="bi bi-receipt"></i>
-<span class="menu-text">Issuance</span>
+    <i class="bi bi-receipt"></i>
+    <span class="menu-text">Issuance</span>
 </a>
 
 <a class="<?= ($page=='inventory/credentials') ? 'active' : '' ?>" href="?page=inventory/credentials">
-<i class="bi bi-key"></i>
-<span class="menu-text">Credentials</span>
+    <i class="bi bi-key"></i>
+    <span class="menu-text">Credentials</span>
 </a>
 
 </div>

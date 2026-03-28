@@ -11,7 +11,11 @@ $isLaptop = strtolower($itemName) === 'laptop';
 // ============================
 // BUILD SQL DYNAMICALLY
 // ============================
-$sql = "SELECT i.*, t.type_name";
+$sql = "SELECT 
+            i.*, 
+            t.type_name,
+            c.condition_name,
+            q.qr_code_path";
 
 // Add laptop specs if needed
 if ($isLaptop) {
@@ -19,7 +23,9 @@ if ($isLaptop) {
 }
 
 $sql .= " FROM item_tb i
-          LEFT JOIN item_type t ON i.type_id = t.type_id";
+          LEFT JOIN item_type t ON i.type_id = t.type_id
+          LEFT JOIN qr_tb q ON i.item_id = q.item_id
+          LEFT JOIN item_condition_tb c ON i.condition_id = c.condition_id";
 
 if ($isLaptop) {
     $sql .= " LEFT JOIN laptop_pc_specs s ON i.item_id = s.item_id";
@@ -59,9 +65,9 @@ $result = $stmt->get_result();
             <th style="display:none;">Description</th>
             <th>Qty</th>
             <th>Received</th>
-            <th>Status</th>
+            <th style="width: 50px;">Status</th>
             <th style="display:none;">Type</th>
-            <th>Condition</th>
+            <th style="width: 30px;">Condition</th>
         </tr>
     </thead>
     <tbody>
