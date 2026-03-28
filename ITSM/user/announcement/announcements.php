@@ -74,7 +74,7 @@
 }
 </style>
 
-<div class="container" style="max-width: 1000px;">
+<div class="container" style="max-width: 850px;">
 
     <!-- HEADER -->
     <div class="d-flex justify-content-between align-items-center my-3">
