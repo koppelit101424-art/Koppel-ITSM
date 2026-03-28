@@ -99,6 +99,9 @@ if(isset($_GET['ajax'])){
                     case "inventory/transactions":
                         include "inventory/transactions.php";
                         break;
+                    case 'inventory/asset_listing':
+                        include 'inventory/asset_listing.php';
+                        break;
 
                     case "inventory/desktops":
                         include "inventory/desktops.php";
