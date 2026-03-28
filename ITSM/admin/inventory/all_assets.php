@@ -19,8 +19,11 @@ include __DIR__ . '/includes/inv_sql.php';
       <button type="submit" form="filterForm" class="btn btn-primary btn-sm">
         <i class="fas fa-search me-1"></i> Filter
       </button>
-<button type="button" onclick="printInventory()" class="btn btn-success btn-sm">
-    <i class="fas fa-print me-1"></i> Print
+    <button type="button" onclick="printInventory()" class="btn btn-success btn-sm">
+        <i class="fas fa-print me-1"></i> Print
+    </button>
+    <button type="button" onclick="printQRStickers()" class="btn btn-dark btn-sm">
+    <i class="fas fa-qrcode me-1"></i> Print QR Codes
 </button>
     </div>
   </div>
@@ -393,6 +396,87 @@ function printInventory() {
     </head>
     <body>
         ${html}
+    </body>
+    </html>
+    `);
+
+    win.document.close();
+    win.print();
+}
+</script>
+<!-- print qr -->
+ <script>
+function printQRStickers() {
+
+    const rows = document.querySelectorAll("#inventoryTable tbody tr");
+
+    let content = "";
+
+    rows.forEach(row => {
+
+        // skip hidden rows (important if using filters/datatables)
+        if (row.offsetParent === null) return;
+
+        const qr = row.dataset.qr;
+        const code = row.dataset.code || "";
+        const name = row.dataset.name || "";
+
+        if (!qr) return;
+
+        content += `
+        <div class="sticker">
+            <img src="inventory/${qr}" class="qr">
+            <div class="label">
+                <strong>${code}</strong><br>
+                ${name}
+            </div>
+        </div>
+        `;
+    });
+
+    const win = window.open("", "", "width=800,height=600");
+
+    win.document.write(`
+    <html>
+    <head>
+        <title>QR Stickers</title>
+        <style>
+            @page {
+                size: 4in 4in;
+                margin: 0;
+            }
+
+            body {
+                margin: 0;
+                padding: 0;
+                font-family: Arial;
+            }
+
+            .sticker {
+                width: 4in;
+                height: 4in;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                page-break-after: always;
+                text-align: center;
+            }
+
+            .qr {
+                width: 3in;
+                height: 3in;
+                object-fit: contain;
+            }
+
+            .label {
+                margin-top: 10px;
+                font-size: 14px;
+            }
+        </style>
+    </head>
+    <body>
+        ${content}
     </body>
     </html>
     `);
