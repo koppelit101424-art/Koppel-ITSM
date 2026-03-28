@@ -59,7 +59,7 @@ include __DIR__ . '/includes/inv_sql.php';
       </div>
 
       <!-- Type -->
-      <div class="col-md-2">
+      <div class="col-md">
         <label class="form-label">Type</label>
         <select name="type" class="form-select">
           <option value="">All Types</option>
@@ -72,7 +72,7 @@ include __DIR__ . '/includes/inv_sql.php';
       </div>
 
       <!-- Status -->
-      <div class="col-md-2">
+      <div class="col-md">
         <label class="form-label">Status</label>
         <select name="status" class="form-select">
           <option value="">All Status</option>
@@ -81,15 +81,33 @@ include __DIR__ . '/includes/inv_sql.php';
           <option value="consumed" <?= $filterStatus=='consumed'?'selected':'' ?>>Consumed</option>
         </select>
       </div>
+    <!-- Condition -->
+    <div class="col-md">
+        <label class="form-label">Condition</label>
+        <select name="condition" class="form-select">
+            <option value="">All Conditions</option>
+            <?php
 
+            $conditionsArr = [];
+            $condQuery = $conn->query("SELECT condition_id, condition_name FROM item_condition_tb ORDER BY condition_name ASC");
+            while($c = $condQuery->fetch_assoc()){
+                $conditionsArr[] = $c;
+            }
+            foreach($conditionsArr as $cond): ?>
+                <option value="<?= $cond['condition_id'] ?>" <?= ($filterCondition == $cond['condition_id']) ? 'selected' : '' ?>>
+                    <?= $cond['condition_name'] ?>
+                </option>
+            <?php endforeach; ?>
+        </select>
+    </div>
       <!-- Date From -->
-      <div class="col-md-2">
+      <div class="col-md">
         <label class="form-label">Date From</label>
         <input type="date" name="date_from" class="form-control" value="<?= $dateFrom ?>">
       </div>
 
       <!-- Date To -->
-      <div class="col-md-2">
+      <div class="col-md">
         <label class="form-label">Date To</label>
         <input type="date" name="date_to" class="form-control" value="<?= $dateTo ?>">
       </div>
@@ -194,18 +212,11 @@ include __DIR__ . '/includes/inv_sql.php';
                                 $cond = strtolower(trim($condRaw));
 
                                 $badgeClass = 'bg-success';
-
-                                if ($cond == 'good') {
-                                    $badgeClass = 'bg-success';
-                                } elseif ($cond == 'damaged') {
-                                    $badgeClass = 'bg-warning ';
-                                } elseif ($cond == 'defective') {
-                                    $badgeClass = 'bg-danger';
-                                } elseif ($cond == 'disposed') {
-                                    $badgeClass = 'bg-secondary';
-                                }
+                                if ($cond == 'good') $badgeClass = 'bg-success';
+                                elseif ($cond == 'damaged') $badgeClass = 'bg-warning';
+                                elseif ($cond == 'defective') $badgeClass = 'bg-danger';
+                                elseif ($cond == 'disposed') $badgeClass = 'bg-secondary';
                                 ?>
-
                                 <span style="width: 100%;" class="badge <?= $badgeClass ?>">
                                     <?= htmlspecialchars($condRaw ?: 'N/A') ?>
                                 </span>

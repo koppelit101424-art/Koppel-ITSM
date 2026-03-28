@@ -7,7 +7,8 @@ $filterBrand = $_GET['brand'] ?? '';
 $filterStatus = $_GET['status'] ?? '';
 $filterType = $_GET['type'] ?? '';
 $dateFrom = $_GET['date_from'] ?? '';
-$dateTo = $_GET['date_to'] ?? '';
+$dateTo = $_GET['date_to'] ?? '';            
+$filterCondition = $_GET['condition'] ?? '';
 
 // Fetch items
 $itemsArr = [];
@@ -92,7 +93,11 @@ if($filterStatus){
         $sql .= " AND i.type_id = 8";
     }
 }
-
+if($filterCondition){
+    $sql .= " AND i.condition_id = ?";
+    $params[] = $filterCondition;
+    $types .= "i";
+}
 if($dateFrom && $dateTo){
     $sql .= " AND i.date_received BETWEEN ? AND ?";
     $params[] = $dateFrom;
