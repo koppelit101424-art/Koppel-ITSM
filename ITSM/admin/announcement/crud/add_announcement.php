@@ -14,6 +14,7 @@ if(isset($_POST['add_announcement'])){
     $announcement_id = mysqli_insert_id($conn);
 
     // UPLOAD DIRECTORY (SERVER PATH)
+    // $upload_dir = __DIR__ . "/../../../uploads/announcements/";
     $upload_dir = __DIR__ . "/../uploads/announcements/";
     // WEB PATH (FOR DISPLAY)
     $web_path = "announcement/uploads/announcements/";
