@@ -227,7 +227,7 @@ p{
         </button>
 
             <!-- Download Button -->
-            <a href="/../<?= htmlspecialchars($file['file_path']) ?>" 
+            <a href="../<?= htmlspecialchars($file['file_path']) ?>" 
                download
                class="btn btn-sm btn-outline-primary">
                 Download
