@@ -302,7 +302,7 @@ $priorityColor = match(strtolower($ticket['priority'])) {
                     <!-- Preview Button -->
                 <button 
                     class="btn btn-sm btn-outline-secondary me-2 preview-file"
-                    data-file="<?= htmlspecialchars($file['file_path']) ?>"
+                    data-file="../<?= htmlspecialchars($file['file_path']) ?>"
                     data-name="<?= htmlspecialchars($file['file_name']) ?>"
                 ><i class="fa-solid fa-eye"></i>
                     <?= htmlspecialchars($file['file_name']) ?>

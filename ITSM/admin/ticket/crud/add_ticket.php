@@ -123,7 +123,8 @@ if ($stmt->execute()) {
 
     if (!empty($_FILES['attachments']['name'][0])) {
 
-        $uploadDir = "../../uploads/tickets/";
+        $uploadDir = __DIR__ . "/../../../uploads/tickets/";
+        $dbDir = "uploads/tickets/";
 
         if (!is_dir($uploadDir)) {
             mkdir($uploadDir, 0777, true);
@@ -144,9 +145,10 @@ if ($stmt->execute()) {
                 if (in_array($ext, $allowed)) {
 
                     $newName = time().'_'.$i.'.'.$ext;
-                    $filePath = $uploadDir . $newName;
+                    $filePath = $dbDir . $newName;
+                    
 
-                    move_uploaded_file($files['tmp_name'][$i], $filePath);
+                    move_uploaded_file($files['tmp_name'][$i], $uploadDir . $newName);
 
                     $stmtAttach = $conn->prepare("
                         INSERT INTO ticket_attachments (ticket_id, file_name, file_path)

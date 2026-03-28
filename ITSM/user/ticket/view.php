@@ -220,14 +220,14 @@ p{
             <!-- Preview Button -->
         <button 
             class="btn btn-sm btn-outline-secondary me-2 preview-file"
-            data-file="<?= htmlspecialchars($file['file_path']) ?>"
+            data-file="../<?= htmlspecialchars($file['file_path']) ?>"
             data-name="<?= htmlspecialchars($file['file_name']) ?>"
         ><i class="fa-solid fa-eye"></i>
             <?= htmlspecialchars($file['file_name']) ?>
         </button>
 
             <!-- Download Button -->
-            <a href="<?= htmlspecialchars($file['file_path']) ?>" 
+            <a href="/../<?= htmlspecialchars($file['file_path']) ?>" 
                download
                class="btn btn-sm btn-outline-primary">
                 Download
