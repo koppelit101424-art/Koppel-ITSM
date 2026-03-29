@@ -99,6 +99,9 @@ if(isset($_GET['ajax'])){
                     case "inventory/includes/generate_missing_qr":
                         include "inventory/includes/generate_missing_qr.php";
                         break;
+                    case "inventory/includes/generate_desktop_qr":
+                        include "inventory/includes/generate_desktop_qr.php";
+                        break;
                     case "inventory/transactions":
                         include "inventory/transactions.php";
                         break;
