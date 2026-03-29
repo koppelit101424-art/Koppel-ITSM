@@ -35,14 +35,14 @@ while ($row = $result->fetch_assoc()) {
 
     // File name
     $fileName = "desktop_" . $desktop_id . ".png";
-    $filePath = $qrFolder . $fileName;
+    $filePath = "qrcodes/desktop_qrcodes/" . $fileName;
     
 
     // Path to store in DB (relative)
     $qrCodePath = "qrcodes/desktop_qrcodes/" . $fileName;
 
     // Generate QR
-    QRcode::png($qrValue, $qrCodePath, QR_ECLEVEL_L, 5);
+    QRcode::png($qrValue, $filePath, QR_ECLEVEL_L, 5);
 
     // Save to database
     $stmt = $conn->prepare("
