@@ -89,9 +89,12 @@ $result = $stmt->get_result();
             <button type="submit" form="userFilterForm" class="btn btn-primary btn-sm">
                 <i class="fas fa-search me-1"></i> Filter
             </button>
-            <button type="button" onclick="window.print()" class="btn btn-success btn-sm">
-                <i class="fas fa-print me-1"></i> Print
-            </button>
+                <button type="button" onclick="printUsers()" class="btn btn-success btn-sm">
+                    <i class="fas fa-print me-1"></i> Print
+                </button>
+                <button type="button" onclick="exportUsersCSV()" class="btn btn-info btn-sm">
+                    <i class="fas fa-file-csv me-1"></i> Export CSV
+                </button>
         </div>
     </div>
 
@@ -232,5 +235,130 @@ $result = $stmt->get_result();
     document.body.innerHTML = originalContents;
 
     location.reload();
+}
+</script>
+<!-- print -->
+ <script>
+function printUsers() {
+
+    const rows = document.querySelectorAll("#usersTable tbody tr");
+
+    let html = `
+        <html>
+        <head>
+            <title>User Report</title>
+            <style>
+                body { font-family: Arial; padding: 20px; }
+                h2 { text-align: center; margin-bottom: 20px; }
+                table {
+                    width: 100%;
+                    border-collapse: collapse;
+                    font-size: 12px;
+                }
+                th, td {
+                    border: 1px solid #000;
+                    padding: 6px;
+                    text-align: left;
+                }
+                th { background: #f0f0f0; }
+            </style>
+        </head>
+        <body>
+
+        <h2>User Report</h2>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>EMPID</th>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Position</th>
+                    <th>Department</th>
+                    <th>Company</th>
+                    <th>Area</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+    `;
+
+    rows.forEach(row => {
+
+        const cells = row.querySelectorAll("td");
+        if (!cells.length) return;
+
+        html += `
+            <tr>
+                <td>${cells[0]?.innerText || ""}</td>
+                <td>${cells[1]?.innerText || ""}</td>
+                <td>${cells[2]?.innerText || ""}</td>
+                <td>${cells[3]?.innerText || ""}</td>
+                <td>${cells[4]?.innerText || ""}</td>
+                <td>${cells[5]?.innerText || ""}</td>
+                <td>${cells[6]?.innerText || ""}</td>
+                <td>${cells[7]?.innerText || ""}</td>
+                <td>${cells[8]?.innerText || ""}</td>
+            </tr>
+        `;
+    });
+
+    html += `
+            </tbody>
+        </table>
+
+        </body>
+        </html>
+    `;
+
+    const win = window.open("", "", "width=1000,height=700");
+    win.document.write(html);
+    win.document.close();
+    win.print();
+}
+</script>
+<!-- export -->
+ <script>
+function exportUsersCSV() {
+
+    const rows = document.querySelectorAll("#usersTable tbody tr");
+
+    const headers = [
+        "ID","EMPID","Name","Email","Position",
+        "Department","Company","Area","Status"
+    ];
+
+    let csv = [headers.join(",")];
+
+    rows.forEach(row => {
+
+        const cells = row.querySelectorAll("td");
+        if (!cells.length) return;
+
+        const id = cells[0]?.innerText.trim() || "";
+        const empid = cells[1]?.innerText.trim() || "";
+        const name = cells[2]?.innerText.trim() || "";
+        const email = cells[3]?.innerText.trim() || "";
+        const position = cells[4]?.innerText.trim() || "";
+        const department = cells[5]?.innerText.trim() || "";
+        const company = cells[6]?.innerText.trim() || "";
+        const area = cells[7]?.innerText.trim() || "";
+        const status = cells[8]?.innerText.trim() || "";
+
+        const rowData = [
+            id, empid, name, email, position,
+            department, company, area, status
+        ].map(val => `"${val.replace(/"/g, '""')}"`);
+
+        csv.push(rowData.join(","));
+    });
+
+    const blob = new Blob([csv.join("\n")], { type: "text/csv;charset=utf-8;" });
+
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `users_${new Date().toISOString().slice(0,10)}.csv`;
+    link.click();
 }
 </script>
