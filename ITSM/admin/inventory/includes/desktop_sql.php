@@ -10,11 +10,13 @@ $sql = "
             u.user_id, 
         u.fullname AS user_name,
         u.position AS user_position,
-        u.department AS user_department
+        u.department AS user_department,
+        q.qr_code_path
     FROM desktop_tb d
     LEFT JOIN desktop_area_tb a ON d.desktop_area_id = a.desktop_area_id
     LEFT JOIN user_desktop_tb ud ON d.desktop_id = ud.desktop_id
     LEFT JOIN user_tb u ON ud.user_id = u.user_id
+    LEFT JOIN qr_desktop_tb q ON d.desktop_id = q.desktop_id
     ORDER BY d.date_created DESC
 ";
 $result = $conn->query($sql);

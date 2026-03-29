@@ -1,5 +1,3 @@
-
-
 <?php
 include __DIR__ . '/../../../includes/db.php';
 include __DIR__ . '/../../../phpqrcode/qrlib.php';
@@ -33,14 +31,15 @@ while ($row = $result->fetch_assoc()) {
     $desktop_id = $row['desktop_id'];
 
     // 🔗 URL that QR will open
-    $qrValue = "http://115.88.1.63/koppel-itsm/ITSM/admin/desktop_view.php?id=" . $desktop_id;
+    // $qrValue = "http://115.88.1.63/koppel-itsm/ITSM/admin/desktop_view.php?id=" . $desktop_id;
+    $qrValue = "http://115.88.1.63/koppel-itsm/ITSM/desktop_view.php?id=" . $desktop_id;
 
     // File name
     $fileName = "desktop_" . $desktop_id . ".png";
     $filePath = $qrFolder . $fileName;
 
     // Path to store in DB (relative)
-    $qrCodePath = "qrcodes/desktop_qrcodes/" . $fileName;
+    $qrCodePath = "desktop_qrcodes/" . $fileName;
 
     // Generate QR
     QRcode::png($qrValue, $filePath, QR_ECLEVEL_L, 5);

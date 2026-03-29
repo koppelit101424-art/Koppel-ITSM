@@ -117,8 +117,8 @@ include __DIR__ . '/includes/desktop_sql.php';
             <td style="display:none;"><?= htmlspecialchars($row['area_name'] ?? '') ?></td>
             <td>
                 <?php if (!empty($row['qr_code_path'])): ?>
-                    <a href="inventory/<?= htmlspecialchars($row['qr_code_path']) ?>" target="_blank">
-                        <img src="inventory/<?= htmlspecialchars($row['qr_code_path']) ?>" width="50">
+                    <a href="inventory/qrcodes/<?= htmlspecialchars($row['qr_code_path']) ?>" target="_blank">
+                        <img src="inventory/qrcodes/<?= htmlspecialchars($row['qr_code_path']) ?>" width="50">
                     </a>
                 <?php else: ?>
                     <span class="text-muted">No QR</span>
