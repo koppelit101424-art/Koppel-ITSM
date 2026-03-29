@@ -1,3 +1,5 @@
+
+
 <?php
 include __DIR__ . '/../../../includes/db.php';
 include __DIR__ . '/../../../phpqrcode/qrlib.php';
@@ -35,8 +37,7 @@ while ($row = $result->fetch_assoc()) {
 
     // File name
     $fileName = "desktop_" . $desktop_id . ".png";
-    $filePath = "qrcodes/desktop_qrcodes/" . $fileName;
-    
+    $filePath = $qrFolder . $fileName;
 
     // Path to store in DB (relative)
     $qrCodePath = "qrcodes/desktop_qrcodes/" . $fileName;
