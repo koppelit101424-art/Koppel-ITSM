@@ -101,9 +101,12 @@ $result = $stmt->get_result();
       <button type="submit" form="transactionFilterForm" class="btn btn-primary btn-sm">
         <i class="fas fa-search me-1"></i> Filter
       </button>
-      <button type="button" onclick="window.print()" class="btn btn-success btn-sm">
+      <button type="button" onclick="printInventory()" class="btn btn-success btn-sm">
         <i class="fas fa-print me-1"></i> Print
       </button>
+    <button type="button" onclick="exportInventoryCSV()" class="btn btn-info btn-sm">
+        <i class="fas fa-file-csv me-1"></i> Export CSV
+    </button>
     </div>
   </div>
 
@@ -296,4 +299,140 @@ $result = $stmt->get_result();
 <?php include "inventory/includes/trans_menu.php"; ?>
 <?php endif; ?>
 <?php include __DIR__.'/includes/trans_js.php'; ?>
+<!-- print -->
+ <script>
+function printInventory() {
+
+    const rows = document.querySelectorAll("#transactionTable tbody tr");
+
+    let html = `
+    <h2 style="text-align:center;">Transaction Report</h2>
+
+    <table border="1" cellspacing="0" cellpadding="6" width="100%">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>User</th>
+            <th>Item</th>
+            <th>Code</th>
+            <th>Brand</th>
+            <th>Model</th>
+            <th>Serial</th>
+            <th>Qty</th>
+            <th>Date</th>
+            <th>Returned</th>
+            <th>Status</th>
+            <th>Remarks</th>
+        </tr>
+    </thead>
+    <tbody>
+    `;
+
+    rows.forEach(row => {
+
+        if (row.offsetParent === null) return; // skip hidden rows
+
+        const id = row.dataset.transaction || "";
+        const user = row.dataset.user || "";
+        const item = row.dataset.item || "";
+        const code = row.dataset.item_code || "";
+        const brand = row.dataset.brand || "";
+        const model = row.dataset.model || "";
+        const serial = row.dataset.serial_number || "";
+        const qty = row.dataset.qty || "";
+        const date = row.dataset.date || "";
+        const returned = row.dataset.returnedLabel || "";
+        const status = row.dataset.status || "";
+        const remarks = row.dataset.remarks || "";
+
+        html += `
+        <tr>
+            <td>${id}</td>
+            <td>${user}</td>
+            <td>${item}</td>
+            <td>${code}</td>
+            <td>${brand}</td>
+            <td>${model}</td>
+            <td>${serial}</td>
+            <td>${qty}</td>
+            <td>${date}</td>
+            <td>${returned}</td>
+            <td>${status}</td>
+            <td>${remarks}</td>
+        </tr>
+        `;
+    });
+
+    html += "</tbody></table>";
+
+    const win = window.open("", "", "width=1200,height=700");
+
+    win.document.write(`
+    <html>
+    <head>
+        <title>Transaction Report</title>
+        <style>
+            body{font-family:Arial;padding:20px}
+            h2{text-align:center;margin-bottom:20px}
+            table{border-collapse:collapse;width:100%;font-size:12px}
+            th,td{
+                border:1px solid #000;
+                padding:6px;
+                text-align:left;
+            }
+            th{background:#eee}
+        </style>
+    </head>
+    <body>
+        ${html}
+    </body>
+    </html>
+    `);
+
+    win.document.close();
+    win.print();
+}
+</script>
+<script>
+function exportInventoryCSV() {
+
+    const rows = document.querySelectorAll("#transactionTable tbody tr");
+
+    const headers = [
+        "ID","User","Item","Code","Brand","Model",
+        "Serial","Qty","Date","Returned","Status","Remarks"
+    ];
+
+    let csv = [headers.join(",")];
+
+    rows.forEach(row => {
+
+        if (row.offsetParent === null) return; // respect filters
+
+        const data = [
+            row.dataset.transaction || "",
+            row.dataset.user || "",
+            row.dataset.item || "",
+            row.dataset.item_code || "",
+            row.dataset.brand || "",
+            row.dataset.model || "",
+            row.dataset.serial_number || "",
+            row.dataset.qty || "",
+            row.dataset.date || "",
+            row.dataset.returnedLabel || "",
+            row.dataset.status || "",
+            row.dataset.remarks || ""
+        ].map(val => `"${String(val).replace(/"/g, '""')}"`);
+
+        csv.push(data.join(","));
+    });
+
+    const blob = new Blob([csv.join("\n")], { type: "text/csv;charset=utf-8;" });
+
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `transactions_${new Date().toISOString().slice(0,10)}.csv`;
+    link.click();
+}
+</script>
 
