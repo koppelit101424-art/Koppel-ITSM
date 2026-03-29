@@ -15,12 +15,12 @@ $cred_result = $conn->query($cred_sql);
     <div class="card-header d-flex justify-content-between align-items-center bg-white border-bottom-0">
         <h5 class="mb-0 text-primary fw-semibold">Credentials</h5>
         <div>
-            <a href="?page=inventory/crud/add_credential" class="btn btn-sm btn-primary me-2">
+            <span><a href="?page=inventory/crud/add_credential" class="btn btn-sm btn-primary me-2">
                 <i class="fas fa-plus me-1"></i> Add Credentials
             </a>
-            <!-- <a href="print_inventory.php" class="btn btn-sm btn-outline-secondary">
+            <button type="button" onclick="exportCredentialsCSV()" class="btn btn-info btn-sm">
                 <i class="fas fa-file-csv me-1"></i> Export CSV
-            </a> -->
+            </button></span>
         </div>
     </div>
 
@@ -74,7 +74,6 @@ $cred_result = $conn->query($cred_sql);
                                 <?php else: ?>
                                     <span class="text-muted">—</span>
                                 <?php endif; ?>
-                            </td>
                             </td>
                             <td><?= date('m-d-Y', strtotime($row['date_updated'])) ?></td>
                             <td><?= htmlspecialchars($row['updater_name'] ?? 'Unknown') ?></td>
@@ -275,4 +274,59 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 });
+</script>
+<!-- export -->
+<script>
+function exportCredentialsCSV() {
+
+    const rows = document.querySelectorAll("#credentialTable tbody tr");
+
+    const headers = [
+        "ID","System","Description","Username","Password",
+        "Recovery Email","URL","Date","Updated By"
+    ];
+
+    let csv = [headers.join(",")];
+
+    rows.forEach(row => {
+
+        if (!row.classList.contains("credential-row")) return;
+
+        const cells = row.querySelectorAll("td");
+
+        // ✅ STRICT COLUMN MAPPING
+        const id = row.dataset.id || "";
+        const system = cells[0]?.innerText.trim() || "";
+        const description = cells[1]?.innerText.trim() || "";
+        const username = cells[2]?.innerText.trim() || "";
+
+        // ✅ PASSWORD (input field)
+        const passwordInput = row.querySelector(".password-field");
+        const password = passwordInput ? passwordInput.value.trim() : "";
+
+        const recovery = cells[4]?.innerText.trim() || "";
+
+        // ✅ URL (anchor href)
+        const link = cells[5]?.querySelector("a");
+        const url = link ? link.href : "";
+
+        const date = cells[6]?.innerText.trim() || "";
+        const updatedBy = cells[7]?.innerText.trim() || "";
+
+        const rowData = [
+            id, system, description, username, password,
+            recovery, url, date, updatedBy
+        ].map(val => `"${val.replace(/"/g, '""')}"`);
+
+        csv.push(rowData.join(","));
+    });
+
+    // download
+    const blob = new Blob([csv.join("\n")], { type: "text/csv;charset=utf-8;" });
+
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `credentials_${new Date().toISOString().slice(0,10)}.csv`;
+    link.click();
+}
 </script>
