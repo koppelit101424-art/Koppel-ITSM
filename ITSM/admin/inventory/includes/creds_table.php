@@ -1,76 +1,76 @@
 <?php
-use PhpOffice\PhpSpreadsheet\IOFactory;
+// use PhpOffice\PhpSpreadsheet\IOFactory;
 
-if(isset($_GET['ajax']) && $_GET['ajax'] === 'import_credentials'){
+// if(isset($_GET['ajax']) && $_GET['ajax'] === 'import_credentials'){
 
-    header('Content-Type: application/json');
+//     header('Content-Type: application/json');
 
-    if(!isset($_FILES['excel'])){
-        echo json_encode(["success"=>false,"message"=>"No file uploaded"]);
-        exit;
-    }
+//     if(!isset($_FILES['excel'])){
+//         echo json_encode(["success"=>false,"message"=>"No file uploaded"]);
+//         exit;
+//     }
 
-    $file = $_FILES['excel']['tmp_name'];
+//     $file = $_FILES['excel']['tmp_name'];
 
-    try {
-        // Load Excel file
-        $spreadsheet = IOFactory::load($file);
-        $sheet = $spreadsheet->getActiveSheet();
-        $rows = $sheet->toArray();
+//     try {
+//         // Load Excel file
+//         $spreadsheet = IOFactory::load($file);
+//         $sheet = $spreadsheet->getActiveSheet();
+//         $rows = $sheet->toArray();
 
-        // REMOVE HEADER
-        array_shift($rows);
+//         // REMOVE HEADER
+//         array_shift($rows);
 
-        $inserted = 0;
+//         $inserted = 0;
 
-        foreach($rows as $row){
-            $system = trim($row[1] ?? '');
-            $description = trim($row[2] ?? '');
-            $username = trim($row[3] ?? '');
-            $password = trim($row[4] ?? '');
-            $recovery = trim($row[5] ?? '');
-            $url = trim($row[6] ?? '');
+//         foreach($rows as $row){
+//             $system = trim($row[1] ?? '');
+//             $description = trim($row[2] ?? '');
+//             $username = trim($row[3] ?? '');
+//             $password = trim($row[4] ?? '');
+//             $recovery = trim($row[5] ?? '');
+//             $url = trim($row[6] ?? '');
 
-            if(empty($system)) continue; // skip empty rows
+//             if(empty($system)) continue; // skip empty rows
 
-            $stmt = $conn->prepare("
-                INSERT INTO credential_tb 
-                (system, description, username, password, recovery_email, url_link, date_created, date_updated, updated_by)
-                VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW(), ?)
-            ");
+//             $stmt = $conn->prepare("
+//                 INSERT INTO credential_tb 
+//                 (system, description, username, password, recovery_email, url_link, date_created, date_updated, updated_by)
+//                 VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW(), ?)
+//             ");
 
-            $user_id = $_SESSION['user_id'] ?? 0;
+//             $user_id = $_SESSION['user_id'] ?? 0;
 
-            $stmt->bind_param(
-                "ssssssi",
-                $system,
-                $description,
-                $username,
-                $password,
-                $recovery,
-                $url,
-                $user_id
-            );
+//             $stmt->bind_param(
+//                 "ssssssi",
+//                 $system,
+//                 $description,
+//                 $username,
+//                 $password,
+//                 $recovery,
+//                 $url,
+//                 $user_id
+//             );
 
-            if($stmt->execute()){
-                $inserted++;
-            }
-        }
+//             if($stmt->execute()){
+//                 $inserted++;
+//             }
+//         }
 
-        echo json_encode([
-            "success"=>true,
-            "message"=>"Imported {$inserted} credentials successfully"
-        ]);
+//         echo json_encode([
+//             "success"=>true,
+//             "message"=>"Imported {$inserted} credentials successfully"
+//         ]);
 
-    } catch(Exception $e){
-        echo json_encode([
-            "success"=>false,
-            "message"=>$e->getMessage()
-        ]);
-    }
+//     } catch(Exception $e){
+//         echo json_encode([
+//             "success"=>false,
+//             "message"=>$e->getMessage()
+//         ]);
+//     }
 
-    exit;
-}
+//     exit;
+// }
 
 // ============================================
 // FETCH CREDENTIAL DATA FOR TABLE
