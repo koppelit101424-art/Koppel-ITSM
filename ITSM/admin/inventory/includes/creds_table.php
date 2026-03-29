@@ -1,15 +1,86 @@
 <?php
+use PhpOffice\PhpSpreadsheet\IOFactory;
+
+if(isset($_GET['ajax']) && $_GET['ajax'] === 'import_credentials'){
+
+    header('Content-Type: application/json');
+
+    if(!isset($_FILES['excel'])){
+        echo json_encode(["success"=>false,"message"=>"No file uploaded"]);
+        exit;
+    }
+
+    $file = $_FILES['excel']['tmp_name'];
+
+    try {
+        // Load Excel file
+        $spreadsheet = IOFactory::load($file);
+        $sheet = $spreadsheet->getActiveSheet();
+        $rows = $sheet->toArray();
+
+        // REMOVE HEADER
+        array_shift($rows);
+
+        $inserted = 0;
+
+        foreach($rows as $row){
+            $system = trim($row[1] ?? '');
+            $description = trim($row[2] ?? '');
+            $username = trim($row[3] ?? '');
+            $password = trim($row[4] ?? '');
+            $recovery = trim($row[5] ?? '');
+            $url = trim($row[6] ?? '');
+
+            if(empty($system)) continue; // skip empty rows
+
+            $stmt = $conn->prepare("
+                INSERT INTO credential_tb 
+                (system, description, username, password, recovery_email, url_link, date_created, date_updated, updated_by)
+                VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW(), ?)
+            ");
+
+            $user_id = $_SESSION['user_id'] ?? 0;
+
+            $stmt->bind_param(
+                "ssssssi",
+                $system,
+                $description,
+                $username,
+                $password,
+                $recovery,
+                $url,
+                $user_id
+            );
+
+            if($stmt->execute()){
+                $inserted++;
+            }
+        }
+
+        echo json_encode([
+            "success"=>true,
+            "message"=>"Imported {$inserted} credentials successfully"
+        ]);
+
+    } catch(Exception $e){
+        echo json_encode([
+            "success"=>false,
+            "message"=>$e->getMessage()
+        ]);
+    }
+
+    exit;
+}
+
 // ============================================
 // FETCH CREDENTIAL DATA FOR TABLE
 // ============================================
-// Join with user_tb to get fullname instead of just user_id
 $cred_sql = "SELECT c.*, u.fullname as updater_name 
-        FROM credential_tb c 
-        LEFT JOIN user_tb u ON c.updated_by = u.user_id 
-        ORDER BY c.cred_id DESC";
+             FROM credential_tb c 
+             LEFT JOIN user_tb u ON c.updated_by = u.user_id 
+             ORDER BY c.cred_id DESC";
 $cred_result = $conn->query($cred_sql);
 ?>
-
 <!-- Credential Table Card -->
 <div class="card shadow-sm rounded-3 mb-4">
     <div class="card-header d-flex justify-content-between align-items-center bg-white border-bottom-0">
@@ -18,6 +89,10 @@ $cred_result = $conn->query($cred_sql);
             <span><a href="?page=inventory/crud/add_credential" class="btn btn-sm btn-primary me-2">
                 <i class="fas fa-plus me-1"></i> Add Credentials
             </a>
+            <button type="button" onclick="importCredentials()" class="btn btn-info btn-sm">
+                <i class="fas fa-file-csv me-1"></i> Import Credentials
+            </button>
+            <input type="file" id="excelFileInput" accept=".xlsx,.xls" style="display:none;">
             <button type="button" onclick="exportCredentialsCSV()" class="btn btn-info btn-sm">
                 <i class="fas fa-file-csv me-1"></i> Export CSV
             </button></span>
@@ -329,4 +404,26 @@ function exportCredentialsCSV() {
     link.download = `credentials_${new Date().toISOString().slice(0,10)}.csv`;
     link.click();
 }
+</script>
+<!-- import -->
+ <script>
+// Import CSV
+function importCredentials() {
+    document.getElementById("excelFileInput").click();
+}
+document.getElementById("excelFileInput").addEventListener("change", function(){
+    const file = this.files[0];
+    if(!file) return;
+    const formData = new FormData();
+    formData.append("excel", file);
+    fetch("?ajax=import_credentials", { method:"POST", body:formData })
+        .then(res=>res.json())
+        .then(data=>{
+            alert(data.message);
+            if(data.success) location.reload();
+        }).catch(err=>{
+            console.error(err);
+            alert("Import failed");
+        });
+});
 </script>
