@@ -36,9 +36,10 @@ while ($row = $result->fetch_assoc()) {
     // File name
     $fileName = "desktop_" . $desktop_id . ".png";
     $filePath = $qrFolder . $fileName;
+    
 
     // Path to store in DB (relative)
-    $qrCodePath = "desktop_qrcodes/" . $fileName;
+    $qrCodePath = "qrCodePath/" . $fileName;
 
     // Generate QR
     QRcode::png($qrValue, $filePath, QR_ECLEVEL_L, 5);
