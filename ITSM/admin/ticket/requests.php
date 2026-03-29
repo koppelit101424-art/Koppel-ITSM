@@ -65,9 +65,14 @@ $result = $conn->query($sql);
 <div class="card">
 <div class="card-header d-flex justify-content-between text-white">
 <span>Request Management</span>
-<!-- <a href="request/add_request.php" class="btn btn-blue btn-sm">
-<i class="fas fa-plus"></i> Add Request
-</a> -->
+<span>
+    <button type="button" onclick="printRequests()" class="btn btn-success btn-sm">
+        <i class="fas fa-print me-1"></i> Print
+    </button>
+    <button type="button" onclick="exportRequestsCSV()" class="btn btn-info btn-sm">
+        <i class="fas fa-file-csv me-1"></i> Export CSV
+    </button>
+</span>
 </div>
 
 <div class="card-body">
@@ -311,5 +316,145 @@ function updateRequestStatus(requestId, status) {
     })
 }
 </script>
+<!-- print -->
+ <script>
+function printRequests() {
 
+    const rows = document.querySelectorAll("#requestsTable tbody tr");
+
+    let html = `
+        <html>
+        <head>
+            <title>Request Report</title>
+            <style>
+                body { font-family: Arial; padding: 20px; }
+                h2 { text-align: center; margin-bottom: 20px; }
+                table {
+                    width: 100%;
+                    border-collapse: collapse;
+                    font-size: 12px;
+                }
+                th, td {
+                    border: 1px solid #000;
+                    padding: 6px;
+                    text-align: left;
+                }
+                th { background: #f0f0f0; }
+            </style>
+        </head>
+        <body>
+
+        <h2>Request Report</h2>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>LMR</th>
+                    <th>Requestor</th>
+                    <th>Ticket</th>
+                    <th>Department</th>
+                    <th>Item</th>
+                    <th>Description</th>
+                    <th>Qty</th>
+                    <th>UoM</th>
+                    <th>Created</th>
+                    <th>Status</th>
+                    <th>Needed</th>
+                </tr>
+            </thead>
+            <tbody>
+    `;
+
+    rows.forEach(row => {
+
+        const cells = row.querySelectorAll("td");
+        if (!cells.length) return;
+
+        html += `
+            <tr>
+                <td>${row.dataset.lmrNo || ""}</td>
+                <td>${cells[2]?.innerText || ""}</td>
+                <td>${cells[3]?.innerText || ""}</td>
+                <td>${cells[4]?.innerText || ""}</td>
+                <td>${cells[5]?.innerText || ""}</td>
+                <td>${cells[6]?.innerText || ""}</td>
+                <td>${cells[7]?.innerText || ""}</td>
+                <td>${cells[8]?.innerText || ""}</td>
+                <td>${cells[9]?.innerText || ""}</td>
+                <td>${row.dataset.status || ""}</td>
+                <td>${cells[11]?.innerText || ""}</td>
+            </tr>
+        `;
+    });
+
+    html += `
+            </tbody>
+        </table>
+
+        </body>
+        </html>
+    `;
+
+    const win = window.open("", "", "width=1000,height=700");
+    win.document.write(html);
+    win.document.close();
+    win.print();
+}
+</script>
+<!-- export -->
+ <script>
+function exportRequestsCSV() {
+
+    const rows = document.querySelectorAll("#requestsTable tbody tr");
+
+    const headers = [
+        "ID","LMR","Requestor","Ticket","Department",
+        "Item","Description","Qty","UoM",
+        "Created","Status","Date Needed"
+    ];
+
+    let csv = [headers.join(",")];
+
+    rows.forEach(row => {
+
+        const cells = row.querySelectorAll("td");
+        if (!cells.length) return;
+
+        // ✅ SAFE DATA
+        const id = row.dataset.requestId || "";
+        const lmr = row.dataset.lmrNo || "";
+
+        const requestor = cells[2]?.innerText.trim() || "";
+
+        // ticket text (not link)
+        const ticket = cells[3]?.innerText.trim() || "";
+
+        const department = cells[4]?.innerText.trim() || "";
+        const item = cells[5]?.innerText.trim() || "";
+        const description = cells[6]?.innerText.trim() || "";
+        const qty = cells[7]?.innerText.trim() || "";
+        const uom = cells[8]?.innerText.trim() || "";
+        const created = cells[9]?.innerText.trim() || "";
+
+        const status = row.dataset.status || "";
+
+        const needed = cells[11]?.innerText.trim() || "";
+
+        const rowData = [
+            id, lmr, requestor, ticket, department,
+            item, description, qty, uom,
+            created, status, needed
+        ].map(val => `"${val.replace(/"/g, '""')}"`);
+
+        csv.push(rowData.join(","));
+    });
+
+    const blob = new Blob([csv.join("\n")], { type: "text/csv;charset=utf-8;" });
+
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `requests_${new Date().toISOString().slice(0,10)}.csv`;
+    link.click();
+}
+</script>
 <?php $conn->close(); ?>
