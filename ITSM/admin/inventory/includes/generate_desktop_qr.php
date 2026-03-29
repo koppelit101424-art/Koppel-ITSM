@@ -39,10 +39,10 @@ while ($row = $result->fetch_assoc()) {
     
 
     // Path to store in DB (relative)
-    $qrCodePath = "qrCodePath/" . $fileName;
+    $qrCodePath = "qrcodes/desktop_qrcodes/" . $fileName;
 
     // Generate QR
-    QRcode::png($qrValue, $filePath, QR_ECLEVEL_L, 5);
+    QRcode::png($qrValue, $qrCodePath, QR_ECLEVEL_L, 5);
 
     // Save to database
     $stmt = $conn->prepare("

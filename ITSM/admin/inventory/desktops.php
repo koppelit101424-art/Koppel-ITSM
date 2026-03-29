@@ -77,8 +77,9 @@ include __DIR__ . '/includes/desktop_sql.php';
             <table id="desktopTable" class="table table-hover align-middle" style="min-width:1200px;">
             <thead class="table-light">
             <tr>
-            <th>ID</th>
+            <th style="display:none;">ID</th>
             <th style="display:none;">Area</th>
+            <th>QR</th>
             <th>Department</th>
             <th>Position</th>
             <th>User</th>
@@ -94,6 +95,7 @@ include __DIR__ . '/includes/desktop_sql.php';
             <tr class="desktop-row" 
                 data-id="<?= $row['desktop_id'] ?>"
                 data-area="<?= htmlspecialchars($row['area_name'] ?? '') ?>" 
+                data-qr="<?= htmlspecialchars($row['qr_code_path'] ?? '') ?>"
                 data-cpu="<?= htmlspecialchars($row['cpu']) ?>"
                 data-ram="<?= htmlspecialchars($row['ram']) ?>"
                 data-rom="<?= htmlspecialchars($row['rom_w_serial']) ?>"
@@ -111,8 +113,17 @@ include __DIR__ . '/includes/desktop_sql.php';
                 data-area-id="<?= htmlspecialchars($row['desktop_area_id']) ?>"
                 data-remarks="<?= htmlspecialchars($row['remarks']) ?>"
             >
-            <td><?= $row['desktop_id'] ?></td>
+            <td style="display:none;"><?= $row['desktop_id'] ?></td>
             <td style="display:none;"><?= htmlspecialchars($row['area_name'] ?? '') ?></td>
+            <td>
+                <?php if (!empty($row['qr_code_path'])): ?>
+                    <a href="inventory/<?= htmlspecialchars($row['qr_code_path']) ?>" target="_blank">
+                        <img src="inventory/<?= htmlspecialchars($row['qr_code_path']) ?>" width="50">
+                    </a>
+                <?php else: ?>
+                    <span class="text-muted">No QR</span>
+                <?php endif; ?>
+                </td>
             <td><?= $row['user_department'] ?? 'N/A' ?></td>
             <td class="truncate-col"><?= $row['user_position'] ?? 'N/A' ?></td>
             <!-- <td class="truncate-col"><?= $row['user_name'] ?? 'N/A' ?></td> -->
