@@ -46,13 +46,14 @@ include __DIR__ . '/includes/desktop_sql.php';
     <div class="card shadow-sm rounded-3 mb-4">
         <div class="card-header d-flex justify-content-between align-items-center bg-white border-bottom-0">
             <h5 class="mb-0 fw-semibold">Desktops</h5>
-           
+           <span>
             <a href="?page=inventory/crud/add_desktop" class="btn btn-sm btn-primary">
             <i class="fas fa-plus"></i> Add Desktop
             </a>
-            <!-- <a href="export_desktop_csv.php" class="btn btn-sm btn-outline-secondary">
-            <i class="fas fa-file-csv"></i> Export CSV
-            </a> -->
+
+            <button type="button" onclick="exportDesktopsCSV()" class="btn btn-info btn-sm">
+                <i class="fas fa-file-csv me-1"></i> Export CSV
+            </button></span>
         </div>
 
         <div class="card-body ">
@@ -92,6 +93,7 @@ include __DIR__ . '/includes/desktop_sql.php';
             <?php while($row = $result->fetch_assoc()): ?>
             <tr class="desktop-row" 
                 data-id="<?= $row['desktop_id'] ?>"
+                data-area="<?= htmlspecialchars($row['area_name'] ?? '') ?>" 
                 data-cpu="<?= htmlspecialchars($row['cpu']) ?>"
                 data-ram="<?= htmlspecialchars($row['ram']) ?>"
                 data-rom="<?= htmlspecialchars($row['rom_w_serial']) ?>"
@@ -138,6 +140,70 @@ include __DIR__ . '/includes/desktop_sql.php';
     </div></div> <?php include "inventory/includes/desktop_menu.php"; ?>
 <?php include 'includes/desktop_js.php'; ?>
 <?php include 'includes/desktop_modal.php'?>
+<script>
+function exportDesktopsCSV() {
+
+    const rows = document.querySelectorAll("#desktopTable tbody tr");
+
+    // CSV Headers
+    const headers = [
+        "ID","Area","Department","Position","User",
+        "CPU","RAM","ROM","IP Address","MAC Address",
+        "Motherboard","Monitor","Computer Name",
+        "Windows Key","Keyboard","Mouse","AVR","Antivirus","Tag","Remarks"
+    ];
+
+    let csv = [headers.join(",")];
+
+    rows.forEach(row => {
+
+        if (row.offsetParent === null) return; // respects filters
+
+        const cells = row.querySelectorAll("td");
+
+        // visible columns
+        const id = cells[0]?.innerText || "";
+        const area = row.dataset.area || ""; 
+        const department = cells[1]?.innerText || "";
+        const position = cells[2]?.innerText || "";
+        const user = cells[3]?.innerText || "";
+        const cpu = cells[4]?.innerText || "";
+        const ram = cells[5]?.innerText || "";
+        const rom = cells[6]?.innerText || "";
+        const ip = cells[7]?.innerText || "";
+        const mac = cells[8]?.innerText || "";
+
+        // extra data from dataset
+        const motherboard = row.dataset.motherboard || "";
+        const monitor = row.dataset.monitor || "";
+        const computer = row.dataset.computer || "";
+        const windowsKey = row.dataset.windowsKey || "";
+        const keyboard = row.dataset.keyboard || "";
+        const mouse = row.dataset.mouse || "";
+        const avr = row.dataset.avr || "";
+        const antivirus = row.dataset.antivirus || "";
+        const tag = row.dataset.tag || "";
+        const remarks = row.dataset.remarks || "";
+
+        const data = [
+            id, area, department, position, user,
+            cpu, ram, rom, ip, mac,
+            motherboard, monitor, computer,
+            windowsKey, keyboard, mouse, avr, antivirus, tag, remarks
+        ].map(val => `"${String(val).replace(/"/g, '""')}"`);
+
+        csv.push(data.join(","));
+    });
+
+    // download file
+    const blob = new Blob([csv.join("\n")], { type: "text/csv;charset=utf-8;" });
+
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `desktops_${new Date().toISOString().slice(0,10)}.csv`;
+    link.click();
+}
+</script>
 
 
 
