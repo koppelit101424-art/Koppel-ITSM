@@ -8,7 +8,7 @@ $(document).ready(function() {
             { "visible": false, "targets": [0, 7, 11] },
             { "orderable": false, "targets": [10] }
         ],
-        "order": [[10, 'desc']],
+        "order": [[0, 'desc']],
         "autoWidth": false,
         "language": {
             "search": "Search within table:"
