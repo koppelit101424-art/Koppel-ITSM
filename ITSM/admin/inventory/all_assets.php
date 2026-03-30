@@ -456,7 +456,7 @@ function printQRStickers() {
         <title>QR Stickers</title>
         <style>
             @page {
-                size: 4in 4in;
+                size: 6in 6in;
                 margin: 0;
             }
 
@@ -467,25 +467,25 @@ function printQRStickers() {
             }
 
             .sticker {
-                width: 4in;
-                height: 4in;
+                width: 6in;
+                height: 6in;
                 display: flex;
                 flex-direction: column;
                 justify-content: center;
                 align-items: center;
-                page-break-after: always;
                 text-align: center;
+                border: 1px solid black;
             }
 
             .qr {
-                width: 3in;
-                height: 3in;
+                width: 4in;
+                height: 4in;
                 object-fit: contain;
             }
 
             .label {
-                margin-top: 10px;
-                font-size: 14px;
+                margin-top: 5px;
+                font-size: 45px;
             }
         </style>
     </head>

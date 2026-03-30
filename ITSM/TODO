@@ -40,22 +40,20 @@ ADMIN
     loader on add ticket- 3/27/26
     fetch qr on modal - 3/28/26
     print and export xls function filtered assets  - 3/28/26
-
-    print and export xls function (all issued assets)
-    print & export credentials
-    print & export desktops
-
-    notif each status change
-    fix modal on announcement
-    ticket pause on weekends
-    Inventory image 
-
-    print list filtered lmr, filtered sla tally, list of filtered users
+    print and export xls function (all issued assets)  - 3/29/26
+    print & export credentials - 3/29/26
+    print & export desktops - 3/29/26
 
     chat UI, auto reset text area after enter
+    notif each status change
+    ticket pause on weekends
+    print list filtered lmr, filtered sla tally, list of filtered users
+
+
+    fix modal on announcement
     clickable request, chat inside request
     On select filter
-
+    Inventory image     
  
 
 
