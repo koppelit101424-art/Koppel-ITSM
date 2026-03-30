@@ -448,7 +448,7 @@ function printQRStickers() {
         `;
     });
 
-    const win = window.open("", "", "width=800,height=600");
+    const win = window.open("", "", "");
 
     win.document.write(`
     <html>
