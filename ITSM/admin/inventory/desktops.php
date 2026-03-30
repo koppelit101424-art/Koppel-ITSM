@@ -50,7 +50,9 @@ include __DIR__ . '/includes/desktop_sql.php';
             <a href="?page=inventory/crud/add_desktop" class="btn btn-sm btn-primary">
             <i class="fas fa-plus"></i> Add Desktop
             </a>
-
+            <a href="?page=inventory/includes/generate_desktop_qr" class="btn btn-sm btn-success">
+            <i class="fas fa-process"></i> Generate QR
+            </a>
             <button type="button" onclick="exportDesktopsCSV()" class="btn btn-info btn-sm">
                 <i class="fas fa-file-csv me-1"></i> Export CSV
             </button></span>
