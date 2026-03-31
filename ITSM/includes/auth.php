@@ -3,7 +3,7 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-$timeout = 900; // 15 minutes
+$timeout = 9000000; // 15 minutes
 
 $currentPage = $_GET['page'] ?? '';
 
