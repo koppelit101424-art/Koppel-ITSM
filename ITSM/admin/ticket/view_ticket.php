@@ -964,26 +964,26 @@ document.addEventListener("DOMContentLoaded", function () {
             remainingEl.textContent = "00:00:00 (SLA Exceeded)";
 
             // Auto-close ticket if not closed
-            if (statusSelect && statusSelect.value !== 'closed') {
-                fetch('?page=ticket/includes/update_ticket_field', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({
-                        ticket_id: <?= $ticket_id ?>,
-                        field: 'status',
-                        value: 'closed',
-                        comment: 'Ticket Automatically Closed',
-                        is_public: 0
-                    })
-                })
-                .then(res => res.json())
-                .then(data => {
-                    if (data.success) {
-                        statusSelect.value = 'closed';
-                        reloadActivityLog();
-                    }
-                });
-            }
+            // if (statusSelect && statusSelect.value !== 'closed') {
+            //     fetch('?page=ticket/includes/update_ticket_field', {
+            //         method: 'POST',
+            //         headers: {'Content-Type': 'application/json'},
+            //         body: JSON.stringify({
+            //             ticket_id: <?= $ticket_id ?>,
+            //             field: 'status',
+            //             value: 'closed',
+            //             comment: 'Ticket Automatically Closed',
+            //             is_public: 0
+            //         })
+            //     })
+            //     .then(res => res.json())
+            //     .then(data => {
+            //         if (data.success) {
+            //             statusSelect.value = 'closed';
+            //             reloadActivityLog();
+            //         }
+            //     });
+            // }
         } else {
             const hours = Math.floor(diff / 3600);
             const minutes = Math.floor((diff % 3600) / 60);
