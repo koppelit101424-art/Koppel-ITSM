@@ -13,7 +13,7 @@ $sql = "
 SELECT 
     d.*,
     q.qr_code_path,
-    a.area_name
+    a.area
 FROM qr_desktop_tb q
 JOIN desktop_tb d ON d.desktop_id = q.desktop_id
 LEFT JOIN desktop_area_tb a ON d.desktop_area_id = a.desktop_area_id
@@ -35,7 +35,7 @@ if (!$desktop) {
 echo "<h2>Desktop Details</h2>";
 
 echo "<strong>Tag Number:</strong> " . htmlspecialchars($desktop['tag_number']) . "<br>";
-echo "<strong>Area:</strong> " . htmlspecialchars($desktop['area_name'] ?? 'N/A') . "<br>";
+// echo "<strong>Area:</strong> " . htmlspecialchars($desktop['area_name'] ?? 'N/A') . "<br>";
 echo "<strong>Computer Name:</strong> " . htmlspecialchars($desktop['computer_name']) . "<br>";
 echo "<strong>IP Address:</strong> " . htmlspecialchars($desktop['ip_address']) . "<br>";
 echo "<strong>MAC Address:</strong> " . htmlspecialchars($desktop['mac_address']) . "<br><br>";
