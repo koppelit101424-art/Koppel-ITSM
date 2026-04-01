@@ -333,22 +333,22 @@ if ($stmt->execute()) {
 
 <div class="row">
 
-<div class="col-md-6 mb-3">
+<div class="col-md-6 mb-3" style="display: none;">
 <label class="form-label">Full Name</label>
 <input class="form-control" value="<?= htmlspecialchars($user['fullname']) ?>" >
 </div>
 
-<div class="col-md-6 mb-3">
+<div class="col-md-6 mb-3" style="display: none;">
 <label class="form-label">Company Email</label>
 <input class="form-control" value="<?= htmlspecialchars($user['email']) ?>" >
 </div>
 
-<div class="col-md-6 mb-3">
+<div class="col-md-6 mb-3" style="display: none;">
 <label class="form-label">Company</label>
 <input class="form-control" value="<?= htmlspecialchars($user['company']) ?>" >
 </div>
 
-<div class="col-md-6 mb-3">
+<div class="col-md-6 mb-3" style="display: none;">
 <label class="form-label">Department</label>
 <input class="form-control" value="<?= htmlspecialchars($user['department']) ?>" readonly>
 </div>
