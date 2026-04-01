@@ -113,7 +113,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     );
 
 if ($stmt->execute()) {
-
+    include 'ticket_email.php';
     // GET THE CREATED TICKET ID
     $ticket_id = $stmt->insert_id;
 
@@ -181,7 +181,139 @@ if ($stmt->execute()) {
 }
 
 ?>
+<style>
+ /* From Uiverse.io by boryanakrasteva */ 
+@-webkit-keyframes honeycomb {
+  0%,
+  20%,
+  80%,
+  100% {
+    opacity: 0;
+    -webkit-transform: scale(0);
+    transform: scale(0);
+  }
 
+  30%,
+  70% {
+    opacity: 1;
+    -webkit-transform: scale(1);
+    transform: scale(1);
+  }
+}
+
+@keyframes honeycomb {
+  0%,
+  20%,
+  80%,
+  100% {
+    opacity: 0;
+    -webkit-transform: scale(0);
+    transform: scale(0);
+  }
+
+  30%,
+  70% {
+    opacity: 1;
+    -webkit-transform: scale(1);
+    transform: scale(1);
+  }
+}
+
+.honeycomb {
+  height: 24px;
+  position: relative;
+  width: 24px;
+}
+
+.honeycomb div {
+  -webkit-animation: honeycomb 2.1s infinite backwards;
+  animation: honeycomb 2.1s infinite backwards;
+  background: #5c84f0;
+  height: 12px;
+  margin-top: 6px;
+  position: absolute;
+  width: 24px;
+}
+
+.honeycomb div:after, .honeycomb div:before {
+  content: '';
+  border-left: 12px solid transparent;
+  border-right: 12px solid transparent;
+  position: absolute;
+  left: 0;
+  right: 0;
+}
+
+.honeycomb div:after {
+  top: -6px;
+  border-bottom: 6px solid #5c84f0;
+}
+
+.honeycomb div:before {
+  bottom: -6px;
+  border-top: 6px solid #5c84f0;
+}
+
+.honeycomb div:nth-child(1) {
+  -webkit-animation-delay: 0s;
+  animation-delay: 0s;
+  left: -28px;
+  top: 0;
+}
+
+.honeycomb div:nth-child(2) {
+  -webkit-animation-delay: 0.1s;
+  animation-delay: 0.1s;
+  left: -14px;
+  top: 22px;
+}
+
+.honeycomb div:nth-child(3) {
+  -webkit-animation-delay: 0.2s;
+  animation-delay: 0.2s;
+  left: 14px;
+  top: 22px;
+}
+
+.honeycomb div:nth-child(4) {
+  -webkit-animation-delay: 0.3s;
+  animation-delay: 0.3s;
+  left: 28px;
+  top: 0;
+}
+
+.honeycomb div:nth-child(5) {
+  -webkit-animation-delay: 0.4s;
+  animation-delay: 0.4s;
+  left: 14px;
+  top: -22px;
+}
+
+.honeycomb div:nth-child(6) {
+  -webkit-animation-delay: 0.5s;
+  animation-delay: 0.5s;
+  left: -14px;
+  top: -22px;
+}
+
+.honeycomb div:nth-child(7) {
+  -webkit-animation-delay: 0.6s;
+  animation-delay: 0.6s;
+  left: 0;
+  top: 0;
+}
+</style>
+<style>
+#ticketLoader {
+    display: none; /* hidden by default */
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(255,255,255,0.7);
+    z-index: 9999;
+    justify-content: center;
+    align-items: center;
+}
+</style>
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <div class="card">
@@ -201,23 +333,14 @@ if ($stmt->execute()) {
 
 <div class="row">
 
-<div class="col-md-6 mb-3">
-    <label class="form-label">Fullname</label>
-    <?php $users = $conn->query("SELECT user_id, fullname FROM user_tb ORDER BY fullname ASC"); ?>
-        <select name="user_id" id="user_id" class="form-select form-select-lg" required>
-        <option value="">Select User</option>
-        <?php while ($u = $users->fetch_assoc()): ?>
-        <option value="<?= $u['user_id'] ?>"><?= $u['fullname'] ?></option>
-        <?php endwhile; ?>
-    </select>
-</div>
 
-<div class="col-md-6 mb-3">
+
+<div class="col-md-6 mb-3" style="display: none;">
 <label class="form-label">Company Email</label>
 <input class="form-control" name="email" >
 </div>
 
-<div class="col-md-6 mb-3">
+<div class="col-md-6 mb-3" style="display: none;">
      <label class="form-label">Company</label>
     <select name="company" class="form-select" required>
     <option name="" value="Koppel Inc." id="">Koppel, Inc.</option>
@@ -227,13 +350,20 @@ if ($stmt->execute()) {
     </select>
 </div>
 
-<div class="col-md-6 mb-3">
+<div class="col-md-6 mb-3" style="display: none;">
 <label class="form-label">Department</label>
 <input class="form-control" name="department" >
 </div>
 
-<div class="mb-3">
-
+<div class="col-md-3 mb-3">
+    <label class="form-label">Fullname</label>
+    <?php $users = $conn->query("SELECT user_id, fullname FROM user_tb ORDER BY fullname ASC"); ?>
+        <select name="user_id" id="user_id" class="form-select form-select-lg" required>
+        <option value="">Select User</option>
+        <?php while ($u = $users->fetch_assoc()): ?>
+        <option value="<?= $u['user_id'] ?>"><?= $u['fullname'] ?></option>
+        <?php endwhile; ?>
+    </select>
 </div>
 
 <div class="col-md-3 mb-3">
@@ -249,7 +379,7 @@ while ($row = $res->fetch_assoc()) {
 </select>
 </div>
 
-<div class="col-md-3 mb-3">
+<div class="col-md-2 mb-3">
 <label class="form-label">Priority</label>
 <select name="priority" class="form-select" required>
 <option value="">Select Priority</option>
@@ -261,7 +391,7 @@ while ($row = $res->fetch_assoc()) {
 </select>
 </div>
 
-<div class="col-md-3 mb-3">
+<div class="col-md-2 mb-3">
  <label class="form-label">Impact</label>
 <select name="impact" class="form-select">
 <option value="">Select Impact</option>
@@ -271,7 +401,7 @@ while ($row = $res->fetch_assoc()) {
 </select>
 </div>
 
-<div class="col-md-3 mb-3">
+<div class="col-md-2 mb-3">
  <label class="form-label">Ticket Category</label>
  <select name="ticket_category" class="form-select" required>
 <option value="incident" <?= $ticket_category=='incident'?'selected':'' ?>>Incident</option>
@@ -314,6 +444,20 @@ Submit Ticket
     </a></span>
 
 </form>
+<!-- Loader overlay -->
+<div id="ticketLoader">
+<!-- From Uiverse.io by boryanakrasteva --> 
+<div class="honeycomb">
+  <div></div>
+  <div></div>
+  <div></div>
+  <div></div>
+  <div></div>
+  <div></div>
+  <div></div>
+</div>
+</div>
+
 </div>
 </div>
 
@@ -337,6 +481,37 @@ $(document).ready(function() {
         placeholder: "Search user...",
         allowClear: true,
         width: '100%'
+    });
+});
+</script>
+<script>
+const form = document.getElementById('ticketForm');
+const loader = document.getElementById('ticketLoader');
+const submitBtn = document.getElementById('ticketSubmitBtn');
+
+form.addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    loader.style.display = 'flex'; // Show loader overlay
+    submitBtn.disabled = true;
+
+    const formData = new FormData(form);
+
+    fetch('', {
+        method: 'POST',
+        body: formData
+    })
+    .then(res => res.text())
+    .then(html => {
+        window.location.href='?page=ticket/all_tickets&success=1';
+    })
+    .catch(err => {
+        console.error(err);
+        alert('Error submitting ticket.');
+    })
+    .finally(() => {
+        loader.style.display = 'none';
+        submitBtn.disabled = false;
     });
 });
 </script>
