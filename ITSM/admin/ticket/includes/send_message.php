@@ -21,14 +21,29 @@ if (!$ticket_id || !$message) {
     exit;
 }
 
-$sender_role = ($role === 'admin') ? 'admin' : 'user';
+$senderRole = ($role === 'admin') ? 'admin' : 'user';
 
+// INSERT MESSAGE (without is_public)
 $stmt = $conn->prepare("INSERT INTO ticket_messages (ticket_id, sender_id, sender_role, message, created_at) VALUES (?, ?, ?, ?, NOW())");
-$stmt->bind_param("iiss", $ticket_id, $currentUserId, $sender_role, $message);
+$stmt->bind_param("iiss", $ticket_id, $currentUserId, $senderRole, $message);
 
-if($stmt->execute()){
-    echo json_encode(['success'=>true]);
-} else {
+if (!$stmt->execute()) {
     echo json_encode(['success'=>false, 'error'=>$stmt->error]);
+    exit;
 }
+
+// -------------------------------------------------
+// TRIGGER EMAIL AFTER INSERT
+// -------------------------------------------------
+
+// Variables for email script
+$ticketId = $ticket_id;
+$ticketMessage = $message;
+$senderId = $currentUserId;
+$senderRole = $senderRole;
+
+// Include email script
+include __DIR__ . '/../crud/ticket_message_email.php';
+
+echo json_encode(['success'=>true]);
 $conn->close();
