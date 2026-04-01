@@ -166,6 +166,7 @@ $(document).ready(function () {
 
     const table = $('#requestsTable').DataTable({
         pageLength: 25,
+        lengthMenu: [10, 25, 50, 100, 250, 500, 1000, 3000, 5000],
         order: [[0, "desc"]],
         columnDefs: [{ orderable: false, targets: [5] }]
     });

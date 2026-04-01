@@ -321,7 +321,7 @@ $.fn.dataTable.ext.type.order['impact-sort-pre'] = function (data) {
 
 const table = $('#ticketsTable').DataTable({
     pageLength: 25,
-
+    lengthMenu: [10, 25, 50, 100, 250, 500, 1000, 3000, 5000],
     order: [
         [4, "asc"], // PRIORITY (highest first)
         [3, "asc"], // IMPACT (organization first)

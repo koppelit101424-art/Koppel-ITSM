@@ -185,7 +185,10 @@ if ($stmt->execute()) {
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <div class="card">
-<div class="card-header text-white">Create New Ticket</div>
+<div class="card-header text-white">
+    <span>Create New Ticket</span>
+</div>
+
 
 <div class="card-body">
 <form method="POST" enctype="multipart/form-data">
@@ -304,6 +307,11 @@ Select a subject to see options
 <button class="btn btn-primary">
 Submit Ticket
 </button>
+    <!-- RIGHT: Back Button -->
+     <span>
+    <a href="#" onclick="window.history.back(); return false;" class="btn btn-secondary">
+      Back
+    </a></span>
 
 </form>
 </div>
