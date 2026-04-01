@@ -3,6 +3,41 @@ include __DIR__ . '/../../../includes/auth.php';
 include __DIR__ . '/../../../includes/db.php';
 $data = json_decode(file_get_contents("php://input"), true);
 
+function sendTicketEmail($conn, $ticket_id, $field, $old_value, $new_value, $comment, $type) {
+
+    // GET ticket + user
+    $stmt = $conn->prepare("
+        SELECT 
+            t.ticket_number,
+            t.subject,
+            t.priority,
+            t.ticket_category,
+            u.fullname,
+            u.email
+        FROM ticket_tb t
+        JOIN user_tb u ON t.user_id = u.user_id
+        WHERE t.ticket_id = ?
+    ");
+    $stmt->bind_param("i", $ticket_id);
+    $stmt->execute();
+    $ticket = $stmt->get_result()->fetch_assoc();
+
+    if (!$ticket) return; // safety
+
+    // PASS VARIABLES
+    $ticket_number   = $ticket['ticket_number'];
+    $subject         = $ticket['subject'];
+    $priority        = $ticket['priority'];
+    $ticket_category = $ticket['ticket_category'];
+    $fullname        = $ticket['fullname'];
+    $userEmail       = $ticket['email'];
+
+    $email_type      = $type;
+    $email_comment   = $comment;
+
+    include __DIR__ . '/../crud/ticket_status_email.php';
+}
+
 $ticket_id = $data['ticket_id'] ?? null;
 $field     = $data['field'] ?? null;
 $comment   = $data['comment'] ?? null;
@@ -27,6 +62,9 @@ if ($field === 'comment_only') {
 
     $stmt->bind_param("iisi", $ticket_id, $changed_by, $comment, $is_public);
     $stmt->execute();
+
+    /* ✅ SEND EMAIL */
+    sendTicketEmail($conn, $ticket_id, null, null, null, $comment, 'comment');
 
     echo json_encode(['success' => true]);
     exit;
@@ -93,5 +131,8 @@ $stmt->bind_param(
 );
 
 $stmt->execute();
+
+/* ✅ SEND EMAIL */
+sendTicketEmail($conn, $ticket_id, $field, $old_value, $new_value, $comment, 'update');
 
 echo json_encode(["success" => true]);

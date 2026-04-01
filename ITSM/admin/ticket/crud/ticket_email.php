@@ -43,7 +43,7 @@ try {
     $mail->addCC('itticketing@koppel.ph');
 
     $mail->isHTML(true);
-    $mail->Subject = "$ticket_number {$subject} (". ucfirst($_POST['priority']).")";
+    $mail->Subject = "$ticket_number - {$subject} (". ucfirst($_POST['priority']).")";
 
     $mail->Body = "
     Hello {$fullname}, <br><br>
