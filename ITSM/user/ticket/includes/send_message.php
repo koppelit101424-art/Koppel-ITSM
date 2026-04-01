@@ -1,40 +1,52 @@
 <?php
 include 'includes/auth.php';
 include 'includes/db.php';
+header('Content-Type: application/json');
 
-/* ==========================
-   AJAX HANDLER
-========================== */
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\Exception;
 
-if(isset($_GET['ajax'])){
+date_default_timezone_set('Asia/Manila');
 
-    if($_GET['ajax'] === 'send_message'){
+require __DIR__ . '/../../../PHPMailer/Exception.php';
+require __DIR__ . '/../../../PHPMailer/PHPMailer.php';
+require __DIR__ . '/../../../PHPMailer/SMTP.php';
 
-        $data = json_decode(file_get_contents('php://input'), true);
+if(isset($_GET['ajax']) && $_GET['ajax'] === 'send_message'){
 
-        $ticket_id = $data['ticket_id'] ?? null;
-        $message   = trim($data['message'] ?? '');
-        $sender_id = $_SESSION['user_id'];
-        $role      = $_SESSION['user_type'] ?? 'user';
+    $data = json_decode(file_get_contents('php://input'), true);
 
-        if($ticket_id && $message){
+    $ticket_id = $data['ticket_id'] ?? null;
+    $message   = trim($data['message'] ?? '');
+    $senderId  = $_SESSION['user_id'];
+    $senderRole = $_SESSION['user_type'] ?? 'user';
 
-            $stmt = $conn->prepare("
-                INSERT INTO ticket_messages
-                (ticket_id, sender_id, message, sender_role, created_at)
-                VALUES (?, ?, ?, ?, NOW())
-            ");
-
-            $stmt->bind_param("iiss",$ticket_id,$sender_id,$message,$role);
-            $stmt->execute();
-
-            echo json_encode(['success'=>true]);
-        }else{
-            echo json_encode(['success'=>false]);
-        }
-
+    if(!$ticket_id || !$message){
+        echo json_encode(['success'=>false,'error'=>'Ticket ID or message missing']);
         exit;
     }
 
+    // INSERT MESSAGE
+    $stmt = $conn->prepare("
+        INSERT INTO ticket_messages (ticket_id, sender_id, sender_role, message, created_at)
+        VALUES (?, ?, ?, ?, NOW())
+    ");
+    $stmt->bind_param("iiss", $ticket_id, $senderId, $senderRole, $message);
+
+    if(!$stmt->execute()){
+        echo json_encode(['success'=>false, 'error'=>$stmt->error]);
+        exit;
+    }
+
+    /* ===========================
+       TRIGGER EMAIL AFTER INSERT
+    ============================ */
+    $ticketMessage = $message;
+    $ticketId      = $ticket_id;
+
+    // Include the email script
+    include __DIR__ . '/ticket_message_email.php';
+
+    echo json_encode(['success'=>true]);
+    $conn->close();
 }
-?>
