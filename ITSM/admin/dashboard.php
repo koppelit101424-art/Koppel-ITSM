@@ -63,7 +63,14 @@
         $areaCounts[] = $row['total'];
     }
 ?>
-
+<style>
+    .card {
+    border-radius: 0.75rem;
+    box-shadow:
+        0 10px 20px rgba(32, 71, 190, 0.35),
+        0 10px 25px rgba(23, 10, 144, 0.25);
+}
+</style>
   <div id="inventoryTableContainer" style="display: none;">
     <?php include 'inventory/all_assets.php'; ?>
 </div>

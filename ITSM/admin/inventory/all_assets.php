@@ -7,6 +7,15 @@ include __DIR__ . '/includes/inv_sql.php';
 
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script> -->
 <!-- FILTER -->
+<style>
+.card {
+    border-radius: 0.75rem;
+    box-shadow:
+        0 10px 20px rgba(32, 71, 190, 0.35),
+        0 10px 25px rgba(23, 10, 144, 0.25);
+}
+</style>
+
 <div class="card shadow-sm mb-2">
   <div class="card-header bg-white d-flex justify-content-between align-items-center">
     <h6 class="mb-0 text-primary fw-semibold">
