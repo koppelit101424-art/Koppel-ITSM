@@ -479,7 +479,7 @@ $priorityColor = match(strtolower($ticket['priority'])) {
 
     <label class="fw-bold">Category</label>
     <select class="form-select mb-3 live-update" data-field="ticket_category">
-    <?php foreach(['incident','service','change'] as $c): ?>
+    <?php foreach(['incident','service','change', 'material' ] as $c): ?>
     <option value="<?= $c ?>" <?= $ticket['ticket_category']===$c?'selected':'' ?>><?= ucfirst($c) ?></option>
     <?php endforeach; ?>
     </select>

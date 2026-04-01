@@ -23,11 +23,18 @@ $stmt->execute();
 $tickets = $stmt->get_result();
 ?>
 
-
+<style>
+    .col{
+        border-radius: 0.75rem;
+        box-shadow:
+        0 5px 5px rgba(32, 71, 190, 0.35),
+        0 5px 5px rgba(23, 10, 144, 0.25);
+    }
+</style>
 <!-- REQUEST TYPES -->
 <div class="row g-3 mb-2">
 
-    <div class="col-md-4">
+    <div class="col-md-3">
         <button class="btn w-100 p-3 text-start request-btn incident shadow-sm rounded"
             onclick="location.href='?page=ticket/includes/add&type=incident'">
             <h6 class="mb-1 fw-bold">
@@ -39,7 +46,7 @@ $tickets = $stmt->get_result();
         </button>
     </div>
 
-    <div class="col-md-4">
+    <div class="col-md-3">
         <button class="btn w-100 p-3 text-start request-btn service shadow-sm rounded"
             onclick="location.href='?page=ticket/includes/add&type=service'">
             <h6 class="mb-1 fw-bold">
@@ -51,7 +58,7 @@ $tickets = $stmt->get_result();
         </button>
     </div>
 
-    <div class="col-md-4">
+    <div class="col-md-3">
         <button class="btn w-100 p-3 text-start request-btn change shadow-sm rounded"
             onclick="location.href='?page=ticket/includes/add&type=change'">
             <h6 class="mb-1 fw-bold">
@@ -59,6 +66,17 @@ $tickets = $stmt->get_result();
             </h6>
             <small class="fst-italic text-muted">
                 (System/process/hardware changes, upgrades, etc.)
+            </small>
+        </button>
+    </div>
+    <div class="col-md-3">
+        <button class="btn w-100 p-3 text-start request-btn service shadow-sm rounded"
+            onclick="location.href='?page=ticket/includes/add&type=material'">
+            <h6 class="mb-1 fw-bold">
+                <i class="fas fa-cogs me-2"></i> Local Material Request
+            </h6>
+            <small class="fst-italic text-muted">
+                (Request new Hardware, Software, etc.)
             </small>
         </button>
     </div>

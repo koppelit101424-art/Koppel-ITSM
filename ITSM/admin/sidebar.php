@@ -8,7 +8,7 @@ $inventory_pages = [
 ];
 
 $tickets_pages = [
-'ticket/all_tickets','ticket/assigned_tickets','ticket/requests','ticket/sla','ticket/sla_settings'
+'ticket/all_tickets','ticket/assigned_tickets','ticket/sla','ticket/sla_settings'
 ];
 
 $organization_pages = [
@@ -160,11 +160,6 @@ $type = $_GET['type'] ?? '';
 <span class="menu-text">Assigned Tickets</span>
 </a>
 
-<a class="<?= ($page=='ticket/requests') ? 'active' : '' ?>" href="?page=ticket/requests">
-<i class="bi bi-file-text"></i>
-<span class="menu-text">Requests</span>
-</a>
-
 <a class="<?= ($page=='ticket/sla') ? 'active' : '' ?>" href="?page=ticket/sla">
 <i class="bi bi-clock"></i>
 <span class="menu-text">SLA</span>
@@ -180,6 +175,10 @@ $type = $_GET['type'] ?? '';
 </div>
 </div>
 
+<a class="<?= ($page=='ticket/requests') ? 'active' : '' ?>" href="?page=ticket/requests">
+<i class="bi bi-file-text"></i>
+<span class="menu-text">Requests</span>
+</a>
 <!-- ORGANIZATION -->
 <div class="menu-group">
 <div class="menu-group-title">Administration</div>

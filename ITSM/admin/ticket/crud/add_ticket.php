@@ -274,6 +274,7 @@ while ($row = $res->fetch_assoc()) {
 <option value="incident" <?= $ticket_category=='incident'?'selected':'' ?>>Incident</option>
 <option value="service" <?= $ticket_category=='service'?'selected':'' ?>>Service</option>
 <option value="change" <?= $ticket_category=='change'?'selected':'' ?>>Change</option> 
+<option value="material" <?= $ticket_category=='material'?'selected':'' ?>>Material</option> 
 </select>
 </div>
 
