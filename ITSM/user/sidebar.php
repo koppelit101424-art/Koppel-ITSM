@@ -44,20 +44,20 @@ System
 <span class="menu-text">Announcements</span>
 </a>
 <a data-title="Transactions" class="<?= ($page=='transaction/transactions') ? 'active' : '' ?>" href="?page=transaction/transactions">
-<i class="bi bi-receipt"></i>
+<i class="fas fa-receipt"></i>
 <span class="menu-text">Issued Asset</span>
 </a>
 
 <!-- TICKETS -->
 
 <a data-title="All Tickets" class="<?= ($page=='ticket/all_tickets') ? 'active' : '' ?>" href="?page=ticket/all_tickets">
-<i class="bi bi-list"></i>
+<i class="fas fa-ticket"></i>
 <span class="menu-text">Tickets</span>
 </a>
 
 
 <a data-title="Requests" class="<?= ($page=='ticket/requests') ? 'active' : '' ?>" href="?page=ticket/requests">
-<i class="bi bi-file-text"></i>
+<i class="fas fa-file-text"></i>
 <span class="menu-text">Requests</span>
 </a>
 
