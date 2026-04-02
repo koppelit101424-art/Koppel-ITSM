@@ -202,48 +202,7 @@ p{
 
 <!-- LEFT COLUMN -->
 <div class="col-md-8">
-<label class="fw-bold">Subject</label>
-<div class="mb-3"><?= nl2br(htmlspecialchars($ticket['subject'])) ?></div>
 
-<label class="fw-bold">Issue Description</label>
-<div class="mb-4"><?= nl2br(htmlspecialchars($ticket['issue'])) ?></div>
-
-<label class="fw-bold">Attachments</label>
-<div class="mb-4">
-
-<?php if ($attachments->num_rows > 0): ?>
-
-    <?php while($file = $attachments->fetch_assoc()): ?>
-
-        <div class="d-flex align-items-center mb-2">
-
-            <!-- Preview Button -->
-        <button 
-            class="btn btn-sm btn-outline-secondary me-2 preview-file"
-            data-file="../<?= htmlspecialchars($file['file_path']) ?>"
-            data-name="<?= htmlspecialchars($file['file_name']) ?>"
-        ><i class="fa-solid fa-eye"></i>
-            <?= htmlspecialchars($file['file_name']) ?>
-        </button>
-
-            <!-- Download Button -->
-            <a href="../<?= htmlspecialchars($file['file_path']) ?>" 
-               download
-               class="btn btn-sm btn-outline-primary">
-                Download
-            </a>
-
-        </div>
-
-    <?php endwhile; ?>
-
-<?php else: ?>
-
-    <span class="text-muted">No attachment</span>
-
-<?php endif; ?>
-
-</div>
 
 <!-- Tabs -->
 <ul class="nav nav-tabs mb-2">
@@ -281,7 +240,7 @@ p{
 
 <!-- ACTIVITY LOG TAB -->
 <div class="tab-pane show active" id="activityTab">
-    <div id="activityLog" style="max-height:400px; overflow-y:auto;">
+    <div id="activityLog" style="height:500px; overflow-y:auto;">
         <?php
         $comment = '';
 
@@ -319,38 +278,76 @@ p{
 
 <!-- RIGHT COLUMN -->
 <div class="col-md-4" id="logDetails">
-<p><strong>Assignee:</strong> <?= htmlspecialchars($ticket['assignee'] ?? 'Unassigned') ?></p>
-<p><strong>Sender:</strong> <?= htmlspecialchars($ticket['reporter']) ?></p>
-<p><strong>Category:</strong> <?= ucfirst($ticket['ticket_category']) ?></p>
-<p><strong>Status:</strong> <?= ucfirst($ticket['status']) ?></p>
-<p><strong>Priority:</strong> <?= ucfirst($ticket['priority']) ?></p>
-<p><strong>Urgency:</strong> <?= ucfirst($ticket['urgency'] ?? 'Medium') ?></p>
-<p><strong>Impact:</strong> <?= ucfirst($ticket['impact'] ?? 'Moderate') ?></p>
-<?php if($ticket['status'] !== 'closed'): ?>
-    <!-- <button id="closeTicketBtn" class="btn btn-secondary btn-sm mt-2 w-100">
-        Close Ticket
-    </button> -->
-<?php endif; ?>
-<?php if($ticket['status'] === 'closed'): ?>
-    <hr>
-    <h6>Customer Satisfaction</h6>
+    <p><strong>Assignee:</strong> <?= htmlspecialchars($ticket['assignee'] ?? 'Unassigned') ?></p>
+    <p><strong>Sender:</strong> <?= htmlspecialchars($ticket['reporter']) ?></p>
+    <p><strong>Category:</strong> <?= ucfirst($ticket['ticket_category']) ?></p>
+    <p><strong>Status:</strong> <?= ucfirst($ticket['status']) ?></p>
+    <p><strong>Priority:</strong> <?= ucfirst($ticket['priority']) ?></p>
+    <p><strong>Urgency:</strong> <?= ucfirst($ticket['urgency'] ?? 'Medium') ?></p>
+    <p><strong>Impact:</strong> <?= ucfirst($ticket['impact'] ?? 'Moderate') ?></p>
+    <p><strong>Subject Details: </strong><?= nl2br(htmlspecialchars($ticket['subject_details'])) ?></p>
 
-    <?php if(empty($ticket['rating'])): ?>
-        <div id="ratingSection" style="font-size: 25px; cursor:pointer;">
-            <span class="star" data-value="1">☆</span>
-            <span class="star" data-value="2">☆</span>
-            <span class="star" data-value="3">☆</span>
-            <span class="star" data-value="4">☆</span>
-            <span class="star" data-value="5">☆</span>
-        </div>
-        <small id="ratingText" class="text-muted"></small>
-    <?php else: ?>
-        <p style="font-size: 25px;">
-            <?= str_repeat('⭐', $ticket['rating']) ?>
-        </p>
+    <p class="fw-bold">Issue Description</p>
+    <div class="mb-4"><?= nl2br(htmlspecialchars($ticket['issue'])) ?></div>
+
+    <label class="fw-bold">Attachments</label>
+    <div class="mb-4">
+        <?php if ($attachments->num_rows > 0): ?>
+
+            <?php while($file = $attachments->fetch_assoc()): ?>
+
+                <div class="d-flex align-items-center mb-2">
+
+                    <!-- Preview Button -->
+                <button 
+                    class="btn btn-sm btn-outline-secondary me-2 preview-file"
+                    data-file="../<?= htmlspecialchars($file['file_path']) ?>"
+                    data-name="<?= htmlspecialchars($file['file_name']) ?>"
+                ><i class="fa-solid fa-eye"></i>
+                    <?= htmlspecialchars($file['file_name']) ?>
+                </button>
+
+                    <!-- Download Button -->
+                    <a href="../<?= htmlspecialchars($file['file_path']) ?>" 
+                    download
+                    class="btn btn-sm btn-outline-primary">
+                        Download
+                    </a>
+
+                </div>
+
+            <?php endwhile; ?>
+
+            <?php else: ?>
+
+                <span class="text-muted">No attachment</span>
+
+            <?php endif; ?>
+    </div>
+        <?php if($ticket['status'] !== 'closed'): ?>
+        <!-- <button id="closeTicketBtn" class="btn btn-secondary btn-sm mt-2 w-100">
+            Close Ticket
+        </button> -->
     <?php endif; ?>
+    <?php if($ticket['status'] === 'closed'): ?>
+        <hr>
+        <h6>Customer Satisfaction</h6>
 
-<?php endif; ?>
+        <?php if(empty($ticket['rating'])): ?>
+            <div id="ratingSection" style="font-size: 25px; cursor:pointer;">
+                <span class="star" data-value="1">☆</span>
+                <span class="star" data-value="2">☆</span>
+                <span class="star" data-value="3">☆</span>
+                <span class="star" data-value="4">☆</span>
+                <span class="star" data-value="5">☆</span>
+            </div>
+            <small id="ratingText" class="text-muted"></small>
+        <?php else: ?>
+            <p style="font-size: 25px;">
+                <?= str_repeat('⭐', $ticket['rating']) ?>
+            </p>
+        <?php endif; ?>
+    <?php endif; ?>
 </div>
 
 

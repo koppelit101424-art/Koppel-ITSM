@@ -65,7 +65,7 @@ $tickets = $stmt->get_result();
                 <i class="fas fa-random me-2"></i> Change Request
             </h6>
             <small class="fst-italic text-muted">
-                (System/process/hardware changes, upgrades, etc.)
+                (System/process/hardware changes, upgrades, <br>etc.)
             </small>
         </button>
     </div>
@@ -76,7 +76,7 @@ $tickets = $stmt->get_result();
                 <i class="fas fa-cogs me-2"></i> Local Material Request
             </h6>
             <small class="fst-italic text-muted">
-                (Request new Hardware, Software, etc.)
+                (Request new Hardware, Software, <br>etc.)
             </small>
         </button>
     </div>
