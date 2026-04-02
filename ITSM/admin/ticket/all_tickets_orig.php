@@ -63,137 +63,7 @@ include __DIR__ . '/../../includes/db.php';
     }
 ?>
 
-<style>
- /* From Uiverse.io by boryanakrasteva */ 
-@-webkit-keyframes honeycomb {
-  0%,
-  20%,
-  80%,
-  100% {
-    opacity: 0;
-    -webkit-transform: scale(0);
-    transform: scale(0);
-  }
 
-  30%,
-  70% {
-    opacity: 1;
-    -webkit-transform: scale(1);
-    transform: scale(1);
-  }
-}
-
-@keyframes honeycomb {
-  0%,
-  20%,
-  80%,
-  100% {
-    opacity: 0;
-    -webkit-transform: scale(0);
-    transform: scale(0);
-  }
-
-  30%,
-  70% {
-    opacity: 1;
-    -webkit-transform: scale(1);
-    transform: scale(1);
-  }
-}
-
-.honeycomb {
-  height: 24px;
-  position: relative;
-  width: 24px;
-}
-
-.honeycomb div {
-  -webkit-animation: honeycomb 2.1s infinite backwards;
-  animation: honeycomb 2.1s infinite backwards;
-  background: #5c84f0;
-  height: 12px;
-  margin-top: 6px;
-  position: absolute;
-  width: 24px;
-}
-
-.honeycomb div:after, .honeycomb div:before {
-  content: '';
-  border-left: 12px solid transparent;
-  border-right: 12px solid transparent;
-  position: absolute;
-  left: 0;
-  right: 0;
-}
-
-.honeycomb div:after {
-  top: -6px;
-  border-bottom: 6px solid #5c84f0;
-}
-
-.honeycomb div:before {
-  bottom: -6px;
-  border-top: 6px solid #5c84f0;
-}
-
-.honeycomb div:nth-child(1) {
-  -webkit-animation-delay: 0s;
-  animation-delay: 0s;
-  left: -28px;
-  top: 0;
-}
-
-.honeycomb div:nth-child(2) {
-  -webkit-animation-delay: 0.1s;
-  animation-delay: 0.1s;
-  left: -14px;
-  top: 22px;
-}
-
-.honeycomb div:nth-child(3) {
-  -webkit-animation-delay: 0.2s;
-  animation-delay: 0.2s;
-  left: 14px;
-  top: 22px;
-}
-
-.honeycomb div:nth-child(4) {
-  -webkit-animation-delay: 0.3s;
-  animation-delay: 0.3s;
-  left: 28px;
-  top: 0;
-}
-
-.honeycomb div:nth-child(5) {
-  -webkit-animation-delay: 0.4s;
-  animation-delay: 0.4s;
-  left: 14px;
-  top: -22px;
-}
-
-.honeycomb div:nth-child(6) {
-  -webkit-animation-delay: 0.5s;
-  animation-delay: 0.5s;
-  left: -14px;
-  top: -22px;
-}
-
-.honeycomb div:nth-child(7) {
-  -webkit-animation-delay: 0.6s;
-  animation-delay: 0.6s;
-  left: 0;
-  top: 0;
-}
-#statusLoader {
-    display: none;
-    position: fixed;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(255,255,255,0.3);
-    z-index: 2000;
-    justify-content: center;
-    align-items: center;
-}
-</style>
 <!-- Ticket Filter -->
 <div class="card shadow-sm mb-3">
   <div class="card-header bg-white d-flex justify-content-between align-items-center">
@@ -437,18 +307,7 @@ include __DIR__ . '/../../includes/db.php';
     <button class="btn btn-primary" id="confirmStatusChange">Confirm</button>
     </div></div>
  </div>
-
- <!-- laoder -->
-  <!-- STATUS LOADER -->
-<div id="statusLoader">
-    <div class="honeycomb">
-        <div></div><div></div><div></div>
-        <div></div><div></div><div></div>
-        <div></div>
-    </div>
-</div>
-
- <script>const BASE_URL = '<?= $baseUrl ?>';</script>
+<script>const BASE_URL = '<?= $baseUrl ?>';</script>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
@@ -624,7 +483,6 @@ $(document).ready(function () {
         if (currentValue == newValue) return; // nothing changed
 
         let confirmChange = confirm("Are you sure you want to change the assigned admin?");
-        window.location.href = '?page=ticket/all_tickets';
         if (!confirmChange) {
             select.val(currentValue); // revert selection
             return;
@@ -638,7 +496,7 @@ $(document).ready(function () {
                 admin_id: newValue
             },
             success: function () {
-                
+
                 // Update select current value
                 select.data('current', newValue);
 
@@ -668,7 +526,7 @@ $(document).ready(function () {
 
                 // Refresh the DataTable row so filters and sorting are correct
                 // $('#ticketsTable').DataTable().row(row).invalidate().draw(false);
-                // window.location.href = '?page=ticket/all_tickets';
+                location.reload();
             },
             error: function () {
                 alert('Failed to update assignment.');
@@ -719,10 +577,9 @@ statusModalInstance.show();
 
 /* CONFIRM STATUS CHANGE (SEND TO BACKEND + EMAIL) */
 document.getElementById('confirmStatusChange').addEventListener('click', function () {
+    
     window.location.href = '?page=ticket/all_tickets';
     if (!pendingStatusSelect) return;
-
-    let loader = document.getElementById('statusLoader');
 
     let select = pendingStatusSelect;
     let ticketId = select.data('ticket-id');
@@ -734,9 +591,6 @@ document.getElementById('confirmStatusChange').addEventListener('click', functio
         alert("Comment is required.");
         return;
     }
-
-    // ✅ SHOW LOADER
-    loader.style.display = 'flex';
 
     fetch('?page=ticket/includes/update_ticket_field', {
         method: 'POST',
@@ -753,7 +607,6 @@ document.getElementById('confirmStatusChange').addEventListener('click', functio
     .then(data => {
 
         if (data.success) {
-
             // update select UI
             select.val(newStatus);
             select.data('current', newStatus);
@@ -771,11 +624,10 @@ document.getElementById('confirmStatusChange').addEventListener('click', functio
             // redraw table
             $('#ticketsTable').DataTable().row(select.closest('tr')).invalidate().draw(false);
 
-            // ✅ CLOSE MODAL PROPERLY
-            if (statusModalInstance) {
-                statusModalInstance.hide();
-            }
+            // close modal
+            // bootstrap.Modal.getInstance(document.getElementById('statusModal')).hide();
 
+            // reset
             pendingStatusSelect = null;
 
         } else {
@@ -783,18 +635,9 @@ document.getElementById('confirmStatusChange').addEventListener('click', functio
             select.val(previousStatusValue);
         }
     })
-    // .catch(err => {
-    //     console.error(err);
-    //     alert("Error updating status.");
-    // })
-    .finally(() => {
-
-        // ✅ HIDE LOADER AFTER EVERYTHING
-        loader.style.display = 'none';
-
-    });
 
 });
+
 
 /* IF MODAL CLOSED WITHOUT CONFIRM → REVERT */
 document.getElementById('statusModal').addEventListener('hidden.bs.modal', function () {
@@ -805,15 +648,6 @@ document.getElementById('statusModal').addEventListener('hidden.bs.modal', funct
 
     pendingStatusSelect = null;
 });
-// Trigger Confirm on Enter inside modal
-document.getElementById('statusModal').addEventListener('keydown', function (e) {
-    // Check if Enter is pressed without Shift (Shift+Enter for new line)
-    if (e.key === "Enter" && !e.shiftKey) {
-        e.preventDefault(); // prevent new line
-        document.getElementById('confirmStatusChange').click();
-    }
-});
-
 </script>
 <script>
 function loadAdminTickets() {
