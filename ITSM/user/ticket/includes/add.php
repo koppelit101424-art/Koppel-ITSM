@@ -87,7 +87,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $stmt->execute();
     // $subject_details = $stmt->get_result()->fetch_assoc()['name'];
     $row = $stmt->get_result()->fetch_assoc();
-    $subject_details = $row['subject_details'] ?? 'Unknown';
+    $subject_details = $row['name'] ?? 'Unknown';
 
     $stmt = $conn->prepare("
         INSERT INTO ticket_tb (
