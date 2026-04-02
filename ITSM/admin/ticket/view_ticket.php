@@ -250,289 +250,282 @@ $priorityColor = match(strtolower($ticket['priority'])) {
 .bg-maroon {
     background-color: #800000 !important; /* maroon */
 }
+.file-name-ellipsis {
+    display: inline-block;
+    max-width: 160px; /* adjust depending on your layout */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    vertical-align: middle;
+}
 </style>
 <!-- HEADER -->
 <div class="card">
     <div class="card-header d-flex align-items-center justify-content-between text-white <?= $priorityColor ?>">
-    <!-- LEFT: Ticket Info -->
-    <h5 class="mb-0">
-      <?= htmlspecialchars($ticket['ticket_number']) ?> - <?= htmlspecialchars($ticket['subject']) ?> (<?= strtoupper($ticket['priority']) ?>)
-    </h5>
+        <!-- LEFT: Ticket Info -->
+        <h5 class="mb-0">
+        <?= htmlspecialchars($ticket['ticket_number']) ?> - <?= htmlspecialchars($ticket['subject']) ?> (<?= strtoupper($ticket['priority']) ?>)
+        </h5>
 
-    <!-- CENTER: Remaining Time + SLA Status -->
-    <div class="d-flex align-items-center">
-        <label class="fw-bold me-2 mb-0">Remaining Time:</label>
-        <div id="remainingHours" data-deadline="<?= $deadline->format('Y-m-d H:i:s') ?>">
-            <?= $remainingHMS ?>
+        <!-- CENTER: Remaining Time + SLA Status -->
+        <div class="d-flex align-items-center">
+            <label class="fw-bold me-2 mb-0">Remaining Time:</label>
+            <div id="remainingHours" data-deadline="<?= $deadline->format('Y-m-d H:i:s') ?>">
+                <?= $remainingHMS ?>
+            </div>
+            <div class="ms-3">
+                <?= $slaStatus ?>
+            </div>
         </div>
-        <div class="ms-3">
-            <?= $slaStatus ?>
-        </div>
-    </div>
 
-    <!-- RIGHT: Back Button -->
-    <a href="#" onclick="window.history.back(); return false;" class="btn btn-secondary btn-sm">
-      Back
-    </a>
+        <!-- RIGHT: Back Button -->
+        <a href="#" onclick="window.history.back(); return false;" class="btn btn-secondary btn-sm">
+        Back
+        </a>
     </div>
 
     <div class="card-body">
         <div class="row g-3">
+            <!-- LEFT --> 
+            <div class="col-md-4">
+                <div class="row">
+                    <div class="col">
+                        <label class="fw-bold">Assignee</label>
+                        <div class="mb-3" id="assigneeContainer">
+                            <?php if ($ticket['assigned_to'] == 1 && $canAssignTicket): ?>
+                            <button class="btn btn-link p-0 fw-bold text-primary" id="assignToMeBtn">
+                                Assign to me
+                            </button>
+                            <?php else: ?>
+                            <?= htmlspecialchars($ticket['assignee'] ?? 'Unassigned') ?>
+                            <?php endif; ?>
+                        </div>
 
-        <!-- LEFT -->
-        <div class="col-md-8">
-        <label class="fw-bold">Subject Details</label>
-        <div class="mb-3"><?= htmlspecialchars($ticket['subject_details']) ?></div>
+                        <label class="fw-bold">Sender</label>
+                        <div class="mb-3"><?= htmlspecialchars($ticket['reporter']) ?></div>
 
-        <!-- <label class="fw-bold">Issue Description</label>
-        <div class="mb-4"><?= nl2br(htmlspecialchars($ticket['issue'])) ?></div> -->
+                        <label class="fw-bold">Subject Details</label>
+                        <div class="mb-3"><?= htmlspecialchars($ticket['subject_details']) ?></div>
 
-        <label class="fw-bold">Issue Description</label>
-        <div class="mb-3"><?= nl2br(htmlspecialchars($ticket['issue'])) ?></div>
+                        <label class="fw-bold">Attachments</label>
+                        <div class="mb-4">
+                            <?php if ($attachments->num_rows > 0): ?>
 
-        <label class="fw-bold">Attachments</label>
-        <div class="mb-4">
+                                <?php while($file = $attachments->fetch_assoc()): ?>
 
-        <?php if ($attachments->num_rows > 0): ?>
+                                    <div class="d-flex align-items-center mb-2">
 
-            <?php while($file = $attachments->fetch_assoc()): ?>
+                                        <!-- Preview Button -->
+                                    <button 
+                                        class="btn btn-sm btn-outline-secondary me-2 preview-file"
+                                        data-file="../<?= htmlspecialchars($file['file_path']) ?>"
+                                        data-name="<?= htmlspecialchars($file['file_name']) ?>">
+                                        <i class="fa-solid fa-eye"></i>
+                                            <span class="file-name-ellipsis">
+                                                <?= htmlspecialchars($file['file_name']) ?>
+                                            </span>
+                                    </button>
 
-                <div class="d-flex align-items-center mb-2">
+                                        <!-- Download Button -->
+                                        <a href="../<?= htmlspecialchars($file['file_path']) ?>" 
+                                        download
+                                        class="btn btn-sm btn-outline-primary"><i class="fa-regular fa-download"></i>
+                                        </a>
 
-                    <!-- Preview Button -->
-                <button 
-                    class="btn btn-sm btn-outline-secondary me-2 preview-file"
-                    data-file="../<?= htmlspecialchars($file['file_path']) ?>"
-                    data-name="<?= htmlspecialchars($file['file_name']) ?>"
-                ><i class="fa-solid fa-eye"></i>
-                    <?= htmlspecialchars($file['file_name']) ?>
-                </button>
+                                    </div>
 
-                    <!-- Download Button -->
-                    <a href="../<?= htmlspecialchars($file['file_path']) ?>" 
-                    download
-                    class="btn btn-sm btn-outline-primary">
-                        Download
-                    </a>
+                                <?php endwhile; ?>
 
+                            <?php else: ?>
+
+                                <span class="text-muted">No attachment</span>
+
+                            <?php endif; ?>
+
+                        </div>
+                        <?php if (!empty($ticket['ticket_category']) && strtolower($ticket['ticket_category']) === 'material'): ?>
+                            <a href="?page=ticket/crud/add_request&ticket_id=<?= $ticket_id ?>" class="btn btn-primary">
+                                Create LMR
+                            </a>
+                        <?php endif; ?>
+                    </div>
+                    <div class="col">
+                    <label class="fw-bold">Category</label>
+                    <select class="form-select mb-3 live-update" data-field="ticket_category">
+                    <?php foreach(['incident','service','change', 'material' ] as $c): ?>
+                    <option value="<?= $c ?>" <?= $ticket['ticket_category']===$c?'selected':'' ?>><?= ucfirst($c) ?></option>
+                    <?php endforeach; ?>
+                    </select>
+
+                    <label class="fw-bold">Status</label>
+                    <select class="form-select mb-3 live-update"
+                            data-field="status"
+                            id="statusSelect"
+                            <?= !$canEditStatus ? 'disabled' : '' ?>>
+                    <?php foreach ($allowedStatuses as $s): ?>
+                    <option value="<?= $s ?>" <?= $currentStatus === $s ? 'selected' : '' ?>><?= ucfirst($s) ?></option>
+                    <?php endforeach; ?>
+                    </select>
+
+                    <label class="fw-bold">Priority</label>
+                    <select class="form-select mb-3 live-update" data-field="priority">
+                    <?php foreach(['low','medium','high', 'highest'] as $p): ?>
+                    <option value="<?= $p ?>" <?= $ticket['priority']===$p?'selected':'' ?>><?= ucfirst($p) ?></option>
+                    <?php endforeach; ?>
+                    </select>
+
+                    <label class="fw-bold">Urgency</label>
+                    <select class="form-select mb-3 live-update" data-field="urgency">
+                    <?php foreach(['low','medium','high' ,'critical'] as $u): ?>
+                    <option value="<?= $u ?>" <?= ($ticket['urgency']??'medium')===$u?'selected':'' ?>><?= ucfirst($u) ?></option>
+                    <?php endforeach; ?>
+                    </select>
+
+                    <label class="fw-bold">Impact</label>
+                    <select class="form-select mb-3 live-update" data-field="impact">
+                    <?php foreach(['individual','department','organization','extensive'] as $i): ?>
+                    <option value="<?= $i ?>" <?= ($ticket['impact']??'moderate')===$i?'selected':'' ?>><?= ucfirst($i) ?></option>
+                    <?php endforeach; ?>
+                    </select>
+
+                    <!-- <label class="fw-bold">Pending Reason</label>
+                    <select class="form-select live-update" data-field="pending_reason">
+                    <?php foreach(['None','Waiting for user','Waiting for vendor','Internal review'] as $r): ?>
+                    <option value="<?= $r ?>" <?= ($ticket['pending_reason']??'None')===$r?'selected':'' ?>><?= $r ?></option>
+                    <?php endforeach; ?>
+                    </select> -->
+                    </div>
                 </div>
+                    <label class="fw-bold">Issue Description</label>
+                    <div class="mb-3"><?= nl2br(htmlspecialchars($ticket['issue'])) ?></div>
+            </div>
+            <!-- RIGHT -->
+            <div class="col-md-8">
+                <!-- ================= TABS ================= -->
+                <ul class="nav nav-tabs mb-2">
+                    <li class="nav-item">
+                        <button class="nav-link " data-bs-toggle="tab" data-bs-target="#chatTab">Conversation</button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#activityTab">Activity Log</button>
+                    </li>
 
-            <?php endwhile; ?>
+                </ul>
 
-        <?php else: ?>
+                <div class="tab-content border border-top-0 rounded-bottom p-3 bg-light">
 
-            <span class="text-muted">No attachment</span>
+                <!-- ===== CHAT TAB ===== -->
+                <div class="tab-pane  fade" id="chatTab">
 
-        <?php endif; ?>
+                    <div class="chat-box mb-2" id="chatBox">
+                        <?php while($msg = $messages->fetch_assoc()): ?>
+                        <div class="chat-msg <?= ($msg['sender_id']==$currentUserId) ? 'chat-user' : 'chat-admin' ?>">
+                            <div class="bubble">
+                                <?= nl2br(htmlspecialchars($msg['message'])) ?>
+                                <div class="chat-time"><?= date("M d, Y h:i A", strtotime($msg['created_at'])) ?></div>
+                            </div>
+                        </div>
+                        <?php endwhile; ?>
+                    </div>
+                    <form id="chatForm" action="?ajax=send_message">
+                        <div class="d-flex gap-2">
+                            <textarea 
+                            id="chatMessage"
+                            name="chatMessage"
+                            class="form-control"
+                            rows="3"
+                            placeholder="Type a message..."
+                            required
+                            ></textarea>
 
-        </div>
+                            <button class="btn btn-primary">Send</button>`
+                        </div>
+                    </form>
+                </div>  
 
-    <!-- ================= TABS ================= -->
-    <ul class="nav nav-tabs mb-2">
-        <li class="nav-item">
-            <button class="nav-link " data-bs-toggle="tab" data-bs-target="#chatTab">Conversation</button>
-        </li>
-        <li class="nav-item">
-            <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#activityTab">Activity Log</button>
-        </li>
+                <!-- ===== ACTIVITY TAB ===== -->
+                <div class="tab-pane show active" id="activityTab">
+                    <div id="activityLog" style="height:400px; overflow-y:auto;">     
+                        <?php
+                        $role = $_SESSION['user_type'];
 
-    </ul>
+                        if ($role === 'admin') {
+                            $logStmt = $conn->prepare("
+                                SELECT l.*, u.fullname
+                                FROM ticket_logs l
+                                JOIN user_tb u ON l.changed_by = u.user_id
+                                WHERE l.ticket_id = ?
+                                ORDER BY l.created_at DESC
+                            ");
+                        } else {
+                            $logStmt = $conn->prepare("
+                                SELECT l.*, u.fullname
+                                FROM ticket_logs l
+                                JOIN user_tb u ON l.changed_by = u.user_id
+                                WHERE l.ticket_id = ?
+                                AND l.is_public = 1
+                                ORDER BY l.created_at DESC
+                            ");
+                        }
 
-    <div class="tab-content border border-top-0 rounded-bottom p-3 bg-light">
+                        $logStmt->bind_param("i", $ticket_id);
+                        $logStmt->execute();
+                        $logs = $logStmt->get_result();
+                        if ($logs->num_rows === 0): 
+                                echo '<div class="text-center text-muted">No Activity Log Available.</div>';
+                            endif; 
+                        while ($log = $logs->fetch_assoc()):
+                        ?>
+                        <div class="mb-3 p-2 border rounded bg-white">
+                            <small class="text-muted"><?= date("M d, Y h:i A", strtotime($log['created_at'])) ?></small><br>
 
-    <!-- ===== CHAT TAB ===== -->
-    <div class="tab-pane  fade" id="chatTab">
+                            <?php if ($log['action_type'] === 'assign'): ?>
+                                Ticket assigned to <strong><?= htmlspecialchars($log['fullname']) ?></strong>
+                                <!-- <?= htmlspecialchars($log['new_value']) ?> -->
+                            <?php elseif ($log['action_type'] === 'escalated'): ?>
+                                    <strong><?= htmlspecialchars($log['fullname']) ?></strong>
+                                escalated the ticket
+                            <?php else: ?>
+                                    <strong><?= htmlspecialchars($log['fullname']) ?></strong>
+                                updated <b><?= htmlspecialchars($log['field_name']) ?></b>
+                                <?php 
+                                $role = $_SESSION['user_type'];
+                                if ($log['is_public'] || $role === 'admin'): 
+                                ?> 
+                                <?php if ($log['field_name'] !== 'comment_only'): ?>
+                                        <strong><?= htmlspecialchars($log['fullname']) ?></strong>
+                                        updated <b><?= htmlspecialchars($log['field_name']) ?></b>
+                                
+                                        from <span class="text-danger"><?= htmlspecialchars($log['old_value']) ?></span>
+                                        to <span class="text-success"><?= htmlspecialchars($log['new_value']) ?></span>
+                                    <?php endif; ?>
+                                <?php endif; ?>
+                            <?php endif; ?>
 
-        <div class="chat-box mb-2" id="chatBox">
-            <?php while($msg = $messages->fetch_assoc()): ?>
-            <div class="chat-msg <?= ($msg['sender_id']==$currentUserId) ? 'chat-user' : 'chat-admin' ?>">
-                <div class="bubble">
-                    <?= nl2br(htmlspecialchars($msg['message'])) ?>
-                    <div class="chat-time"><?= date("M d, Y h:i A", strtotime($msg['created_at'])) ?></div>
+                            <?php if (!empty($log['comment'])): ?>
+                                <div class="mt-2 p-2 rounded <?= $log['is_public'] ? 'bg-light' : 'bg-warning-subtle border border-warning' ?>">
+                                    <small class="fw-bold"><?= $log['is_public'] ? 'Comment:' : 'Internal Note:' ?></small><br>
+                                    <?= nl2br(htmlspecialchars($log['comment'])) ?>
+                                </div>
+                            <?php endif; ?>
+                        </div><?php endwhile; ?>
+                    </div> 
+                            <div class="d-flex gap-2">
+                                <textarea id="activityComment" class="form-control" rows="3"></textarea>
+                                <button class="btn btn-primary" id="sendLogComment">Send</button>
+                            </div>
+                    </div>          
+                    
                 </div>
             </div>
-            <?php endwhile; ?>
-        </div>
 
-
-    <form id="chatForm" action="?ajax=send_message">
-
-    <div class="d-flex gap-2">
-
-    <textarea 
-    id="chatMessage"
-    name="chatMessage"
-    class="form-control"
-    rows="3"
-    placeholder="Type a message..."
-    required
-    ></textarea>
-
-    <button class="btn btn-primary">Send</button>
-
-    </div>
-
-    </form>
-
-
-    </div>
-
-    <!-- ===== ACTIVITY TAB ===== -->
-    <div class="tab-pane show active" id="activityTab">
-
-    <div id="activityLog" style="max-height:400px; overflow-y:auto;">
-        
-    <?php
-    $role = $_SESSION['user_type'];
-
-    if ($role === 'admin') {
-        $logStmt = $conn->prepare("
-            SELECT l.*, u.fullname
-            FROM ticket_logs l
-            JOIN user_tb u ON l.changed_by = u.user_id
-            WHERE l.ticket_id = ?
-            ORDER BY l.created_at DESC
-        ");
-    } else {
-        $logStmt = $conn->prepare("
-            SELECT l.*, u.fullname
-            FROM ticket_logs l
-            JOIN user_tb u ON l.changed_by = u.user_id
-            WHERE l.ticket_id = ?
-            AND l.is_public = 1
-            ORDER BY l.created_at DESC
-        ");
-    }
-
-    $logStmt->bind_param("i", $ticket_id);
-    $logStmt->execute();
-    $logs = $logStmt->get_result();
-    if ($logs->num_rows === 0): 
-            echo '<div class="text-center text-muted">No Activity Log Available.</div>';
-        endif; 
-    while ($log = $logs->fetch_assoc()):
-    ?>
-    <div class="mb-3 p-2 border rounded bg-white">
-        <small class="text-muted"><?= date("M d, Y h:i A", strtotime($log['created_at'])) ?></small><br>
-
-        <?php if ($log['action_type'] === 'assign'): ?>
-            Ticket assigned to <strong><?= htmlspecialchars($log['fullname']) ?></strong>
-            <!-- <?= htmlspecialchars($log['new_value']) ?> -->
-        <?php elseif ($log['action_type'] === 'escalated'): ?>
-                <strong><?= htmlspecialchars($log['fullname']) ?></strong>
-            escalated the ticket
-        <?php else: ?>
-                <strong><?= htmlspecialchars($log['fullname']) ?></strong>
-            updated <b><?= htmlspecialchars($log['field_name']) ?></b>
-            <?php 
-            $role = $_SESSION['user_type'];
-            if ($log['is_public'] || $role === 'admin'): 
-            ?> 
-            <?php if ($log['field_name'] !== 'comment_only'): ?>
-                    <strong><?= htmlspecialchars($log['fullname']) ?></strong>
-                    updated <b><?= htmlspecialchars($log['field_name']) ?></b>
-               
-                    from <span class="text-danger"><?= htmlspecialchars($log['old_value']) ?></span>
-                    to <span class="text-success"><?= htmlspecialchars($log['new_value']) ?></span>
-                <?php endif; ?>
-            <?php endif; ?>
-        <?php endif; ?>
-
-        <?php if (!empty($log['comment'])): ?>
-            <div class="mt-2 p-2 rounded <?= $log['is_public'] ? 'bg-light' : 'bg-warning-subtle border border-warning' ?>">
-                <small class="fw-bold"><?= $log['is_public'] ? 'Comment:' : 'Internal Note:' ?></small><br>
-                <?= nl2br(htmlspecialchars($log['comment'])) ?>
             </div>
-        <?php endif; ?>
-    
-
+        </div>
     </div>
-
-    <?php endwhile; ?>
-    </div> 
-    <div class="d-flex gap-2">
-        <textarea id="activityComment" class="form-control" rows="3"></textarea>
-        <button class="btn btn-primary" id="sendLogComment">Send</button>
-    </div>
-</div>          
-        
-    </div>
-    </div>
-    <!-- RIGHT -->
-    <div class="col-md-4">
-
-    <label class="fw-bold">Assignee</label>
-    <div class="mb-3" id="assigneeContainer">
-    <?php if ($ticket['assigned_to'] == 1 && $canAssignTicket): ?>
-
-
-    <button class="btn btn-link p-0 fw-bold text-primary" id="assignToMeBtn">
-        Assign to me
-    </button>
-    <?php else: ?>
-    <?= htmlspecialchars($ticket['assignee'] ?? 'Unassigned') ?>
-    <?php endif; ?>
-    </div>
-
-    <label class="fw-bold">Sender</label>
-    <div class="mb-3"><?= htmlspecialchars($ticket['reporter']) ?></div>
-
-    <label class="fw-bold">Category</label>
-    <select class="form-select mb-3 live-update" data-field="ticket_category">
-    <?php foreach(['incident','service','change', 'material' ] as $c): ?>
-    <option value="<?= $c ?>" <?= $ticket['ticket_category']===$c?'selected':'' ?>><?= ucfirst($c) ?></option>
-    <?php endforeach; ?>
-    </select>
-
-    <label class="fw-bold">Status</label>
-    <select class="form-select mb-3 live-update"
-            data-field="status"
-            id="statusSelect"
-            <?= !$canEditStatus ? 'disabled' : '' ?>>
-    <?php foreach ($allowedStatuses as $s): ?>
-    <option value="<?= $s ?>" <?= $currentStatus === $s ? 'selected' : '' ?>><?= ucfirst($s) ?></option>
-    <?php endforeach; ?>
-    </select>
-
-    <label class="fw-bold">Priority</label>
-    <select class="form-select mb-3 live-update" data-field="priority">
-    <?php foreach(['low','medium','high', 'highest'] as $p): ?>
-    <option value="<?= $p ?>" <?= $ticket['priority']===$p?'selected':'' ?>><?= ucfirst($p) ?></option>
-    <?php endforeach; ?>
-    </select>
-
-    <label class="fw-bold">Urgency</label>
-    <select class="form-select mb-3 live-update" data-field="urgency">
-    <?php foreach(['low','medium','high' ,'critical'] as $u): ?>
-    <option value="<?= $u ?>" <?= ($ticket['urgency']??'medium')===$u?'selected':'' ?>><?= ucfirst($u) ?></option>
-    <?php endforeach; ?>
-    </select>
-
-    <label class="fw-bold">Impact</label>
-    <select class="form-select mb-3 live-update" data-field="impact">
-    <?php foreach(['individual','department','organization','extensive'] as $i): ?>
-    <option value="<?= $i ?>" <?= ($ticket['impact']??'moderate')===$i?'selected':'' ?>><?= ucfirst($i) ?></option>
-    <?php endforeach; ?>
-    </select>
-
-    <!-- <label class="fw-bold">Pending Reason</label>
-    <select class="form-select live-update" data-field="pending_reason">
-    <?php foreach(['None','Waiting for user','Waiting for vendor','Internal review'] as $r): ?>
-    <option value="<?= $r ?>" <?= ($ticket['pending_reason']??'None')===$r?'selected':'' ?>><?= $r ?></option>
-    <?php endforeach; ?>
-    </select> -->
-
-
-        <a href="?page=ticket/crud/add_request&ticket_id=<?= $ticket_id ?>" class="btn btn-primary">
-            Create LMR
-        </a>
-
-    </div>
-    </div></div></div>
 </div>
 <?php include 'includes/image_modal.php'?>
 
-    <!-- STATUS MODAL -->
+ <!-- STATUS MODAL -->
 <div class="modal fade" id="statusModal" tabindex="-1">
     <div class="modal-dialog">
     <div class="modal-content">
@@ -1001,7 +994,5 @@ document.addEventListener("DOMContentLoaded", function () {
     updateRemaining();
     setInterval(updateRemaining, 1000);
 }
-
-
 </script>
 <?php $conn->close(); ?>
