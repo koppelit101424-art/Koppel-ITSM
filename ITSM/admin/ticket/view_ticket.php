@@ -259,6 +259,137 @@ $priorityColor = match(strtolower($ticket['priority'])) {
     vertical-align: middle;
 }
 </style>
+<style>
+ /* From Uiverse.io by boryanakrasteva */ 
+@-webkit-keyframes honeycomb {
+  0%,
+  20%,
+  80%,
+  100% {
+    opacity: 0;
+    -webkit-transform: scale(0);
+    transform: scale(0);
+  }
+
+  30%,
+  70% {
+    opacity: 1;
+    -webkit-transform: scale(1);
+    transform: scale(1);
+  }
+}
+
+@keyframes honeycomb {
+  0%,
+  20%,
+  80%,
+  100% {
+    opacity: 0;
+    -webkit-transform: scale(0);
+    transform: scale(0);
+  }
+
+  30%,
+  70% {
+    opacity: 1;
+    -webkit-transform: scale(1);
+    transform: scale(1);
+  }
+}
+
+.honeycomb {
+  height: 24px;
+  position: relative;
+  width: 24px;
+}
+
+.honeycomb div {
+  -webkit-animation: honeycomb 2.1s infinite backwards;
+  animation: honeycomb 2.1s infinite backwards;
+  background: #5c84f0;
+  height: 12px;
+  margin-top: 6px;
+  position: absolute;
+  width: 24px;
+}
+
+.honeycomb div:after, .honeycomb div:before {
+  content: '';
+  border-left: 12px solid transparent;
+  border-right: 12px solid transparent;
+  position: absolute;
+  left: 0;
+  right: 0;
+}
+
+.honeycomb div:after {
+  top: -6px;
+  border-bottom: 6px solid #5c84f0;
+}
+
+.honeycomb div:before {
+  bottom: -6px;
+  border-top: 6px solid #5c84f0;
+}
+
+.honeycomb div:nth-child(1) {
+  -webkit-animation-delay: 0s;
+  animation-delay: 0s;
+  left: -28px;
+  top: 0;
+}
+
+.honeycomb div:nth-child(2) {
+  -webkit-animation-delay: 0.1s;
+  animation-delay: 0.1s;
+  left: -14px;
+  top: 22px;
+}
+
+.honeycomb div:nth-child(3) {
+  -webkit-animation-delay: 0.2s;
+  animation-delay: 0.2s;
+  left: 14px;
+  top: 22px;
+}
+
+.honeycomb div:nth-child(4) {
+  -webkit-animation-delay: 0.3s;
+  animation-delay: 0.3s;
+  left: 28px;
+  top: 0;
+}
+
+.honeycomb div:nth-child(5) {
+  -webkit-animation-delay: 0.4s;
+  animation-delay: 0.4s;
+  left: 14px;
+  top: -22px;
+}
+
+.honeycomb div:nth-child(6) {
+  -webkit-animation-delay: 0.5s;
+  animation-delay: 0.5s;
+  left: -14px;
+  top: -22px;
+}
+
+.honeycomb div:nth-child(7) {
+  -webkit-animation-delay: 0.6s;
+  animation-delay: 0.6s;
+  left: 0;
+  top: 0;
+}
+#statusLoader {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(255,255,255,0.3);
+    z-index: 2000;
+    justify-content: center;
+    align-items: center;
+}
+</style>
 <!-- HEADER -->
 <div class="card">
     <div class="card-header d-flex align-items-center justify-content-between text-white <?= $priorityColor ?>">
@@ -552,6 +683,15 @@ $priorityColor = match(strtolower($ticket['priority'])) {
     <button class="btn btn-primary" id="confirmStatusChange">Confirm</button>
     </div></div>
  </div>
+ <!-- laoder -->
+  <!-- STATUS LOADER -->
+<div id="statusLoader">
+    <div class="honeycomb">
+        <div></div><div></div><div></div>
+        <div></div><div></div><div></div>
+        <div></div>
+    </div>
+</div>
 
 <!-- EDIT STATUS -->
 <script>
@@ -569,7 +709,7 @@ $priorityColor = match(strtolower($ticket['priority'])) {
         }
 
         el.addEventListener('change', () => {
-
+            const loader = document.getElementById('statusLoader');
             if (!canEditStatus) return;
 
             /* ===== STATUS FIELD (WITH MODAL REQUIRED) ===== */
@@ -584,17 +724,8 @@ $priorityColor = match(strtolower($ticket['priority'])) {
                 return; // stop default update
             }
 
-            /* ===== OTHER FIELDS (NORMAL UPDATE) ===== */
-            // fetch('update_ticket_field.php', {
-            //     method: 'POST',
-            //     headers: {'Content-Type': 'application/json'},
-            //     body: JSON.stringify({
-            //         ticket_id: <?= $ticket_id ?>,
-            //         field: el.dataset.field,
-            //         value: el.value
-            //     })
-            // });
-            fetch('?page=ticket/includes/update_ticket_field', {
+
+        fetch('?page=ticket/includes/update_ticket_field', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({
@@ -607,12 +738,20 @@ $priorityColor = match(strtolower($ticket['priority'])) {
 
         });
     });
-
+    // Trigger Confirm on Enter inside modal
+    document.getElementById('statusModal').addEventListener('keydown', function (e) {
+        // Check if Enter is pressed without Shift (Shift+Enter for new line)
+        if (e.key === "Enter" && !e.shiftKey) {
+            e.preventDefault(); // prevent new line
+            document.getElementById('confirmStatusChange').click();
+        }
+    });
     /* Assign to me */ const assignBtn = document.getElementById('assignToMeBtn'); if (assignBtn) { assignBtn.addEventListener('click', () => { fetch('assign_ticket.php', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ ticket_id: <?= $ticket_id ?> }) }) .then(res => res.json()) .then(data => { if (data.success) { document.getElementById('assigneeContainer').innerHTML = data.assignee_name; reloadActivityLog(); document.querySelectorAll('.live-update').forEach(el => { el.disabled = false; }); } }); }); }
 
     /* ===== CONFIRM STATUS CHANGE ===== */
     document.getElementById('confirmStatusChange').addEventListener('click', () => {
-
+        location.reload();
+        const loader = document.getElementById('statusLoader');
         const newStatus = document.getElementById('newStatusValue').value;
         const comment   = document.getElementById('statusComment').value.trim();
         const isPublic  = document.getElementById('publicComment').checked ? 1 : 0;
@@ -621,6 +760,8 @@ $priorityColor = match(strtolower($ticket['priority'])) {
             alert("Comment is required.");
             return;
         }
+        // ✅ SHOW LOADER
+        loader.style.display = 'flex';
 
         fetch('?page=ticket/includes/update_ticket_field', {
             method: 'POST',
@@ -658,7 +799,13 @@ $priorityColor = match(strtolower($ticket['priority'])) {
                     document.getElementById('statusModal')
                 ).hide();
             }
-        });
+        })
+        .finally(() => {
+
+        // ✅ HIDE LOADER AFTER EVERYTHING
+        loader.style.display = 'none';
+
+    });
     });
 
 
@@ -681,90 +828,90 @@ $priorityColor = match(strtolower($ticket['priority'])) {
 </script>
 <!-- SEND MESSAGE -->
 <script>
-/* ===== ELEMENTS ===== */
-const chatForm = document.getElementById('chatForm');
-const chatBox = document.querySelector('#chatBox');
-const chatTextarea = document.getElementById('chatMessage');
-const activityLog = document.getElementById('activityLog');
+    /* ===== ELEMENTS ===== */
+    const chatForm = document.getElementById('chatForm');
+    const chatBox = document.querySelector('#chatBox');
+    const chatTextarea = document.getElementById('chatMessage');
+    const activityLog = document.getElementById('activityLog');
 
 
-/* ===== SCROLL CHAT ===== */
-function scrollChatToBottom() {
-    chatBox.scrollTop = chatBox.scrollHeight;
-}
+    /* ===== SCROLL CHAT ===== */
+    function scrollChatToBottom() {
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
 
 
-/* ===== INITIAL LOAD ===== */
-scrollChatToBottom();
-reloadChat();
-reloadActivityLogs();
+    /* ===== INITIAL LOAD ===== */
+    scrollChatToBottom();
+    reloadChat();
+    reloadActivityLogs();
 
 
-/* ===== SEND MESSAGE ===== */
-chatForm.addEventListener('submit', function(e) {
+    /* ===== SEND MESSAGE ===== */
+    chatForm.addEventListener('submit', function(e) {
 
-    e.preventDefault();
+        e.preventDefault();
 
-    const message = chatTextarea.value.trim();
-    if (!message) return;
+        const message = chatTextarea.value.trim();
+        if (!message) return;
 
-    fetch('?ajax=send_message', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({
-            ticket_id: <?= $ticket_id ?>,
-            message: message
+        fetch('?ajax=send_message', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                ticket_id: <?= $ticket_id ?>,
+                message: message
+            })
         })
-    })
-    .then(res => res.json())
-    .then(data => {
+        .then(res => res.json())
+        .then(data => {
 
-        if (data.success) {
+            if (data.success) {
 
-            chatTextarea.value = "";
+                chatTextarea.value = "";
 
-            reloadChat();
+                reloadChat();
 
-        } else {
-            alert('Failed to send message');
-        }
+            } else {
+                alert('Failed to send message');
+            }
 
-    })
-    // .catch(() => alert('Error sending message'));
+        })
+        // .catch(() => alert('Error sending message'));
 
-});
+    });
 
-/* ===== RELOAD CHAT ===== */
-function reloadChat() {
+    /* ===== RELOAD CHAT ===== */
+    function reloadChat() {
 
-    fetch('?ajax=fetch_ticket_chat&ticket_id=<?= $ticket_id ?>')
-        .then(res => res.text())
-        .then(html => {
+        fetch('?ajax=fetch_ticket_chat&ticket_id=<?= $ticket_id ?>')
+            .then(res => res.text())
+            .then(html => {
 
-            chatBox.innerHTML = html;
+                chatBox.innerHTML = html;
 
-            scrollChatToBottom();
+                scrollChatToBottom();
 
-        });
+            });
 
-}
+    }
 
 
-/* ===== RELOAD ACTIVITY LOGS ===== */
-function reloadActivityLogs() {
+    /* ===== RELOAD ACTIVITY LOGS ===== */
+    function reloadActivityLogs() {
 
-    fetch('?ajax=fetch_ticket_logs&ticket_id=<?= $ticket_id ?>')
-        .then(res => res.text())
-        .then(html => {
+        fetch('?ajax=fetch_ticket_logs&ticket_id=<?= $ticket_id ?>')
+            .then(res => res.text())
+            .then(html => {
 
-            activityLog.innerHTML = html;
+                activityLog.innerHTML = html;
 
-        });
+            });
 
-}
-/* ===== AUTO REFRESH ===== */
-setInterval(reloadChat, 2000);
-setInterval(reloadActivityLogs, 2000);
+    }
+    /* ===== AUTO REFRESH ===== */
+    setInterval(reloadChat, 2000);
+    setInterval(reloadActivityLogs, 2000);
 </script>
 <!-- /* ===== SEND ON ENTER ===== */ -->
 <script>

@@ -43,18 +43,17 @@ ADMIN
     print and export xls function (all issued assets)  - 3/29/26
     print & export credentials - 3/29/26
     print & export desktops - 3/29/26
+    notif each status change - 4/1/26
+    user email notif, ticket assignment notif - 4/1/26
 
-    user email notif, ticket assignment notif
     chat UI, auto reset text area after enter
-    notif each status change
     ticket pause on weekends
     print list filtered lmr, filtered sla tally, list of filtered users
 
-    fix modal on announcement
     clickable request, chat inside request
     On select filter
     Inventory image     
-    
+    fix modal on announcement 
 
 
     
