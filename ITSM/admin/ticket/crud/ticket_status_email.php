@@ -37,9 +37,19 @@ try {
     } else {
 
         $fieldLabel = ucfirst(str_replace("_", " ", $field));
+        
+        if ($field === 'assigned_to') {
 
-        $updateMessage = "
-            <b>{$fieldLabel}</b> set to <b>{$new_value}</b><br><br>";
+            $updateMessage = "
+                Ticket is assigned to <b>{$new_value}</b><br><br>";
+
+        } else {
+
+            $updateMessage = "
+                <b>{$fieldLabel}</b> set from {$old_value} to <b>{$new_value}</b><br><br>";
+        }
+
+
         if ($comment && $is_public === 1 ) {
             $updateMessage .= "{$comment}";
         }else{
