@@ -262,7 +262,7 @@ while ($row = $ongoingResult->fetch_assoc()) {
 <th>Met SLA</th>
 <th>Failed SLA</th>
 <th>SLA Rating</th>
-<th>Customer Satisfaction Rating</th>
+<th>CSAT Rating</th>
 </tr>
 
 <?php foreach($adminStats as $admin=>$data):

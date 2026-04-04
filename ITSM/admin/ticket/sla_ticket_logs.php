@@ -203,34 +203,76 @@ while($ticket = $tickets->fetch_assoc()){
 
     $previousTime = $created;
 
-    while($log = $logs->fetch_assoc()){
+while($log = $logs->fetch_assoc()){
 
-        $minutes = calculateBusinessMinutes(
-            $conn,$ticketId,$previousTime,$log['created_at']
-        );
+    $minutes = calculateBusinessMinutes(
+        $conn, $ticketId, $previousTime, $log['created_at']
+    );
 
-        echo "<tr>";
-        echo "<td>".$log['old_value']."</td>";
-        echo "<td>".$log['new_value']."</td>";
-        echo "<td>".$log['created_at']."</td>";
-        echo "<td>".$minutes." mins</td>";
-        echo "</tr>";
+    // Convert minutes to days, hours, minutes inline
+    $days    = floor($minutes / 1440);
+    $hours   = floor(($minutes % 1440) / 60);
+    $mins    = $minutes % 60;
 
-        $previousTime = $log['created_at'];
-    }
+    $displayTime = "";
+    if($days > 0)  $displayTime .= $days . "d ";
+    if($hours > 0) $displayTime .= $hours . "h ";
+    if($mins > 0)  $displayTime .= $mins . "m";
+
+    echo "<tr>";
+    echo "<td>".$log['old_value']."</td>";
+    echo "<td>".$log['new_value']."</td>";
+    echo "<td>".$log['created_at']."</td>";
+    if ($displayTime == "") $displayTime = "0m";
+    echo "<td>".$displayTime."";
+    // original minutes if($displayTime != "0 m") echo " ({$minutes}m)";
+    echo "</td>";
+    echo "</tr>";
+
+    $previousTime = $log['created_at'];
+}
 
     echo "</table>";
 
-    echo "<div class='mb-2'>
 
-            <b>Response Target:</b> $targetResponse mins
-            <br>
-            <b>Resolution Time:</b> $resolutionMinutes mins
-            <br>
-            <b>Resolution Target:</b> $targetResolution mins
-          </div>";
+
+echo "<div class='row'>
+        <div class='col'>
+        <b>Response Time:</b> {$responseMinutes}m 
+
+        <br>
+        <b>Response Target:</b> {$targetResponse}m 
+
+        </div>
+        <div class='col'>
+        <b>Resolution Time:</b> " .
+            ($resolutionMinutes >= 1440 ? floor($resolutionMinutes/1440)."d " : "") .
+            ($resolutionMinutes >= 60 ? floor(($resolutionMinutes%1440)/60)."h " : "") .
+            ($resolutionMinutes%60 > 0 ? ($resolutionMinutes%60)."m" : "") .
+        "
+        <br>
+        <b>Resolution Target:</b> " .
+            ($targetResolution >= 1440 ? floor($targetResolution/1440)."d " : "") .
+            ($targetResolution >= 60 ? floor(($targetResolution%1440)/60)."h " : "") .
+            ($targetResolution%60 > 0 ? ($targetResolution%60)."m" : "") ."
+         
+        </div>
+      </div><br>";
 }
-//             <b>Response Time:</b> $responseMinutes mins <br>
            
 $conn->close();
 ?>
+
+<!-- 
+(" .($responseMinutes >= 1440 ? floor($responseMinutes/1440)."d " : "") .
+    ($responseMinutes >= 60 ? floor(($responseMinutes%1440)/60)."h " : "") .
+    ($responseMinutes%60 > 0 ? ($responseMinutes%60)."m" : "") .")
+            
+(" .
+    ($targetResponse >= 1440 ? floor($targetResponse/1440)."d " : "") .
+    ($targetResponse >= 60 ? floor(($targetResponse%1440)/60)."h " : "") .
+    ($targetResponse%60 > 0 ? ($targetResponse%60)."m" : "") .
+")
+ / ({$resolutionMinutes}m)
+   /({$targetResolution}m)
+            -->
