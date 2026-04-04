@@ -46,10 +46,9 @@ ADMIN
     notif each status change - 4/1/26
     user email notif, ticket assignment notif - 4/1/26
     chat UI, auto reset text area after enter - 4/4/26
+    ticket pause on weekends - 4/4/26
 
-    ticket pause on weekends
     print list filtered lmr, filtered sla tally, list of filtered users
-
     clickable request, chat inside request
     On select filter
     Inventory image     

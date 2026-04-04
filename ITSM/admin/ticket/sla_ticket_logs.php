@@ -190,7 +190,7 @@ while($ticket = $tickets->fetch_assoc()){
             <th>From</th>
             <th>To</th>
             <th>Date</th>
-            <th>Business Minutes</th>
+            <th>Resolution Minutes</th>
           </tr>";
 
     $logs = $conn->query("
