@@ -842,8 +842,8 @@ $priorityColor = match(strtolower($ticket['priority'])) {
 
 
     /* ===== INITIAL LOAD ===== */
-    scrollChatToBottom();
-    reloadChat();
+    // scrollChatToBottom();
+    // reloadChat();
     reloadActivityLogs();
 
 
