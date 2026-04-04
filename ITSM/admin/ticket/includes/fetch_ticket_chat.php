@@ -9,9 +9,16 @@ $stmt->bind_param("i", $ticket_id);
 $stmt->execute();
 $messages = $stmt->get_result();
 
-while($msg = $messages->fetch_assoc()):
-?>
-<div class="chat-msg <?= $msg['sender_role'] === 'admin' ? 'chat-admin' : 'chat-user' ?>">
-    <div><?= nl2br(htmlspecialchars($msg['message'])) ?></div>
+while($msg = $messages->fetch_assoc()): ?>
+ <div class="chat-msg <?= ($msg['sender_role'] === 'user') ? 'chat-admin' : 'chat-user' ?>">
+    
+    <div class="bubble">
+        <?= nl2br(htmlspecialchars($msg['message'])) ?>
+
+        <div class="chat-time">
+            <?= date("M d, Y h:i A", strtotime($msg['created_at'])) ?>
+        </div>
+    </div>
+
 </div>
 <?php endwhile; ?>

@@ -175,7 +175,11 @@ $priorityColor = match(strtolower($ticket['priority'])) {
     border:1px solid #dee2e6;
     scroll-behavior:smooth;
 }
-
+#chatBox {
+    height:400px;
+    overflow-y:auto;
+    background:#f8f9fa;
+}
 /* ===== MESSAGE ROW ===== */
 .chat-msg{
     display:flex;
@@ -546,17 +550,19 @@ $priorityColor = match(strtolower($ticket['priority'])) {
                 <div class="tab-content border border-top-0 rounded-bottom p-3 bg-light">
 
                 <!-- ===== CHAT TAB ===== -->
-                <div class="tab-pane  fade" id="chatTab">
+                <div class="tab-pane fade" id="chatTab">
 
                     <div class="chat-box mb-2" id="chatBox">
-                        <?php while($msg = $messages->fetch_assoc()): ?>
-                        <div class="chat-msg <?= ($msg['sender_id']==$currentUserId) ? 'chat-user' : 'chat-admin' ?>">
-                            <div class="bubble">
-                                <?= nl2br(htmlspecialchars($msg['message'])) ?>
-                                <div class="chat-time"><?= date("M d, Y h:i A", strtotime($msg['created_at'])) ?></div>
+                    <?php while($msg = $messages->fetch_assoc()): ?>
+                        <div class="chat-msg <?= ($msg['sender_role'] === 'user') ? 'chat-admin' : 'chat-user' ?>">
+                        <div class="bubble">
+                            <?= nl2br(htmlspecialchars($msg['message'])) ?>
+                            <div class="chat-time">
+                                <?= date("M d, Y h:i A", strtotime($msg['created_at'])) ?>
                             </div>
                         </div>
-                        <?php endwhile; ?>
+                    </div>
+                    <?php endwhile; ?>
                     </div>
                     <form id="chatForm" action="?ajax=send_message">
                         <div class="d-flex gap-2">
