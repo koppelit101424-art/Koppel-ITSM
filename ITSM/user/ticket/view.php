@@ -373,8 +373,12 @@ p{
     // Send chat message
     chatForm.addEventListener('submit', e => {
         e.preventDefault();
-        const message = chatForm.querySelector('textarea[name="chatMessage"]').value.trim();
+        const textarea = chatForm.querySelector('textarea[name="chatMessage"]');
+        const message = textarea.value.trim();
+
         if (!message) return;
+        textarea.value = "";
+
         fetch('?ajax=send_message', {
             method: 'POST',
             headers: {'Content-Type':'application/json'},
@@ -383,7 +387,6 @@ p{
         .then(res=>res.json())
         .then(data=>{
             if(data.success){
-                chatForm.querySelector('textarea[name="chatMessage"]').value='';
                 reloadChat();
             }else{
                 alert('Failed to send message');
