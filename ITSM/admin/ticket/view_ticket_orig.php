@@ -62,10 +62,6 @@ $sql = "SELECT
     $businessStart = $bhRow['start_time'] ?? '07:30:00';
     $businessEnd   = $bhRow['end_time'] ?? '18:00:00';
 
-    $wdStmt = $conn->prepare("SELECT * FROM working_days WHERE id = 1");
-    $wdStmt->execute();
-    $wdResult = $wdStmt->get_result();
-    $wdRow = $wdResult->fetch_assoc();
     // Convert minutes to hours
     $slaHours = isset($slaRow['resolution_minutes']) ? ($slaRow['resolution_minutes'] / 60) : 48;
             /* Permission */
@@ -1045,7 +1041,6 @@ document.addEventListener("DOMContentLoaded", function () {
 <!-- TICKET  -->
 <script>
     const holidays = <?= json_encode($holidayDates) ?>;
-    const workingDays = <?= json_encode($wdRow) ?>;
     const isClosed = "<?= $ticket['status'] ?>" === "closed";
     const businessStart = "<?= $businessStart ?>"; // e.g., "07:30:00"
     const businessEnd = "<?= $businessEnd ?>";     // e.g., "18:00:00"
@@ -1070,26 +1065,6 @@ document.addEventListener("DOMContentLoaded", function () {
         const [startH, startM, startS] = businessStart.split(':').map(Number);
         const [endH, endM, endS] = businessEnd.split(':').map(Number);
 
-        // Get current day name
-        const dayIndex = now.getDay(); 
-        // 0 = Sunday, 1 = Monday, ...
-
-        const dayMap = [
-            'sunday',
-            'monday',
-            'tuesday',
-            'wednesday',
-            'thursday',
-            'friday',
-            'saturday'
-        ];
-
-        const todayKey = dayMap[dayIndex];
-
-        // Check if today is a working day (1 = working, 0 = off)
-        const isWorkingDay = workingDays[todayKey] == 1;
-        const isNonWorkingDay = !isWorkingDay;
-
         const startTime = new Date(now);
         startTime.setHours(startH, startM, startS, 0);
 
@@ -1105,17 +1080,14 @@ document.addEventListener("DOMContentLoaded", function () {
             currentStatus === 'closed' ||   // ✅ CLOSED
             currentStatus === 'pending' ||  // existing
             outsideBusinessHours ||         // existing
-            isHoliday ||
-            isNonWorkingDay                      // ✅ HOLIDAY
+            isHoliday                       // ✅ HOLIDAY
         ) {
             if (!remainingEl.dataset.isPaused) {
                 remainingEl.dataset.paused = remainingEl.textContent;
 
                 let label = " (Paused)";
                 if (currentStatus === 'closed') label = " (Closed)";
-                else if (isHoliday) label = " (Holiday)";
-                else if (isNonWorkingDay) label = " (Non-working day)";
-                else if (outsideBusinessHours) label = " (Outside business hours)";
+                if (isHoliday) label = " (Holiday)";
 
                 remainingEl.textContent = remainingEl.dataset.paused + label;
                 remainingEl.dataset.isPaused = "true";
