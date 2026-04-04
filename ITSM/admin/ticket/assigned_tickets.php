@@ -65,57 +65,138 @@ if ($subjectResult && $subjectResult->num_rows > 0) {
     }
 }
 ?>
-
-
 <style>
-.table-hover tbody tr:hover {
-    background-color: #f1f1f1;
-    cursor: pointer;
+ /* From Uiverse.io by boryanakrasteva */ 
+@-webkit-keyframes honeycomb {
+  0%,
+  20%,
+  80%,
+  100% {
+    opacity: 0;
+    -webkit-transform: scale(0);
+    transform: scale(0);
+  }
+
+  30%,
+  70% {
+    opacity: 1;
+    -webkit-transform: scale(1);
+    transform: scale(1);
+  }
 }
 
-/* PRIORITY COLORS */
-.badge-priority-highest { background-color: #8b0a17; }
-.badge-priority-high { background-color: #dc3545; }
-.badge-priority-medium { background-color: #ffc107; }
-.badge-priority-low { background-color: #0d6efd; }
-.badge-priority-lowest { background-color: #6ea8fe; }
+@keyframes honeycomb {
+  0%,
+  20%,
+  80%,
+  100% {
+    opacity: 0;
+    -webkit-transform: scale(0);
+    transform: scale(0);
+  }
 
-/* STATUS COLORS */
-.badge-status-reopened,
-.badge-status-waiting-for-support,
-.badge-status-waiting-for-customer,
-.badge-status-in-progress,
-.badge-status-escalated,
-.badge-status-pending {
-    background-color: #0d6efd;
+  30%,
+  70% {
+    opacity: 1;
+    -webkit-transform: scale(1);
+    transform: scale(1);
+  }
 }
 
+.honeycomb {
+  height: 24px;
+  position: relative;
+  width: 24px;
+}
 
-.badge-status-canceled,
-.badge-status-closed {
-    background-color: grey;
+.honeycomb div {
+  -webkit-animation: honeycomb 2.1s infinite backwards;
+  animation: honeycomb 2.1s infinite backwards;
+  background: #5c84f0;
+  height: 12px;
+  margin-top: 6px;
+  position: absolute;
+  width: 24px;
 }
-.badge-status-resolved{
-    background-color: #198754;
-}
-.select-unassigned {
-    background-color: white !important;
-      
-}
-.status-waiting-for-support { background-color: #0d6efd; color: white; }
-.status-waiting-for-customer { background-color: #0d6efd; color: white; }
-.status-in-progress { background-color: #0d6efd; color: white; }
-.status-pending { background-color: #ffc107; color: white; }
-.status-escalated { background-color: #0d6efd; color: white; }
 
-.status-resolved { background-color: #198754; color: white; }
-.status-canceled { background-color: grey; color: white; }
-.status-closed { background-color: grey; color: white; }
-.status-reopened { background-color: #0d6efd; color: white; }
+.honeycomb div:after, .honeycomb div:before {
+  content: '';
+  border-left: 12px solid transparent;
+  border-right: 12px solid transparent;
+  position: absolute;
+  left: 0;
+  right: 0;
+}
+
+.honeycomb div:after {
+  top: -6px;
+  border-bottom: 6px solid #5c84f0;
+}
+
+.honeycomb div:before {
+  bottom: -6px;
+  border-top: 6px solid #5c84f0;
+}
+
+.honeycomb div:nth-child(1) {
+  -webkit-animation-delay: 0s;
+  animation-delay: 0s;
+  left: -28px;
+  top: 0;
+}
+
+.honeycomb div:nth-child(2) {
+  -webkit-animation-delay: 0.1s;
+  animation-delay: 0.1s;
+  left: -14px;
+  top: 22px;
+}
+
+.honeycomb div:nth-child(3) {
+  -webkit-animation-delay: 0.2s;
+  animation-delay: 0.2s;
+  left: 14px;
+  top: 22px;
+}
+
+.honeycomb div:nth-child(4) {
+  -webkit-animation-delay: 0.3s;
+  animation-delay: 0.3s;
+  left: 28px;
+  top: 0;
+}
+
+.honeycomb div:nth-child(5) {
+  -webkit-animation-delay: 0.4s;
+  animation-delay: 0.4s;
+  left: 14px;
+  top: -22px;
+}
+
+.honeycomb div:nth-child(6) {
+  -webkit-animation-delay: 0.5s;
+  animation-delay: 0.5s;
+  left: -14px;
+  top: -22px;
+}
+
+.honeycomb div:nth-child(7) {
+  -webkit-animation-delay: 0.6s;
+  animation-delay: 0.6s;
+  left: 0;
+  top: 0;
+}
+#statusLoader {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(255,255,255,0.3);
+    z-index: 2000;
+    justify-content: center;
+    align-items: center;
+}
 </style>
-</head>
-
-
+<!-- Ticket Filter -->
 <div class="card shadow-sm mb-3">
   <div class="card-header bg-white d-flex justify-content-between align-items-center">
     <h6 class="mb-0 text-primary fw-semibold">
@@ -187,9 +268,9 @@ if ($subjectResult && $subjectResult->num_rows > 0) {
     </div>
 
       <!-- Assigned To -->
-      <!-- <div class="col-md-2">
+      <div class="col-md-2">
         <label class="form-label">Assigned To</label>
-        <select id="assignedToFilter" class="form-select" readonly>
+        <select id="assignedToFilter" class="form-select">
           <option value="">All</option>
           <?php foreach ($admins as $admin): ?>
             <option value="<?= strtolower($admin['fullname']) ?>">
@@ -197,7 +278,7 @@ if ($subjectResult && $subjectResult->num_rows > 0) {
             </option>
           <?php endforeach; ?>
         </select>
-      </div> -->
+      </div>
 
       <!-- Status -->
       <div class="col-md-2">
@@ -233,7 +314,7 @@ if ($subjectResult && $subjectResult->num_rows > 0) {
 
 <div class="card">
     <div class="card-header d-flex justify-content-between align-items-center text-white">
-        <h5 class="mb-0 text-white fw-semibold">My Tickets</h5>
+        <h5 class="mb-0 text-white fw-semibold">All Tickets</h5>
             <a href="?page=ticket/crud/add_ticket" class="btn btn-sm btn-primary">
                 <i class="fas fa-plus me-1"></i> Create Ticket
             </a>
@@ -241,101 +322,135 @@ if ($subjectResult && $subjectResult->num_rows > 0) {
 </div>
 
 <div class="card-body table-responsive mt-3">
-
-<table id="ticketsTable" class="table table-hover table-striped">
-<thead>
-<tr>
-    <th>Ticket #</th>
-    <th>User</th>
-    <th>Category</th>
-    <th>Impact</th>
-    <th>Priority</th>
-    <th>Subject</th>
-    <th style="width: 135px;">Assigned To</th>
-    <th style="width: 160px;">Status</th>
-    <th>Date Created</th>
-</tr>
-</thead>
-<!-- id="adminTicketsBody" -->
-<tbody >
-<?php while ($ticket = $result->fetch_assoc()): ?>
-<tr
-    data-ticket-id="<?= $ticket['ticket_id'] ?>"
-    data-status="<?= strtolower($ticket['status']) ?>"
-    data-assigned="<?= $ticket['assigned_to'] == $adminId ? 'yes' : 'no' ?>">
-
-    <td><?= htmlspecialchars($ticket['ticket_number']) ?></td>
-    <td><?= htmlspecialchars($ticket['user_fullname']) ?></td>
-    <td><?= ucfirst($ticket['ticket_category']) ?></td>
-    <td><?= ucfirst($ticket['impact']) ?></td>
-    <td>
-        <span class="badge badge-priority-<?= strtolower($ticket['priority']) ?>">
-            <?= ucfirst($ticket['priority']) ?>
-        </span>
-    </td>
-
-
-
-    <td><?= htmlspecialchars($ticket['subject']) ?></td>
-    <!-- ASSIGNED TO DROPDOWN -->
-<td onclick="event.stopPropagation();" style="width:135px;">
-
-    <select class="form-select form-select-sm assign-admin 
-            <?= empty($ticket['assigned_to']) ? 'select-unassigned' : '' ?>"
+    <table id="ticketsTable" class="table table-hover table-striped">
+        <thead>
+            <tr>
+                <th>Ticket #</th>
+                <th>User</th>
+                <th>Category</th>
+                <th>Impact</th>
+                <th>Priority</th>
+                <th>Subject</th>
+                <th style="width: 135px;">Assigned To</th>
+                <th style="width: 160px;">Status</th>
+                <th>Date</th>
+                <th>Time</th>
+            </tr>
+        </thead>
+        <!-- id="adminTicketsBody" -->
+        <tbody >
+        <?php while ($ticket = $result->fetch_assoc()): ?>
+        <tr
             data-ticket-id="<?= $ticket['ticket_id'] ?>"
-            data-current="<?= $ticket['assigned_to'] ?>">
+            data-status="<?= strtolower($ticket['status']) ?>"
+            data-assigned="<?= $ticket['assigned_to'] == $adminId ? 'yes' : 'no' ?>">
 
-        <?php foreach ($admins as $admin): ?>
-            <option value="<?= $admin['user_id'] ?>" 
-                <?= ($ticket['assigned_to'] == $admin['user_id']) ? 'selected' : '' ?>>
-                <?= htmlspecialchars($admin['fullname']) ?>
-            </option>
-        <?php endforeach; ?>
+            <td><?= htmlspecialchars($ticket['ticket_number']) ?></td>
+            <td><?= htmlspecialchars($ticket['user_fullname']) ?></td>
+            <td><?= ucfirst($ticket['ticket_category']) ?></td>
+            <td><?= ucfirst($ticket['impact']) ?></td>
+            <td>
+                <span class="badge badge-priority-<?= strtolower($ticket['priority']) ?>">
+                    <?= ucfirst($ticket['priority']) ?>
+                </span>
+            </td>
 
-    </select>
 
-</td>
 
-<?php
-// Define the workflow
-$statusFlow = [
-    'waiting for support' => ['waiting for support','waiting for customer','in progress','escalated','pending','canceled','resolved'],
-    'pending' => ['pending','waiting for support','in progress','canceled','resolved'],
-    'waiting for customer' => ['waiting for customer','waiting for support','escalated','canceled','resolved'],
-    'in progress' => ['in progress','pending','canceled','resolved'],
-    'escalated' => ['escalated','in progress'],
-    'canceled' => ['canceled','closed', 'reopened'],
-    'resolved' => ['resolved','closed', 'reopened'],
-    'reopened' => ['reopened','waiting for support','waiting for customer','in progress','escalated','pending','canceled','resolved'],
-    'closed' => ['closed']
-];
+            <td><?= htmlspecialchars($ticket['subject']) ?></td>
+            <!-- ASSIGNED TO DROPDOWN -->
+        <td onclick="event.stopPropagation();" style="width:135px;">
+            <select class="form-select form-select-sm assign-admin 
+                    <?= empty($ticket['assigned_to']) ? 'select-unassigned' : '' ?>"
+                    data-ticket-id="<?= $ticket['ticket_id'] ?>"
+                    data-current="<?= $ticket['assigned_to'] ?>">
 
-$currentStatus = strtolower($ticket['status']); // current status of this ticket
-$allowedStatuses = $statusFlow[$currentStatus] ?? [$currentStatus]; // fallback to current status only
-?>
+                <?php foreach ($admins as $admin): ?>
+                    <option value="<?= $admin['user_id'] ?>" 
+                        <?= ($ticket['assigned_to'] == $admin['user_id']) ? 'selected' : '' ?>>
+                        <?= htmlspecialchars($admin['fullname']) ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
+        </td>
 
-<td class="status-cell" onclick="event.stopPropagation();" style="width:150px;">
-    <select class="form-select form-select-sm status-select status-<?= str_replace(' ', '-', $currentStatus) ?>"
-            data-ticket-id="<?= $ticket['ticket_id'] ?>"
-            data-current="<?= $currentStatus ?>">
-        <?php foreach ($allowedStatuses as $statusOption): ?>
-            <option value="<?= $statusOption ?>" <?= $statusOption == $currentStatus ? 'selected' : '' ?>>
-                <?= ucwords($statusOption) ?>
-            </option>
-        <?php endforeach; ?>
-    </select>
-</td>
+        <?php
+        // Define the workflow
+        $statusFlow = [
+            'waiting for support' => ['waiting for support','waiting for customer','in progress','escalated','pending','canceled','resolved'],
+            'pending' => ['pending','waiting for support','in progress','canceled','resolved'],
+            'waiting for customer' => ['waiting for customer','waiting for support','escalated','canceled','resolved'],
+            'in progress' => ['in progress','pending','canceled','resolved'],
+            'escalated' => ['escalated','in progress'],
+            'canceled' => ['canceled','closed', 'reopened'],
+            'resolved' => ['resolved','closed', 'reopened'],
+            'reopened' => ['reopened','waiting for support','waiting for customer','in progress','escalated','pending','canceled','resolved'],
+            'closed' => ['closed']
+        ];
 
-    <td><?= date('m-d-Y', strtotime($ticket['date_created'])) ?></td>
-</tr>
-<?php endwhile; ?>
-</tbody>
-</table>
+        $currentStatus = strtolower($ticket['status']); // current status of this ticket
+        $allowedStatuses = $statusFlow[$currentStatus] ?? [$currentStatus]; // fallback to current status only
+        ?>
 
+        <td class="status-cell" onclick="event.stopPropagation();" style="width:150px;">
+            <select class="form-select form-select-sm status-select status-<?= str_replace(' ', '-', $currentStatus) ?>"
+                    data-ticket-id="<?= $ticket['ticket_id'] ?>"
+                    data-current="<?= $currentStatus ?>">
+                <?php foreach ($allowedStatuses as $statusOption): ?>
+                    <option value="<?= $statusOption ?>" <?= $statusOption == $currentStatus ? 'selected' : '' ?>>
+                        <?= ucwords($statusOption) ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
+        </td>
+            <td><?= date('m-d-Y', strtotime($ticket['date_created'])) ?></td>
+            <td><?= date('h:i A', strtotime($ticket['date_created'])) ?></td>
+        </tr>
+        <?php endwhile; ?>
+        </tbody>
+    </table>
+
+    </div>
 </div>
+ <!-- STATUS MODAL -->
+<div class="modal fade" id="statusModal" tabindex="-1">
+    <div class="modal-dialog">
+    <div class="modal-content">
+
+    <div class="modal-header">
+    <h5 class="modal-title text-white">Change Status</h5>
+    <button class="btn-close" data-bs-dismiss="modal"></button>
+    </div>
+
+    <div class="modal-body">
+    <input type="hidden" id="newStatusValue">
+
+    <label>Reason</label>
+    <textarea id="statusComment" class="form-control mb-3" rows="3"></textarea>
+
+    <div class="form-check">
+    <input class="form-check-input" type="checkbox" id="publicComment">
+    <label class="form-check-label" >Visible to ticket sender</label>
+    </div>
+    </div>
+
+    <div class="modal-footer">
+    <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+    <button class="btn btn-primary" id="confirmStatusChange">Confirm</button>
+    </div></div>
+ </div>
+
+ <!-- laoder -->
+  <!-- STATUS LOADER -->
+<div id="statusLoader">
+    <div class="honeycomb">
+        <div></div><div></div><div></div>
+        <div></div><div></div><div></div>
+        <div></div>
+    </div>
 </div>
 
-<script>const BASE_URL = '<?= $baseUrl ?>';</script>
+ <script>const BASE_URL = '<?= $baseUrl ?>';</script>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
@@ -343,7 +458,6 @@ $allowedStatuses = $statusFlow[$currentStatus] ?? [$currentStatus]; // fallback 
 <script src="https://cdn.datatables.net/1.13.5/js/dataTables.bootstrap5.min.js"></script>
 
 <script>
-
     // PRIORITY SORT ORDER
 $.fn.dataTable.ext.type.order['priority-sort-pre'] = function (data) {
 
@@ -512,6 +626,7 @@ $(document).ready(function () {
         if (currentValue == newValue) return; // nothing changed
 
         let confirmChange = confirm("Are you sure you want to change the assigned admin?");
+        window.location.href = '?page=ticket/assigned_tickets';
         if (!confirmChange) {
             select.val(currentValue); // revert selection
             return;
@@ -525,7 +640,7 @@ $(document).ready(function () {
                 admin_id: newValue
             },
             success: function () {
-
+                
                 // Update select current value
                 select.data('current', newValue);
 
@@ -555,7 +670,7 @@ $(document).ready(function () {
 
                 // Refresh the DataTable row so filters and sorting are correct
                 // $('#ticketsTable').DataTable().row(row).invalidate().draw(false);
-                location.reload();
+                // window.location.href = '?page=ticket/all_tickets';
             },
             error: function () {
                 alert('Failed to update assignment.');
@@ -567,56 +682,140 @@ $(document).ready(function () {
 
 });
 </script>
+<!-- status select -->
 <script>
+    
+let statusModalInstance = null;
+let pendingStatusSelect = null;
+let previousStatusValue = null;
+
+/* OPEN MODAL INSTEAD OF DIRECT UPDATE */
 $(document).on('change', '.status-select', function (e) {
     e.stopPropagation();
 
     let select = $(this);
-    let ticketId = select.data('ticket-id');
-    let currentValue = select.data('current');
     let newValue = select.val();
+    let currentValue = select.data('current');
 
-    if (currentValue === newValue) return; // no change
+    if (newValue === currentValue) return;
 
-    let confirmChange = confirm("Are you sure you want to change the ticket status?");
-    if (!confirmChange) {
-        select.val(currentValue);
+    pendingStatusSelect = select;
+    previousStatusValue = currentValue;
+
+    // store value in modal
+    document.getElementById('newStatusValue').value = newValue;
+
+    // reset modal fields
+    document.getElementById('statusComment').value = '';
+    document.getElementById('publicComment').checked = true;
+
+let modalEl = document.getElementById('statusModal');
+
+if (!statusModalInstance) {
+    statusModalInstance = new bootstrap.Modal(modalEl);
+}
+
+statusModalInstance.show();
+});
+
+
+/* CONFIRM STATUS CHANGE (SEND TO BACKEND + EMAIL) */
+document.getElementById('confirmStatusChange').addEventListener('click', function () {
+    window.location.href = '?page=ticket/assigned_tickets';
+    if (!pendingStatusSelect) return;
+
+    let loader = document.getElementById('statusLoader');
+
+    let select = pendingStatusSelect;
+    let ticketId = select.data('ticket-id');
+    let newStatus = document.getElementById('newStatusValue').value;
+    let comment = document.getElementById('statusComment').value.trim();
+    let isPublic = document.getElementById('publicComment').checked ? 1 : 0;
+
+    if (!comment) {
+        alert("Comment is required.");
         return;
     }
 
-    $.ajax({
-        url: '?page=ticket/includes/update_ticket_status', // endpoint to update DB
-        type: 'POST',
-        data: {
-            ticket_id: ticketId,
-            status: newValue
-        },
-        success: function () {
-            // Update stored current value
-            select.data('current', newValue);
+    // ✅ SHOW LOADER
+    loader.style.display = 'flex';
 
-            // Update background color based on status
-            // First remove old status classes
+    fetch('?page=ticket/includes/update_ticket_field', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            ticket_id: ticketId,
+            field: 'status',
+            value: newStatus,
+            comment: comment,
+            is_public: isPublic
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+
+        if (data.success) {
+
+            // update select UI
+            select.val(newStatus);
+            select.data('current', newStatus);
+
+            // update class color
             select.removeClass(function(index, className) {
                 return (className.match(/(^|\s)status-\S+/g) || []).join(' ');
             });
-            // Add new status class
-            select.addClass('status-' + newValue.toLowerCase().replace(/ /g, '-'));
 
-            // Optionally update the row's data-status attribute
-            select.closest('tr').attr('data-status', newValue.toLowerCase());
+            select.addClass('status-' + newStatus.toLowerCase().replace(/ /g, '-'));
 
-            // Optional: reload the row completely (uncomment if needed)
-            // location.reload(); // full page reload
-            // OR reload only the table data via DataTables API if using DT
+            // update row attribute
+            select.closest('tr').attr('data-status', newStatus.toLowerCase());
+
+            // redraw table
             $('#ticketsTable').DataTable().row(select.closest('tr')).invalidate().draw(false);
-        },
-        error: function () {
-            alert('Failed to update status.');
-            select.val(currentValue);
+
+            // ✅ CLOSE MODAL PROPERLY
+            if (statusModalInstance) {
+                statusModalInstance.hide();
+            }
+
+            pendingStatusSelect = null;
+
+        } else {
+            alert("Failed to update status.");
+            select.val(previousStatusValue);
         }
+    })
+    // .catch(err => {
+    //     console.error(err);
+    //     alert("Error updating status.");
+    // })
+    .finally(() => {
+
+        // ✅ HIDE LOADER AFTER EVERYTHING
+        loader.style.display = 'none';
+
     });
+
 });
+
+/* IF MODAL CLOSED WITHOUT CONFIRM → REVERT */
+document.getElementById('statusModal').addEventListener('hidden.bs.modal', function () {
+
+    if (pendingStatusSelect && previousStatusValue !== null) {
+        pendingStatusSelect.val(previousStatusValue);
+    }
+
+    pendingStatusSelect = null;
+});
+// Trigger Confirm on Enter inside modal
+document.getElementById('statusModal').addEventListener('keydown', function (e) {
+    // Check if Enter is pressed without Shift (Shift+Enter for new line)
+    if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault(); // prevent new line
+        document.getElementById('confirmStatusChange').click();
+    }
+});
+
 </script>
 <script>
 function loadAdminTickets() {
@@ -639,14 +838,14 @@ function loadAdminTickets() {
 loadAdminTickets();
 
 // Refresh every 2 seconds
-setInterval(loadAdminTickets, 2000);
+// setInterval(loadAdminTickets, 3000);
 setInterval(() => {
     location.reload();
 }, 30000);
 </script>
 <script>
     //print
-    function printTickets() {
+        function printTickets() {
 
         let rows = document.querySelectorAll("#ticketsTable tbody tr");
 
