@@ -27,6 +27,24 @@ CREATE TABLE IF NOT EXISTS holidays (
     description VARCHAR(255) NULL
 )");
 
+$conn->query("
+CREATE TABLE IF NOT EXISTS working_days (
+    id INT PRIMARY KEY DEFAULT 1,
+    monday TINYINT(1) DEFAULT 1,
+    tuesday TINYINT(1) DEFAULT 1,
+    wednesday TINYINT(1) DEFAULT 1,
+    thursday TINYINT(1) DEFAULT 1,
+    friday TINYINT(1) DEFAULT 1,
+    saturday TINYINT(1) DEFAULT 0,
+    sunday TINYINT(1) DEFAULT 0
+)");
+
+$conn->query("
+INSERT IGNORE INTO working_days 
+(id, monday, tuesday, wednesday, thursday, friday, saturday, sunday)
+VALUES (1,1,1,1,1,1,0,0)
+");
+
 /* ==============================
    SAVE SLA SETTINGS
 ============================== */
@@ -47,6 +65,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt->execute();
         }
     }
+            /* ---- Update Working Days ---- */
+        if (isset($_POST['working_days'])) {
+
+            $days = $_POST['working_days'];
+
+            $stmt = $conn->prepare("
+                UPDATE working_days SET
+                    monday=?,
+                    tuesday=?,
+                    wednesday=?,
+                    thursday=?,
+                    friday=?,
+                    saturday=?,
+                    sunday=?
+                WHERE id=1
+            ");
+
+            $stmt->bind_param(
+                "iiiiiii",
+                $days['monday'],
+                $days['tuesday'],
+                $days['wednesday'],
+                $days['thursday'],
+                $days['friday'],
+                $days['saturday'],
+                $days['sunday']
+            );
+
+            $stmt->execute();
+        }
 
     /* ---- Update Business Hours ---- */
     if (!empty($_POST['business_start'])) {
@@ -98,6 +146,8 @@ ORDER BY FIELD(priority,'highest','high','medium','low')
 $business = $conn->query("SELECT * FROM business_hours WHERE id=1")->fetch_assoc();
 
 $holidayResult = $conn->query("SELECT * FROM holidays ORDER BY holiday_date ASC");
+
+$workingDays = $conn->query("SELECT * FROM working_days WHERE id=1")->fetch_assoc();
 
 ?>
 
@@ -151,7 +201,44 @@ required>
 </tbody>
 </table>
 </div>
+<hr>
 
+<h6 class="mb-3">📅 Working Days</h6>
+
+<div class="row mb-4">
+
+<?php
+$daysList = [
+    'monday' => 'Monday',
+    'tuesday' => 'Tuesday',
+    'wednesday' => 'Wednesday',
+    'thursday' => 'Thursday',
+    'friday' => 'Friday',
+    'saturday' => 'Saturday',
+    'sunday' => 'Sunday'
+];
+
+foreach ($daysList as $key => $label):
+?>
+
+<div class="col-md-3">
+    <div class="form-check">
+        <input 
+            class="form-check-input" 
+            type="checkbox"
+            name="working_days[<?= $key ?>]"
+            value="1"
+            <?= $workingDays[$key] ? 'checked' : '' ?>
+        >
+        <label class="form-check-label">
+            <?= $label ?>
+        </label>
+    </div>
+</div>
+
+<?php endforeach; ?>
+
+</div>
 <hr>
 
 <!-- ================= BUSINESS HOURS ================= -->
