@@ -849,12 +849,13 @@ $priorityColor = match(strtolower($ticket['priority'])) {
 
     /* ===== SEND MESSAGE ===== */
     chatForm.addEventListener('submit', function(e) {
-
         e.preventDefault();
 
-        const message = chatTextarea.value.trim();
-        if (!message) return;
+        const textarea = chatForm.querySelector('textarea[name="chatMessage"]');
+        const message = textarea.value.trim();
 
+        if (!message) return;
+        textarea.value = "";
         fetch('?ajax=send_message', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
@@ -867,8 +868,6 @@ $priorityColor = match(strtolower($ticket['priority'])) {
         .then(data => {
 
             if (data.success) {
-
-                chatTextarea.value = "";
 
                 reloadChat();
 
@@ -956,7 +955,7 @@ document.addEventListener("DOMContentLoaded", function () {
             alert("Comment is required.");
             return;
         }
-
+        commentEl.value = ""; 
         fetch('?page=ticket/includes/update_ticket_field', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
@@ -970,8 +969,7 @@ document.addEventListener("DOMContentLoaded", function () {
         .then(res => res.json())
         .then(data => {
             if (data.success) {
-                commentEl.value = "";   // ✅ CLEAR TEXTAREA
-                commentEl.focus();      // (optional) keep cursor ready
+                // commentEl.focus();      // (optional) keep cursor ready
                 reloadActivityLogs();
             } else {
                 alert('Failed to add comment');
