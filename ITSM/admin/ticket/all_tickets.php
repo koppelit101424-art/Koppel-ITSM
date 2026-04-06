@@ -837,9 +837,9 @@ loadAdminTickets();
 
 // Refresh every 2 seconds
 // setInterval(loadAdminTickets, 3000);
-setInterval(() => {
-    location.reload();
-}, 30000);
+// setInterval(() => {
+//     location.reload();
+// }, 30000);
 </script>
 <script>
     //print
