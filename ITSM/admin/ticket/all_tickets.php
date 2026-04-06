@@ -288,6 +288,7 @@ include __DIR__ . '/../../includes/db.php';
         <label class="form-label">Status</label>
         <select id="statusSelectFilter" class="form-select">
           <option value="">All</option>
+          <option value="open">All Open</option>
           <option value="waiting for support">Waiting for Support</option>
           <option value="waiting for customer">Waiting for Customer</option>
           <option value="in progress">In Progress</option>
@@ -569,17 +570,28 @@ columnDefs: [
     // SUBJECT
     if (subject && !data[5].toLowerCase().includes(subject)) return false;
 
-// ASSIGNED TO (REAL-TIME)
-if (assignedTo) {
-    let assignedText = $(row).find('td:eq(6) select option:selected').text().toLowerCase();
-    if (!assignedText.includes(assignedTo)) return false;
-}
+    // ASSIGNED TO (REAL-TIME)
+    if (assignedTo) {
+        let assignedText = $(row).find('td:eq(6) select option:selected').text().toLowerCase();
+        if (!assignedText.includes(assignedTo)) return false;
+    }
 
-// STATUS (REAL-TIME)
-if (status) {
-    let statusText = $(row).find('td:eq(7) select option:selected').text().toLowerCase();
-    if (!statusText.includes(status)) return false;
-}
+    // STATUS FILTER (FIXED)
+    if (status) {
+
+        let rowStatus = $(row).attr('data-status'); // ✅ USE THIS
+
+        if (status === 'open') {
+
+            // show everything EXCEPT closed
+            if (rowStatus === 'closed') return false;
+
+        } else {
+
+            if (rowStatus !== status) return false;
+
+        }
+    }
 
     // DATE FILTER (column index 8)
     let rowDate = data[8]; // format: mm-dd-yyyy
