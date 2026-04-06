@@ -63,6 +63,60 @@ if ($subjectResult && $subjectResult->num_rows > 0) {
     while ($row = $subjectResult->fetch_assoc()) {
         $subjects[] = $row['subject'];
     }
+}   function getTicketActions($conn, $ticket_id, $isAdmin = false) {
+
+    if ($isAdmin) {
+        $sql = "
+            SELECT l.*, u.fullname
+            FROM ticket_logs l
+            JOIN user_tb u ON l.changed_by = u.user_id
+            WHERE l.ticket_id = ?
+            ORDER BY l.created_at ASC
+        ";
+    } else {
+        $sql = "
+            SELECT l.*, u.fullname
+            FROM ticket_logs l
+            JOIN user_tb u ON l.changed_by = u.user_id
+            WHERE l.ticket_id = ?
+            AND l.is_public = 1
+            ORDER BY l.created_at ASC
+        ";
+    }
+
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("i", $ticket_id);
+    $stmt->execute();
+    $logs = $stmt->get_result();
+
+    $actions = [];
+
+    while ($log = $logs->fetch_assoc()) {
+
+        $text = date("M d Y h:i A", strtotime($log['created_at'])) . " - ";
+
+        if ($log['action_type'] === 'assign') {
+            $text .= "Assigned to " . $log['fullname'];
+
+        } elseif ($log['action_type'] === 'escalated') {
+            $text .= $log['fullname'] . " escalated ticket";
+
+        } else {
+            $text .= $log['fullname'] . " updated "
+                . $log['field_name']
+                . " from " . $log['old_value']
+                . " to " . $log['new_value'];
+        }
+
+        if (!empty($log['comment'])) {
+            $text .= "\nNote: " . $log['comment']. "\n";
+        }
+
+        $actions[] = $text;
+    }
+
+    // ✅ Combine ALL logs into ONE cell (line break)
+    return implode("\n", $actions);
 }
 ?>
 
@@ -221,6 +275,9 @@ if ($subjectResult && $subjectResult->num_rows > 0) {
       <button onclick="printTickets()" class="btn btn-success btn-sm">
         <i class="fas fa-print me-1"></i> Print
       </button>
+    <button type="button" onclick="exportTicketCSV()" class="btn btn-info btn-sm">
+        <i class="fas fa-file-csv me-1"></i> Export CSV
+    </button>
     </div>
   </div>
 
@@ -291,6 +348,7 @@ if ($subjectResult && $subjectResult->num_rows > 0) {
         <label class="form-label">Status</label>
         <select id="statusSelectFilter" class="form-select">
           <option value="">All</option>
+          <option value="open">All Open</option>
           <option value="waiting for support">Waiting for Support</option>
           <option value="waiting for customer">Waiting for Customer</option>
           <option value="in progress">In Progress</option>
@@ -349,7 +407,8 @@ if ($subjectResult && $subjectResult->num_rows > 0) {
         <tr
             data-ticket-id="<?= $ticket['ticket_id'] ?>"
             data-status="<?= strtolower($ticket['status']) ?>"
-            data-assigned="<?= $ticket['assigned_to'] == $adminId ? 'yes' : 'no' ?>">
+            data-assigned="<?= $ticket['assigned_to'] == $adminId ? 'yes' : 'no' ?>"
+            data-actions="<?= htmlspecialchars(getTicketActions($conn, $ticket['ticket_id'], true)) ?>">
 
             <td><?= htmlspecialchars($ticket['ticket_number']) ?></td>
             <td><?= htmlspecialchars($ticket['user_fullname']) ?></td>
@@ -503,10 +562,13 @@ const table = $('#ticketsTable').DataTable({
     pageLength: 25,
     lengthMenu: [10, 25, 50, 100, 250, 500, 1000, 3000, 5000],
     order: [
-        [4, "asc"], // PRIORITY (highest first)
+        [7, "desc"],
+        [4, "asc"],// PRIORITY (highest first)
+        [6, "asc"], 
         [3, "asc"], // IMPACT (organization first)
         [8, "desc"] // DATE (latest)
-    ],
+    ]
+    ,
 columnDefs: [
 
     // PRIORITY (COLUMN 4)
@@ -572,17 +634,28 @@ columnDefs: [
     // SUBJECT
     if (subject && !data[5].toLowerCase().includes(subject)) return false;
 
-// ASSIGNED TO (REAL-TIME)
-if (assignedTo) {
-    let assignedText = $(row).find('td:eq(6) select option:selected').text().toLowerCase();
-    if (!assignedText.includes(assignedTo)) return false;
-}
+    // ASSIGNED TO (REAL-TIME)
+    if (assignedTo) {
+        let assignedText = $(row).find('td:eq(6) select option:selected').text().toLowerCase();
+        if (!assignedText.includes(assignedTo)) return false;
+    }
 
-// STATUS (REAL-TIME)
-if (status) {
-    let statusText = $(row).find('td:eq(7) select option:selected').text().toLowerCase();
-    if (!statusText.includes(status)) return false;
-}
+    // STATUS FILTER (FIXED)
+    if (status) {
+
+        let rowStatus = $(row).attr('data-status'); // ✅ USE THIS
+
+        if (status === 'open') {
+
+            // show everything EXCEPT closed
+            if (rowStatus === 'closed') return false;
+
+        } else {
+
+            if (rowStatus !== status) return false;
+
+        }
+    }
 
     // DATE FILTER (column index 8)
     let rowDate = data[8]; // format: mm-dd-yyyy
@@ -599,6 +672,7 @@ if (status) {
 
 // APPLY FILTER BUTTON
 $('#applyFilters').on('click', function () {
+    $('#statusSelectFilter').val('open');
     table.draw();
 });
 
@@ -606,7 +680,7 @@ $('#applyFilters').on('click', function () {
 $('#resetFilters').on('click', function () {
 
     $('#categoryFilter, #impactFilter, #subjectFilter').val('');
-    $('#priorityFilter, #assignedToFilter, #statusSelectFilter').val('');
+    $('#priorityFilter, #assignedToFilter, #statusSelectFilter').val();
     $('#dateFrom, #dateTo').val('');
 
     table.draw();
@@ -938,5 +1012,79 @@ loadAdminTickets();
     }
 
 });
+</script>
+<!-- export -->
+<script>
+function exportTicketCSV() {
+
+    const rows = document.querySelectorAll("#ticketsTable tbody tr");
+
+    // ✅ HEADERS (added Action Taken)
+    const headers = [
+        "Ticket #","User","Category","Impact",
+        "Priority","Subject","Assigned To",
+        "Status","Date","Time","Action Taken"
+    ];
+
+    let csv = [headers.join(",")];
+
+    rows.forEach(row => {
+
+        // ✅ Skip hidden rows (filters / DataTables)
+        if (row.offsetParent === null) return;
+
+        const cols = row.querySelectorAll("td");
+
+        // ✅ BASIC FIELDS
+        const ticketNo = cols[0]?.innerText.trim() || "";
+        const user = cols[1]?.innerText.trim() || "";
+        const category = cols[2]?.innerText.trim() || "";
+        const impact = cols[3]?.innerText.trim() || "";
+        const priority = cols[4]?.innerText.trim() || "";
+        const subject = cols[5]?.innerText.trim() || "";
+
+        // ✅ ASSIGNED (dropdown or text)
+        const assignedSelect = cols[6]?.querySelector("select");
+        const assigned = assignedSelect
+            ? assignedSelect.options[assignedSelect.selectedIndex].text.trim()
+            : cols[6]?.innerText.trim() || "";
+
+        // ✅ STATUS (dropdown or text)
+        const statusSelect = cols[7]?.querySelector("select");
+        const status = statusSelect
+            ? statusSelect.options[statusSelect.selectedIndex].text.trim()
+            : cols[7]?.innerText.trim() || "";
+
+        const date = cols[8]?.innerText.trim() || "";
+        const time = cols[9]?.innerText.trim() || "";
+
+        // ✅ ACTION TAKEN (BEST: use data attribute)
+        let actionTaken = row.dataset.actions || "";
+
+        // 🔁 fallback if not using data-actions
+        if (!actionTaken && cols[10]) {
+            actionTaken = cols[10].innerText.trim();
+        }
+
+        // ✅ CLEAN + ESCAPE (important for Excel)
+        const rowData = [
+            ticketNo, user, category, impact,
+            priority, subject, assigned,
+            status, date, time, actionTaken
+        ].map(val => `"${(val || "").replace(/"/g, '""')}"`);
+
+        csv.push(rowData.join(","));
+    });
+
+    // ✅ CREATE FILE
+    const blob = new Blob([csv.join("\n")], {
+        type: "text/csv;charset=utf-8;"
+    });
+
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `IT Weekly Accomplishment Report ${new Date().toISOString().slice(0,10)}.csv`;
+    link.click();
+}
 </script>
 <?php $conn->close(); ?>
