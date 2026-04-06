@@ -64,6 +64,11 @@ include __DIR__ . '/../../includes/db.php';
 ?>
 
 <style>
+    .select-closed {
+    background-color: grey !important;
+    color: white !important;
+    /* cursor: not-allowed; */
+}
  /* From Uiverse.io by boryanakrasteva */ 
 @-webkit-keyframes honeycomb {
   0%,
@@ -358,10 +363,15 @@ include __DIR__ . '/../../includes/db.php';
             <td><?= htmlspecialchars($ticket['subject']) ?></td>
             <!-- ASSIGNED TO DROPDOWN -->
         <td onclick="event.stopPropagation();" style="width:135px;">
-            <select class="form-select form-select-sm assign-admin 
-                    <?= empty($ticket['assigned_to']) ? 'select-unassigned' : '' ?>"
-                    data-ticket-id="<?= $ticket['ticket_id'] ?>"
-                    data-current="<?= $ticket['assigned_to'] ?>">
+        <select 
+            class="form-select form-select-sm assign-admin 
+            <?= empty($ticket['assigned_to']) ? 'select-unassigned' : '' ?>
+            <?= strtolower($ticket['status']) === 'closed' ? 'select-closed' : '' ?>"
+
+            <?= strtolower($ticket['status']) === 'closed' ? 'disabled' : '' ?>
+
+            data-ticket-id="<?= $ticket['ticket_id'] ?>"
+            data-current="<?= $ticket['assigned_to'] ?>">
 
                 <?php foreach ($admins as $admin): ?>
                     <option value="<?= $admin['user_id'] ?>" 
@@ -912,5 +922,18 @@ loadAdminTickets();
         win.document.close();
         win.print();
     }
+</script>
+<script>
+    $(document).on('change', '.assign-admin', function (e) {
+
+    let row = $(this).closest('tr');
+    let status = row.attr('data-status');
+
+    if (status === 'closed') {
+        alert("Cannot reassign a closed ticket.");
+        return false;
+    }
+
+});
 </script>
 <?php $conn->close(); ?>

@@ -65,7 +65,13 @@ if ($subjectResult && $subjectResult->num_rows > 0) {
     }
 }
 ?>
+
 <style>
+    .select-closed {
+    background-color: grey !important;
+    color: white !important;
+    /* cursor: not-allowed; */
+}
  /* From Uiverse.io by boryanakrasteva */ 
 @-webkit-keyframes honeycomb {
   0%,
@@ -360,10 +366,15 @@ if ($subjectResult && $subjectResult->num_rows > 0) {
             <td><?= htmlspecialchars($ticket['subject']) ?></td>
             <!-- ASSIGNED TO DROPDOWN -->
         <td onclick="event.stopPropagation();" style="width:135px;">
-            <select class="form-select form-select-sm assign-admin 
-                    <?= empty($ticket['assigned_to']) ? 'select-unassigned' : '' ?>"
-                    data-ticket-id="<?= $ticket['ticket_id'] ?>"
-                    data-current="<?= $ticket['assigned_to'] ?>">
+        <select 
+            class="form-select form-select-sm assign-admin 
+            <?= empty($ticket['assigned_to']) ? 'select-unassigned' : '' ?>
+            <?= strtolower($ticket['status']) === 'closed' ? 'select-closed' : '' ?>"
+
+            <?= strtolower($ticket['status']) === 'closed' ? 'disabled' : '' ?>
+
+            data-ticket-id="<?= $ticket['ticket_id'] ?>"
+            data-current="<?= $ticket['assigned_to'] ?>">
 
                 <?php foreach ($admins as $admin): ?>
                     <option value="<?= $admin['user_id'] ?>" 
@@ -626,7 +637,7 @@ $(document).ready(function () {
         if (currentValue == newValue) return; // nothing changed
 
         let confirmChange = confirm("Are you sure you want to change the assigned admin?");
-        window.location.href = '?page=ticket/assigned_tickets';
+        window.location.href = '?page=ticket/all_tickets';
         if (!confirmChange) {
             select.val(currentValue); // revert selection
             return;
@@ -721,7 +732,7 @@ statusModalInstance.show();
 
 /* CONFIRM STATUS CHANGE (SEND TO BACKEND + EMAIL) */
 document.getElementById('confirmStatusChange').addEventListener('click', function () {
-    window.location.href = '?page=ticket/assigned_tickets';
+    window.location.href = '?page=ticket/all_tickets';
     if (!pendingStatusSelect) return;
 
     let loader = document.getElementById('statusLoader');
@@ -839,9 +850,9 @@ loadAdminTickets();
 
 // Refresh every 2 seconds
 // setInterval(loadAdminTickets, 3000);
-setInterval(() => {
-    location.reload();
-}, 30000);
+// setInterval(() => {
+//     location.reload();
+// }, 30000);
 </script>
 <script>
     //print
@@ -914,5 +925,18 @@ setInterval(() => {
         win.document.close();
         win.print();
     }
+</script>
+<script>
+    $(document).on('change', '.assign-admin', function (e) {
+
+    let row = $(this).closest('tr');
+    let status = row.attr('data-status');
+
+    if (status === 'closed') {
+        alert("Cannot reassign a closed ticket.");
+        return false;
+    }
+
+});
 </script>
 <?php $conn->close(); ?>
