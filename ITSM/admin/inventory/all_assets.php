@@ -188,7 +188,8 @@ include __DIR__ . '/includes/inv_sql.php';
                             <td style="display:none;"><?= $row['item_id'] ?></td>
                             <td>
                             <?php if (!empty($row['qr_code_path'])): ?>
-                                <a href="inventory/<?= htmlspecialchars($row['qr_code_path']) ?>" target="_blank">
+                                <!-- inventory/<?= htmlspecialchars($row['qr_code_path']) ?> target="_blank"-->
+                                <a href="#" >
                                     <img src="inventory/<?= htmlspecialchars($row['qr_code_path']) ?>" width="50">
                                 </a>
                             <?php else: ?>
