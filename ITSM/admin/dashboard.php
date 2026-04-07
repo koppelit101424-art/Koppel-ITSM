@@ -2,6 +2,7 @@
     include '../includes/auth.php';
     include '../includes/db.php';
     include 'inventory/includes/inv_sql.php';
+    require_once 'ticket/includes/sla_functions.php';
     // include '../config/config.php';
 
     // USERS
@@ -64,134 +65,199 @@
     }
 ?>
 <?php
-$filterType = $_GET['range'] ?? 'all'; // day, week, month, year, all
-$adminFilter = $_GET['admin'] ?? 'all';
+    $filterType = $_GET['range'] ?? 'all'; // day, week, month, year, all
+    $adminFilter = $_GET['admin'] ?? 'all';
 
-$where = "WHERE 1";
+    $where = "WHERE 1";
 
-// Date range filter
-if (!empty($_GET['start']) && !empty($_GET['end'])) {
-    $start = $_GET['start'];
-    $end   = $_GET['end'];
-    $where .= " AND DATE(t.date_created) BETWEEN '$start' AND '$end'";
-}
+    // Date range filter
+    if (!empty($_GET['start']) && !empty($_GET['end'])) {
+        $start = $_GET['start'];
+        $end   = $_GET['end'];
+        $where .= " AND DATE(t.date_created) BETWEEN '$start' AND '$end'";
+    }
 
-// Range filter
-if ($filterType == 'day') {
-    $where .= " AND DATE(t.date_created) = CURDATE()";
-}
-elseif ($filterType == 'week') {
-    $where .= " AND YEARWEEK(t.date_created,1) = YEARWEEK(CURDATE(),1)";
-}
-elseif ($filterType == 'month') {
-    $where .= " AND MONTH(t.date_created) = MONTH(CURDATE()) 
-                AND YEAR(t.date_created)=YEAR(CURDATE())";
-}
-elseif ($filterType == 'year') {
-    $where .= " AND YEAR(t.date_created)=YEAR(CURDATE())";
-}
+    // Range filter
+    if ($filterType == 'day') {
+        $where .= " AND DATE(t.date_created) = CURDATE()";
+    }
+    elseif ($filterType == 'week') {
+        $where .= " AND YEARWEEK(t.date_created,1) = YEARWEEK(CURDATE(),1)";
+    }
+    elseif ($filterType == 'month') {
+        $where .= " AND MONTH(t.date_created) = MONTH(CURDATE()) 
+                    AND YEAR(t.date_created)=YEAR(CURDATE())";
+    }
+    elseif ($filterType == 'year') {
+        $where .= " AND YEAR(t.date_created)=YEAR(CURDATE())";
+    }
 
-// Admin filter
-if ($adminFilter !== 'all') {
-    $where .= " AND t.assigned_to = '$adminFilter'";
-}
+    // Admin filter
+    if ($adminFilter !== 'all') {
+        $where .= " AND t.assigned_to = '$adminFilter'";
+    }
 ?>
 <?php
+    $totalResponseMinutes = 0;
+    $totalResolutionMinutes = 0;
+    $countResponse = 0;
+    $countResolution = 0;
 
-// SUBJECT
-$subjectLabels=[];
-$subjectData=[];
+    $totalMet = 0;
+    $totalNotMet = 0;
 
-$res=$conn->query("
-    SELECT subject, COUNT(*) total 
-    FROM ticket_tb t 
-    $where
-    GROUP BY subject
-    ORDER BY total DESC LIMIT 10
-");
+    // SUBJECT
+    $subjectLabels=[];
+    $subjectData=[];
 
-while($r=$res->fetch_assoc()){
-    $subjectLabels[]=$r['subject'];
-    $subjectData[]=$r['total'];
-}
+    $res=$conn->query("
+        SELECT subject, COUNT(*) total 
+        FROM ticket_tb t 
+        $where
+        GROUP BY subject
+        ORDER BY total DESC LIMIT 10
+    ");
 
-
-// CATEGORY
-$catLabels=[];
-$catData=[];
-
-$res=$conn->query("
-    SELECT ticket_category, COUNT(*) total 
-    FROM ticket_tb t 
-    $where
-    GROUP BY ticket_category
-");
-
-while($r=$res->fetch_assoc()){
-    $catLabels[]=$r['ticket_category'];
-    $catData[]=$r['total'];
-}
-// TOTAL TICKETS
-$totalTickets = $conn->query("SELECT COUNT(*) total FROM ticket_tb t $where")
-                    ->fetch_assoc()['total'] ?? 0;
-
-// RESOLVED
-$totalResolved = $conn->query("
-    SELECT COUNT(*) total FROM ticket_tb t 
-    $where AND t.status IN('resolved','closed')
-")->fetch_assoc()['total'] ?? 0;
-
-// SLA MET / NOT MET (reuse your SLA logic if needed)
-$totalMet = $totalResolutionMet ?? 0;
-$totalNotMet = $totalTickets - $totalMet;
-
-// AVG PER DAY
-$avgPerDay = $conn->query("
-    SELECT COUNT(*) / COUNT(DISTINCT DATE(date_created)) avg_val
-    FROM ticket_tb t $where
-")->fetch_assoc()['avg_val'] ?? 0;
-
-// AVG PER WEEK
-$avgPerWeek = $conn->query("
-    SELECT COUNT(*) / COUNT(DISTINCT YEARWEEK(date_created)) avg_val
-    FROM ticket_tb t $where
-")->fetch_assoc()['avg_val'] ?? 0;
-
-// AVG PER MONTH
-$avgPerMonth = $conn->query("
-    SELECT COUNT(*) / COUNT(DISTINCT DATE_FORMAT(date_created,'%Y-%m')) avg_val
-    FROM ticket_tb t $where
-")->fetch_assoc()['avg_val'] ?? 0;
-
-// // AVG RESPONSE TIME
-// $avgResponse = $conn->query("
-//     SELECT AVG(TIMESTAMPDIFF(MINUTE,date_created,updated_at)) avg_val
-//     FROM ticket_tb t $where
-// ")->fetch_assoc()['avg_val'] ?? 0;
-
-// AVG RESOLUTION TIME
-// $avgResolution = $conn->query("
-//     SELECT AVG(TIMESTAMPDIFF(MINUTE,date_created,resolved_at)) avg_val
-//     FROM ticket_tb t $where
-// ")->fetch_assoc()['avg_val'] ?? 0;
-
-// PRIORITY
-$priorityLabels = [];
-$priorityData = [];
-
-$res = $conn->query("
-    SELECT priority, COUNT(*) total 
-    FROM ticket_tb t 
-    $where
-    GROUP BY priority
-");
-
-while($r=$res->fetch_assoc()){
-    $priorityLabels[] = $r['priority'];
-    $priorityData[] = $r['total'];
-}
+    while($r=$res->fetch_assoc()){
+        $subjectLabels[]=$r['subject'];
+        $subjectData[]=$r['total'];
+    }
 
 
+    // CATEGORY
+    $catLabels=[];
+    $catData=[];
+
+    $res=$conn->query("
+        SELECT ticket_category, COUNT(*) total 
+        FROM ticket_tb t 
+        $where
+        GROUP BY ticket_category
+    ");
+
+    while($r=$res->fetch_assoc()){
+        $catLabels[]=$r['ticket_category'];
+        $catData[]=$r['total'];
+    }
+
+    // TOTAL TICKETS
+    $totalTickets = $conn->query("SELECT COUNT(*) total FROM ticket_tb t $where")
+                        ->fetch_assoc()['total'] ?? 0;
+
+    // RESOLVED
+    $totalResolved = $conn->query("
+        SELECT COUNT(*) total FROM ticket_tb t 
+        $where AND t.status IN('resolved','closed')
+    ")->fetch_assoc()['total'] ?? 0;
+
+    // ON GOING
+    $totalOngoing = $conn->query("
+        SELECT COUNT(*) total FROM ticket_tb t 
+        $where AND t.status NOT IN('resolved','closed')
+    ")->fetch_assoc()['total'] ?? 0;
+
+    // AVG PER DAY
+    $avgPerDay = $conn->query("
+        SELECT COUNT(*) / COUNT(DISTINCT DATE(date_created)) avg_val
+        FROM ticket_tb t $where
+    ")->fetch_assoc()['avg_val'] ?? 0;
+
+    // AVG PER WEEK
+    $avgPerWeek = $conn->query("
+        SELECT COUNT(*) / COUNT(DISTINCT YEARWEEK(date_created)) avg_val
+        FROM ticket_tb t $where
+    ")->fetch_assoc()['avg_val'] ?? 0;
+
+    // AVG PER MONTH
+    $avgPerMonth = $conn->query("
+        SELECT COUNT(*) / COUNT(DISTINCT DATE_FORMAT(date_created,'%Y-%m')) avg_val
+        FROM ticket_tb t $where
+    ")->fetch_assoc()['avg_val'] ?? 0;
+
+    $tickets = $conn->query("
+        SELECT * FROM ticket_tb t
+        $where
+    ");
+
+    while($t = $tickets->fetch_assoc()){
+
+        $priority = strtolower($t['priority'] ?? 'medium');
+        $created  = $t['date_created'];
+        $ticketId = $t['ticket_id'];
+
+        // FIRST RESPONSE
+        $firstResponse = $conn->query("
+            SELECT created_at FROM ticket_logs
+            WHERE ticket_id=$ticketId
+            AND field_name='status'
+            AND old_value='waiting for support'
+            AND new_value IN('in progress','pending','ongoing')
+            ORDER BY created_at ASC LIMIT 1
+        ")->fetch_assoc()['created_at'] ?? null;
+
+        // RESOLVED TIME
+        $resolvedTime = $conn->query("
+            SELECT created_at FROM ticket_logs
+            WHERE ticket_id=$ticketId
+            AND field_name='status'
+            AND new_value='resolved'
+            ORDER BY created_at ASC LIMIT 1
+        ")->fetch_assoc()['created_at'] ?? null;
+
+        $responseMet = false;
+        $resolutionMet = false;
+
+        // RESPONSE TIME
+        if($firstResponse){
+            $respMinutes = calculateBusinessMinutes($conn,$ticketId,$created,$firstResponse);
+
+            $totalResponseMinutes += $respMinutes;
+            $countResponse++;
+
+            $responseMet = $respMinutes <= ($responseMatrix[$priority] ?? 240);
+        }
+
+        // RESOLUTION TIME
+        if($resolvedTime){
+            $resMinutes = calculateBusinessMinutes($conn,$ticketId,$created,$resolvedTime);
+
+            $totalResolutionMinutes += $resMinutes;
+            $countResolution++;
+
+            $resolutionMet = $resMinutes <= ($slaMatrix[$priority] ?? 4320);
+        }
+
+        // FINAL SLA
+        if($responseMet && $resolutionMet){
+            $totalMet++;
+        } else {
+            $totalNotMet++;
+        }
+    }
+
+    $avgResponse = $countResponse > 0 
+    ? round($totalResponseMinutes / $countResponse, 2) 
+    : 0;
+
+    $avgResolution = $countResolution > 0 
+        ? round($totalResolutionMinutes / $countResolution, 2) 
+        : 0;
+        
+    // PRIORITY
+    $priorityLabels = [];
+    $priorityData = [];
+
+    $res = $conn->query("
+        SELECT priority, COUNT(*) total 
+        FROM ticket_tb t 
+        $where
+        GROUP BY priority
+    ");
+
+    while($r=$res->fetch_assoc()){
+        $priorityLabels[] = $r['priority'];
+        $priorityData[] = $r['total'];
+    }  
 ?>
 <style>
     .card {
@@ -274,10 +340,12 @@ while($r=$res->fetch_assoc()){
             card('Avg Ticket Week',round($avgPerWeek,2));
             card('Avg Ticket Month',round($avgPerMonth,2));
             card('Resolved Tickets',$totalResolved,'success');
-            card('Met SLA',$totalMet,'primary');
-            card('Not Met SLA',$totalNotMet,'danger');
-            // card('Avg Response (min)',round($avgResponse,2));
-            // card('Avg Resolution (min)',round($avgResolution,2));
+            card('On Going Tickets',$totalOngoing,'success');
+            card('Met SLA', $totalMet, 'success');
+            card('Not Met SLA', $totalNotMet, 'danger');
+            card('Avg Response (min)', $avgResponse);
+            card('Avg Resolution (min)', $avgResolution);
+
             ?>
         </div>
         <div class="row mt-4">
