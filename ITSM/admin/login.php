@@ -223,7 +223,7 @@ $conn->close();
         <div class="logo-placeholder">
           <i class="fas fa-boxes"></i>
         </div>
-        <h1>Asset Management System</h1>
+        <h1>IT System Management</h1>
         <p>Admin Portal</p>
       </div>
       
