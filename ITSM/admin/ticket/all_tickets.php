@@ -407,7 +407,9 @@ include __DIR__ . '/../../includes/db.php';
             data-ticket-id="<?= $ticket['ticket_id'] ?>"
             data-status="<?= strtolower($ticket['status']) ?>"
             data-assigned="<?= $ticket['assigned_to'] == $adminId ? 'yes' : 'no' ?>"
-            data-actions="<?= htmlspecialchars(getTicketActions($conn, $ticket['ticket_id'], true)) ?>">
+            data-actions="<?= htmlspecialchars(getTicketActions($conn, $ticket['ticket_id'], true)) ?>"
+            data-subject-details="<?= htmlspecialchars($ticket['subject_details'] ?? '', ENT_QUOTES) ?>"
+            data-issue="<?= htmlspecialchars($ticket['issue'] ?? '', ENT_QUOTES) ?>">
 
             <td><?= htmlspecialchars($ticket['ticket_number']) ?></td>
             <td><?= htmlspecialchars($ticket['user_fullname']) ?></td>
@@ -1021,10 +1023,9 @@ function exportTicketCSV() {
     // ✅ HEADERS (added Action Taken)
     const headers = [
         "Ticket #","User","Category","Impact",
-        "Priority","Subject","Assigned To",
-        "Status","Date","Time","Action Taken"
+        "Priority","Subject","Subject Details","Issue",
+        "Assigned To","Status","Date","Time","Action Taken"
     ];
-
     let csv = [headers.join(",")];
 
     rows.forEach(row => {
@@ -1041,6 +1042,9 @@ function exportTicketCSV() {
         const impact = cols[3]?.innerText.trim() || "";
         const priority = cols[4]?.innerText.trim() || "";
         const subject = cols[5]?.innerText.trim() || "";
+
+        const subjectDetails = row.dataset.subjectDetails || "";
+        const issue = row.dataset.issue || "";
 
         // ✅ ASSIGNED (dropdown or text)
         const assignedSelect = cols[6]?.querySelector("select");
@@ -1068,8 +1072,8 @@ function exportTicketCSV() {
         // ✅ CLEAN + ESCAPE (important for Excel)
         const rowData = [
             ticketNo, user, category, impact,
-            priority, subject, assigned,
-            status, date, time, actionTaken
+            priority, subject, subjectDetails, issue,
+            assigned, status, date, time, actionTaken
         ].map(val => `"${(val || "").replace(/"/g, '""')}"`);
 
         csv.push(rowData.join(","));
