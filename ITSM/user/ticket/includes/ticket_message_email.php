@@ -32,7 +32,7 @@ $subject       = $ticket['subject'];
 $priority      = ucfirst($ticket['priority']);
 
 // BUILD EMAIL BODY
-$updateMessage = ($senderRole === 'admin') 
+$updateMessage = ($senderRole === 'user') 
     ? "Admin commented on the ticket:<br><br><b>{$ticketMessage}</b>"
     : "User commented on the ticket:<br><br><b>{$ticketMessage}</b>";
 
@@ -50,13 +50,13 @@ try {
     $mail->Host       = 'smtp.gmail.com';
     $mail->SMTPAuth   = true;
     $mail->Username   = 'koppelit101424@gmail.com';
-    $mail->Password   = ''; // App password
+    $mail->Password   = 'eymk qyiv awbw wvxb'; // App password
     $mail->SMTPSecure = 'tls';
     $mail->Port       = 587;
 
     $mail->setFrom('koppelit101424@gmail.com', 'IT Support');
-    $mail->addAddress($userEmail, $fullname);
-    $mail->addCC('itticketing@koppel.ph');
+    $mail->addAddress('itticketing@koppel.ph');
+    $mail->addCC($userEmail, $fullname);
 
     $mail->isHTML(true);
     $mail->Subject = "[UPDATE] Ticket {$ticketNumber} - {$subject} ({$priority})";

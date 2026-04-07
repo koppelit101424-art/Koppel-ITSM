@@ -60,7 +60,7 @@ try {
 
     $mail->setFrom('koppelit101424@gmail.com', 'IT Support');
     $mail->addAddress($userEmail, $fullname);
-    $mail->addCC('itticketing@koppel.ph');
+    // $mail->addCC('itticketing@koppel.ph');
 
     $mail->isHTML(true);
     $mail->Subject = "[UPDATE] Ticket {$ticketNumber} - {$subject} ({$priority})";
