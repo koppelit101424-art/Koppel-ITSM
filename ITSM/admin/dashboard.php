@@ -63,6 +63,136 @@
         $areaCounts[] = $row['total'];
     }
 ?>
+<?php
+$filterType = $_GET['range'] ?? 'all'; // day, week, month, year, all
+$adminFilter = $_GET['admin'] ?? 'all';
+
+$where = "WHERE 1";
+
+// Date range filter
+if (!empty($_GET['start']) && !empty($_GET['end'])) {
+    $start = $_GET['start'];
+    $end   = $_GET['end'];
+    $where .= " AND DATE(t.date_created) BETWEEN '$start' AND '$end'";
+}
+
+// Range filter
+if ($filterType == 'day') {
+    $where .= " AND DATE(t.date_created) = CURDATE()";
+}
+elseif ($filterType == 'week') {
+    $where .= " AND YEARWEEK(t.date_created,1) = YEARWEEK(CURDATE(),1)";
+}
+elseif ($filterType == 'month') {
+    $where .= " AND MONTH(t.date_created) = MONTH(CURDATE()) 
+                AND YEAR(t.date_created)=YEAR(CURDATE())";
+}
+elseif ($filterType == 'year') {
+    $where .= " AND YEAR(t.date_created)=YEAR(CURDATE())";
+}
+
+// Admin filter
+if ($adminFilter !== 'all') {
+    $where .= " AND t.assigned_to = '$adminFilter'";
+}
+?>
+<?php
+
+// SUBJECT
+$subjectLabels=[];
+$subjectData=[];
+
+$res=$conn->query("
+    SELECT subject, COUNT(*) total 
+    FROM ticket_tb t 
+    $where
+    GROUP BY subject
+    ORDER BY total DESC LIMIT 10
+");
+
+while($r=$res->fetch_assoc()){
+    $subjectLabels[]=$r['subject'];
+    $subjectData[]=$r['total'];
+}
+
+
+// CATEGORY
+$catLabels=[];
+$catData=[];
+
+$res=$conn->query("
+    SELECT ticket_category, COUNT(*) total 
+    FROM ticket_tb t 
+    $where
+    GROUP BY ticket_category
+");
+
+while($r=$res->fetch_assoc()){
+    $catLabels[]=$r['ticket_category'];
+    $catData[]=$r['total'];
+}
+// TOTAL TICKETS
+$totalTickets = $conn->query("SELECT COUNT(*) total FROM ticket_tb t $where")
+                    ->fetch_assoc()['total'] ?? 0;
+
+// RESOLVED
+$totalResolved = $conn->query("
+    SELECT COUNT(*) total FROM ticket_tb t 
+    $where AND t.status IN('resolved','closed')
+")->fetch_assoc()['total'] ?? 0;
+
+// SLA MET / NOT MET (reuse your SLA logic if needed)
+$totalMet = $totalResolutionMet ?? 0;
+$totalNotMet = $totalTickets - $totalMet;
+
+// AVG PER DAY
+$avgPerDay = $conn->query("
+    SELECT COUNT(*) / COUNT(DISTINCT DATE(date_created)) avg_val
+    FROM ticket_tb t $where
+")->fetch_assoc()['avg_val'] ?? 0;
+
+// AVG PER WEEK
+$avgPerWeek = $conn->query("
+    SELECT COUNT(*) / COUNT(DISTINCT YEARWEEK(date_created)) avg_val
+    FROM ticket_tb t $where
+")->fetch_assoc()['avg_val'] ?? 0;
+
+// AVG PER MONTH
+$avgPerMonth = $conn->query("
+    SELECT COUNT(*) / COUNT(DISTINCT DATE_FORMAT(date_created,'%Y-%m')) avg_val
+    FROM ticket_tb t $where
+")->fetch_assoc()['avg_val'] ?? 0;
+
+// // AVG RESPONSE TIME
+// $avgResponse = $conn->query("
+//     SELECT AVG(TIMESTAMPDIFF(MINUTE,date_created,updated_at)) avg_val
+//     FROM ticket_tb t $where
+// ")->fetch_assoc()['avg_val'] ?? 0;
+
+// AVG RESOLUTION TIME
+// $avgResolution = $conn->query("
+//     SELECT AVG(TIMESTAMPDIFF(MINUTE,date_created,resolved_at)) avg_val
+//     FROM ticket_tb t $where
+// ")->fetch_assoc()['avg_val'] ?? 0;
+
+// PRIORITY
+$priorityLabels = [];
+$priorityData = [];
+
+$res = $conn->query("
+    SELECT priority, COUNT(*) total 
+    FROM ticket_tb t 
+    $where
+    GROUP BY priority
+");
+
+while($r=$res->fetch_assoc()){
+    $priorityLabels[] = $r['priority'];
+    $priorityData[] = $r['total'];
+}
+
+
+?>
 <style>
     .card {
     border-radius: 0.75rem;
@@ -124,8 +254,54 @@
 
                 </div>
             </div>
-    </div>
-    
+        <div class="row mt-4">
+
+            <?php
+            function card($title,$value,$color='primary'){
+                echo "
+                <div class='col-md-3 mb-3'>
+                    <div class='card p-3 text-center'>
+                        <h6 class='text-$color'>$title</h6>
+                        <h3>$value</h3>
+                    </div>
+                </div>";
+            }
+            ?>
+
+            <?php
+            card('Total Tickets',$totalTickets);
+            card('Avg Ticket Day',round($avgPerDay,2));
+            card('Avg Ticket Week',round($avgPerWeek,2));
+            card('Avg Ticket Month',round($avgPerMonth,2));
+            card('Resolved Tickets',$totalResolved,'success');
+            card('Met SLA',$totalMet,'primary');
+            card('Not Met SLA',$totalNotMet,'danger');
+            // card('Avg Response (min)',round($avgResponse,2));
+            // card('Avg Resolution (min)',round($avgResolution,2));
+            ?>
+        </div>
+        <div class="row mt-4">
+            <div class="col-md-3">
+                <div class="card p-3">
+                    <h6>Priority Distribution</h6>
+                    <canvas id="priorityChart"></canvas><br>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card p-3">
+                    <h6>Category Distribution</h6>
+                    <canvas id="categoryTicketChart"></canvas><br>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card p-3">
+                    <h6>Top Subjects</h6>
+                    <canvas id="subjectChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+     </div>
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -429,5 +605,47 @@ document.getElementById('usersCard')?.addEventListener('click', function() {
     // Show user graphs
     document.getElementById('userGraphs').style.display = 'block';
 
+});
+</script>
+    <!-- tickets -->
+<script>
+    // PRIORITY
+new Chart(document.getElementById('priorityChart'), {
+    type: 'doughnut',
+    data: {
+        labels: <?= json_encode($priorityLabels) ?>,
+        datasets: [{
+            data: <?= json_encode($priorityData) ?>,
+            backgroundColor: ['#dc3545','#0d6efd', '#ffc107']
+        }]
+    }
+});
+
+// SUBJECT
+new Chart(document.getElementById('subjectChart'), {
+    type: 'bar',
+    data: {
+        labels: <?= json_encode($subjectLabels) ?>,
+        datasets: [{
+            data: <?= json_encode($subjectData) ?>,
+            backgroundColor: '#0d6efd'
+        }]
+    },
+    options: {
+        indexAxis: 'y'
+    }
+});
+
+
+// CATEGORY
+new Chart(document.getElementById('categoryTicketChart'), {
+    type: 'pie',
+    data: {
+        labels: <?= json_encode($catLabels) ?>,
+        datasets: [{
+            data: <?= json_encode($catData) ?>,
+            backgroundColor: ['#6610f2','#20c997','#fd7e14','#0dcaf0']
+        }]
+    }
 });
 </script>
