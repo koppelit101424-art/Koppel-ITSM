@@ -87,9 +87,9 @@ $sql = "SELECT
 
     /* STATUS WORKFLOW */
     $statusFlow = [
-        'waiting for support' => ['waiting for support','waiting for customer','in progress','escalated','pending','canceled','resolved'],
+        'waiting for support' => ['waiting for support','waiting for customer','in progress','escalated','pending','canceled'],
         'pending' => ['pending','waiting for support','in progress','canceled','resolved'],
-        'waiting for customer' => ['waiting for customer','waiting for support','escalated','canceled','resolved'],
+        'waiting for customer' => ['waiting for customer','waiting for support','escalated','canceled'],
         'in progress' => ['in progress','pending','canceled','resolved'],
         'escalated' => ['escalated','in progress'],
         'canceled' => ['canceled','closed', 'reopened'],
