@@ -684,7 +684,7 @@ new Chart(document.getElementById('priorityChart'), {
         labels: <?= json_encode($priorityLabels) ?>,
         datasets: [{
             data: <?= json_encode($priorityData) ?>,
-            backgroundColor: ['#dc3545','#0d6efd', '#ffc107']
+            backgroundColor: ['#dc3545','#91111e','#0d6efd', '#ffc107']
         }]
     }
 });

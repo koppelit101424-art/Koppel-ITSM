@@ -3,14 +3,8 @@ include 'includes/auth.php';
 include 'includes/db.php';
 header('Content-Type: application/json');
 
-use PHPMailer\PHPMailer\PHPMailer;
-use PHPMailer\PHPMailer\Exception;
 
 date_default_timezone_set('Asia/Manila');
-
-require __DIR__ . '/../../../PHPMailer/Exception.php';
-require __DIR__ . '/../../../PHPMailer/PHPMailer.php';
-require __DIR__ . '/../../../PHPMailer/SMTP.php';
 
 if(isset($_GET['ajax']) && $_GET['ajax'] === 'send_message'){
 
@@ -43,9 +37,10 @@ if(isset($_GET['ajax']) && $_GET['ajax'] === 'send_message'){
     ============================ */
     $ticketMessage = $message;
     $ticketId      = $ticket_id;
-
+    $senderId      = $senderId;      // ✅ pass sender ID
+    $senderRole    = $senderRole;    // ✅ pass role
     // Include the email script
-    include __DIR__ . '/ticket_message_email.php';
+    include __DIR__ . '/../includes/ticket_message_email.php';
 
     echo json_encode(['success'=>true]);
     $conn->close();

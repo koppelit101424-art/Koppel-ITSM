@@ -32,12 +32,12 @@ $subject       = $ticket['subject'];
 $priority      = ucfirst($ticket['priority']);
 
 // BUILD EMAIL BODY
-$updateMessage = ($senderRole === 'user') 
+$updateMessage = ($senderRole === 'admin') 
     ? "Admin commented on the ticket:<br><br><b>{$ticketMessage}</b>"
-    : "User commented on the ticket:<br><br><b>{$ticketMessage}</b>";
+    : "$fullname commented on the ticket:<br><br><b>{$ticketMessage}</b>";
 
 $emailBody = "
-Hello {$fullname},<br><br>
+Hello Admin,<br><br>
 {$updateMessage}<br><br>
 Regards,<br>
 IT Support Team
@@ -56,7 +56,7 @@ try {
 
     $mail->setFrom('koppelit101424@gmail.com', 'IT Support');
     $mail->addAddress('itticketing@koppel.ph');
-    $mail->addCC($userEmail, $fullname);
+    // $mail->addCC($userEmail, $fullname);
 
     $mail->isHTML(true);
     $mail->Subject = "[UPDATE] Ticket {$ticketNumber} - {$subject} ({$priority})";
