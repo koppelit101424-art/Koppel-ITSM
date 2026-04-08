@@ -176,20 +176,19 @@ while($ticket = $tickets->fetch_assoc()){
     if($type=='met' && !$met) continue;
     if($type=='not_met' && $met) continue;
 
-    echo "<div class='ticket-card mb-3 border rounded'>";
-
+    echo "<div class='ticket-card mb-2 border rounded'>";
     /* ================= HEADER (CLICKABLE) ================= */
     echo "<div class='ticket-header p-2 bg-light'
             style='cursor:pointer;'
             onclick='toggleTicket($ticketId)'>
 
-            <h6 class='mb-0'>
+            <h6 class='mb-1'>
                 <a href='?page=ticket/view_ticket&ticket_id=$ticketId' 
                 class='fw-bold text-primary me-2'
                 onclick='event.stopPropagation();'>
                 $ticketNumber
-                </a>
-                | Priority: <b>".ucfirst($priority)."</b>
+                </a><br>
+                Priority: <b>".ucfirst($priority)."</b>
                 | Subject: <b>".ucfirst($subject)."</b>
                 | Details: <b>".ucfirst($subject_details)."</b>
             </h6>
