@@ -672,7 +672,7 @@ columnDefs: [
 
 // APPLY FILTER BUTTON
 $('#applyFilters').on('click', function () {
-    $('#statusSelectFilter').val('open');
+    $('#statusSelectFilter').val();
     table.draw();
 });
 
