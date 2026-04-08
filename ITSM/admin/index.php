@@ -57,9 +57,6 @@ if(isset($_GET['ajax'])){
         case "fetch_ticket_chat":
             include "ticket/includes/fetch_ticket_chat.php";
             exit;
-        case "sla_ticket_logs":
-            include "ticket/sla_ticket_logs.php";
-            exit;
         case "send_message":
             include "ticket/includes/send_message.php";
             exit;
@@ -262,6 +259,9 @@ if(isset($_GET['ajax'])){
                     case "ticket/sla_settings":
                         include "ticket/sla_settings.php";  
                         break;
+                    case "sla_ticket_logs":
+                        include "ticket/includes/sla_ticket_logs.php";
+                        exit;
 
                     // case "ticket/sla_ticket_logs":
                     //     include "ticket/sla_ticket_logs.php";

@@ -65,6 +65,9 @@ System
 <a class="text-danger" href="logout.php" >
     <i class="bi bi-box-arrow-right me-2"></i> Logout
 </a>
+<div class="sidebar-footer text-center">
+Developed by <strong class="footer-text">Aljon Cardeno</strong>
+</div>
 </div>
 </div>
 

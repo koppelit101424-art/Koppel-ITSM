@@ -275,18 +275,25 @@ $percent=$data['total']>0?round(($data['met']/$data['total'])*100,2):0;
 <?= $ongoingStats[$admin] ?? 0 ?>
 </td>
 <td><?= $data['total'] ?></td>
+
 <td>
-<a href="#" class="toggle-detail text-success fw-bold"
-data-admin="<?= $admin ?>"
-data-type="met">
+<a href="?page=sla_ticket_logs
+&admin=<?= urlencode($admin) ?>
+&type=met
+&start=<?= $startDate ?>
+&end=<?= $endDate ?>"
+class="text-success fw-bold">
 <?= $data['met'] ?>
 </a>
 </td>
 
 <td>
-<a href="#" class="toggle-detail text-danger fw-bold"
-data-admin="<?= $admin ?>"
-data-type="not_met">
+<a href="?page=sla_ticket_logs
+&admin=<?= urlencode($admin) ?>
+&type=not_met
+&start=<?= $startDate ?>
+&end=<?= $endDate ?>"
+class="text-danger fw-bold">
 <?= $data['not_met'] ?>
 </a>
 </td>

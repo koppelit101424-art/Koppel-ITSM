@@ -2,8 +2,8 @@
 ini_set('display_errors', 1);
 error_reporting(E_ALL);
 
-include __DIR__ . '/../../includes/auth.php';
-include __DIR__ . '/../../includes/db.php';
+include __DIR__ . '/../../../includes/auth.php';
+include __DIR__ . '/../../../includes/db.php';
 
 /* ==============================
    PARAMETERS
@@ -102,7 +102,7 @@ function calculateBusinessMinutes($conn,$ticketId,$start,$end){
 /* ==============================
    FETCH TICKETS
 ============================== */
-
+    echo "<div class='card p-3'>";
 $sql = "
 SELECT t.*, u.fullname AS admin_name
 FROM ticket_tb t
@@ -175,8 +175,6 @@ while($ticket = $tickets->fetch_assoc()){
 
     if($type=='met' && !$met) continue;
     if($type=='not_met' && $met) continue;
-
-    // echo "<hr>";
 
     echo "<h6>
             <a href='?page=ticket/view_ticket&ticket_id=$ticketId' 
@@ -265,6 +263,7 @@ echo "<div class='row'>
 }
            
 $conn->close();
+    echo "<div class='card'>";
 ?>
 
 <!-- 
