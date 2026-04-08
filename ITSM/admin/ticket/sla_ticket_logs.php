@@ -124,6 +124,8 @@ while($ticket = $tickets->fetch_assoc()){
     $ticketId = $ticket['ticket_id'];
     $ticketNumber = htmlspecialchars($ticket['ticket_number']);
     $priority = strtolower($ticket['priority'] ?? 'medium');
+    $subject = strtolower($ticket['subject']);
+    $subject_details = strtolower($ticket['subject_details']);
     $created  = $ticket['date_created'];
 
     $targetResolution = $slaMatrix[$priority]['resolution'] ?? 4320;
@@ -183,6 +185,8 @@ while($ticket = $tickets->fetch_assoc()){
                $ticketNumber
             </a>
             | Priority: <b>".ucfirst($priority)."</b>
+            | Subject: <b>".ucfirst($subject)."</b>
+            | Details: <b>".ucfirst($subject_details)."</b>
           </h6>";
 
     echo "<table class='table table-bordered table-sm'>";
@@ -257,7 +261,7 @@ echo "<div class='row'>
             ($targetResolution%60 > 0 ? ($targetResolution%60)."m" : "") ."
          
         </div>
-      </div><br>";
+      </div><br><hr>";
 }
            
 $conn->close();
