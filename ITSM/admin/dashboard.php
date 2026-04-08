@@ -345,7 +345,11 @@
             card('Met SLA', $totalMet, 'success');
             card('Not Met SLA', $totalNotMet, 'danger');
             card('Avg Response (min)', $avgResponse);
-            card('Avg Resolution (min)', $avgResolution);
+            $hours = floor($avgResolution / 60);
+            $minutes = $avgResolution % 60;
+
+            $formatted = "{$hours}h {$minutes}m";
+            card('Avg Resolution', $formatted);
 
             ?>
         </div>
