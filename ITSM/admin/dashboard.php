@@ -5,7 +5,7 @@
     require_once 'ticket/includes/sla_functions.php';
     // include '../config/config.php';
 
-    // USERS
+// USERS
     // ================= USER GRAPH DATA =================
 
     // Active vs Disabled
@@ -64,6 +64,7 @@
         $areaCounts[] = $row['total'];
     }
 ?>
+
 <?php
     $filterType = $_GET['range'] ?? 'all'; // day, week, month, year, all
     $adminFilter = $_GET['admin'] ?? 'all';
@@ -381,6 +382,7 @@
     <script src="asset/js/inv_toggle_table.js"></script>
 
 <!-- Charts --> 
+
  <!-- INVENTORY -->
 <script>
        
@@ -579,141 +581,143 @@
         });
     }
 </script>
+
 <!-- users -->
  <script>
     // ================= USER CHARTS =================
 
-// Active vs Disabled (Pie)
-new Chart(document.getElementById('userStatusChart'), {
-    type: 'doughnut',
-    data: {
-        labels: ['Active', 'Disabled'],
-        datasets: [{
-            data: [<?= $activeCount ?>, <?= $disabledCount ?>],
-            backgroundColor: ['#28a745', '#dc3545']
-        }]
-    },
-    options: {
-        responsive: true,
-        maintainAspectRatio: false
-    }
-});
-
-
-// Users per Department (Horizontal Bar)
-new Chart(document.getElementById('userDeptChart'), {
-    type: 'bar',
-    data: {
-        labels: <?= json_encode($deptLabels) ?>,
-        datasets: [{
-            label: 'Users',
-            data: <?= json_encode($deptCounts) ?>,
-            backgroundColor: '#0d6efd'
-        }]
-    },
-    options: {
-        indexAxis: 'y',
-        responsive: true,
-        maintainAspectRatio: false,
-        scales: {
-            x: { beginAtZero: true }
+    // Active vs Disabled (Pie)
+    new Chart(document.getElementById('userStatusChart'), {
+        type: 'doughnut',
+        data: {
+            labels: ['Active', 'Disabled'],
+            datasets: [{
+                data: [<?= $activeCount ?>, <?= $disabledCount ?>],
+                backgroundColor: ['#28a745', '#dc3545']
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false
         }
-    }
-});
+    });
 
 
-// Users per Company (Pie)
-new Chart(document.getElementById('userCompanyChart'), {
-    type: 'pie',
-    data: {
-        labels: <?= json_encode($companyLabels) ?>,
-        datasets: [{
-            data: <?= json_encode($companyCounts) ?>,
-            backgroundColor: [
-                '#0d6efd','#20c997','#ffc107','#6610f2',
-                '#fd7e14','#dc3545','#198754'
-            ]
-        }]
-    },
-    options: {
-        responsive: true,
-        maintainAspectRatio: false
-    }
-});
-
-
-// Users per Area (Vertical Bar)
-new Chart(document.getElementById('userAreaChart'), {
-    type: 'bar',
-    data: {
-        labels: <?= json_encode($areaLabels) ?>,
-        datasets: [{
-            label: 'Users',
-            data: <?= json_encode($areaCounts) ?>,
-            backgroundColor: '#6f42c1'
-        }]
-    },
-    options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        scales: {
-            y: { beginAtZero: true }
+    // Users per Department (Horizontal Bar)
+    new Chart(document.getElementById('userDeptChart'), {
+        type: 'bar',
+        data: {
+            labels: <?= json_encode($deptLabels) ?>,
+            datasets: [{
+                label: 'Users',
+                data: <?= json_encode($deptCounts) ?>,
+                backgroundColor: '#0d6efd'
+            }]
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                x: { beginAtZero: true }
+            }
         }
-    }
-});
+    });
+
+
+    // Users per Company (Pie)
+    new Chart(document.getElementById('userCompanyChart'), {
+        type: 'pie',
+        data: {
+            labels: <?= json_encode($companyLabels) ?>,
+            datasets: [{
+                data: <?= json_encode($companyCounts) ?>,
+                backgroundColor: [
+                    '#0d6efd','#20c997','#ffc107','#6610f2',
+                    '#fd7e14','#dc3545','#198754'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false
+        }
+    });
+
+
+    // Users per Area (Vertical Bar)
+    new Chart(document.getElementById('userAreaChart'), {
+        type: 'bar',
+        data: {
+            labels: <?= json_encode($areaLabels) ?>,
+            datasets: [{
+                label: 'Users',
+                data: <?= json_encode($areaCounts) ?>,
+                backgroundColor: '#6f42c1'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: { beginAtZero: true }
+            }
+        }
+    });
  </script>
 
 <script>
     // Show only user graphs when Users card clicked
-document.getElementById('usersCard')?.addEventListener('click', function() {
+    document.getElementById('usersCard')?.addEventListener('click', function() {
 
-    // Hide inventory graphs
-    document.getElementById('inventoryTableContainer').style.display = 'none';
+        // Hide inventory graphs
+        document.getElementById('inventoryTableContainer').style.display = 'none';
 
-    // Show user graphs
-    document.getElementById('userGraphs').style.display = 'block';
+        // Show user graphs
+        document.getElementById('userGraphs').style.display = 'block';
 
-});
+    });
 </script>
-    <!-- tickets -->
+    
+<!-- tickets -->
 <script>
     // PRIORITY
-new Chart(document.getElementById('priorityChart'), {
-    type: 'doughnut',
-    data: {
-        labels: <?= json_encode($priorityLabels) ?>,
-        datasets: [{
-            data: <?= json_encode($priorityData) ?>,
-            backgroundColor: ['#dc3545','#91111e','#0d6efd', '#ffc107']
-        }]
-    }
-});
+    new Chart(document.getElementById('priorityChart'), {
+        type: 'doughnut',
+        data: {
+            labels: <?= json_encode($priorityLabels) ?>,
+            datasets: [{
+                data: <?= json_encode($priorityData) ?>,
+                backgroundColor: ['#dc3545','#91111e','#0d6efd', '#ffc107']
+            }]
+        }
+    });
 
-// SUBJECT
-new Chart(document.getElementById('subjectChart'), {
-    type: 'bar',
-    data: {
-        labels: <?= json_encode($subjectLabels) ?>,
-        datasets: [{
-            data: <?= json_encode($subjectData) ?>,
-            backgroundColor: '#0d6efd'
-        }]
-    },
-    options: {
-        indexAxis: 'y'
-    }
-});
+    // SUBJECT
+    new Chart(document.getElementById('subjectChart'), {
+        type: 'bar',
+        data: {
+            labels: <?= json_encode($subjectLabels) ?>,
+            datasets: [{
+                data: <?= json_encode($subjectData) ?>,
+                backgroundColor: '#0d6efd'
+            }]
+        },
+        options: {
+            indexAxis: 'y'
+        }
+    });
 
 
-// CATEGORY
-new Chart(document.getElementById('categoryTicketChart'), {
-    type: 'pie',
-    data: {
-        labels: <?= json_encode($catLabels) ?>,
-        datasets: [{
-            data: <?= json_encode($catData) ?>,
-            backgroundColor: ['#6610f2','#20c997','#fd7e14','#0dcaf0']
-        }]
-    }
-});
+    // CATEGORY
+    new Chart(document.getElementById('categoryTicketChart'), {
+        type: 'pie',
+        data: {
+            labels: <?= json_encode($catLabels) ?>,
+            datasets: [{
+                data: <?= json_encode($catData) ?>,
+                backgroundColor: ['#6610f2','#20c997','#fd7e14','#0dcaf0']
+            }]
+        }
+    });
 </script>
