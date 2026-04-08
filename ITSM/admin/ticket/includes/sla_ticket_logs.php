@@ -103,14 +103,14 @@ function calculateBusinessMinutes($conn,$ticketId,$start,$end){
    FETCH TICKETS
 ============================== */
     echo "<div class='card p-3'>";
-$sql = "
-SELECT t.*, u.fullname AS admin_name
-FROM ticket_tb t
-LEFT JOIN user_tb u ON t.assigned_to = u.user_id
-WHERE u.fullname = ?
-AND DATE(t.date_created) BETWEEN ? AND ?
-AND t.status IN ('resolved','closed')
-";
+    $sql = "
+    SELECT t.*, u.fullname AS admin_name
+    FROM ticket_tb t
+    LEFT JOIN user_tb u ON t.assigned_to = u.user_id
+    WHERE u.fullname = ?
+    AND DATE(t.date_created) BETWEEN ? AND ?
+    AND t.status IN ('resolved','closed')
+    ";
 
 $stmt = $conn->prepare($sql);
 $stmt->bind_param("sss",$admin,$start,$end);
@@ -176,25 +176,36 @@ while($ticket = $tickets->fetch_assoc()){
     if($type=='met' && !$met) continue;
     if($type=='not_met' && $met) continue;
 
-    echo "<h6>
-            <a href='?page=ticket/view_ticket&ticket_id=$ticketId' 
-               class='fw-bold text-primary'
-               style='font-size:16px;'>
-               $ticketNumber
-            </a>
-            | Priority: <b>".ucfirst($priority)."</b>
-            | Subject: <b>".ucfirst($subject)."</b>
-            | Details: <b>".ucfirst($subject_details)."</b>
-          </h6>";
+    echo "<div class='ticket-card mb-3 border rounded'>";
 
+    /* ================= HEADER (CLICKABLE) ================= */
+    echo "<div class='ticket-header p-2 bg-light'
+            style='cursor:pointer;'
+            onclick='toggleTicket($ticketId)'>
+
+            <h6 class='mb-0'>
+                <a href='?page=ticket/view_ticket&ticket_id=$ticketId' 
+                class='fw-bold text-primary me-2'
+                onclick='event.stopPropagation();'>
+                $ticketNumber
+                </a>
+                | Priority: <b>".ucfirst($priority)."</b>
+                | Subject: <b>".ucfirst($subject)."</b>
+                | Details: <b>".ucfirst($subject_details)."</b>
+            </h6>
+    </div>";
+
+    echo "<div id='ticket_$ticketId' class='ticket-body p-2' style='display:none;'>";
+
+    // ===== YOUR EXISTING TABLE =====
     echo "<table class='table table-bordered table-sm'>";
     echo "<tr>
             <th>From</th>
             <th>To</th>
             <th>Date</th>
             <th>Resolution Minutes</th>
-          </tr>";
-
+        </tr>";
+    echo "</div>";    echo "</div>";
     $logs = $conn->query("
         SELECT old_value,new_value,created_at
         FROM ticket_logs
@@ -259,12 +270,32 @@ echo "<div class='row'>
             ($targetResolution%60 > 0 ? ($targetResolution%60)."m" : "") ."
          
         </div>
-      </div><br><hr>";
+        </div>
+        </div>";
+
 }
-           
+   
 $conn->close();
-    echo "<div class='card'>";
 ?>
+<script>
+let openTicket = null;
+
+function toggleTicket(id){
+    let el = document.getElementById('ticket_' + id);
+
+    if(openTicket && openTicket !== el){
+        openTicket.style.display = 'none';
+    }
+
+    if(el.style.display === 'none'){
+        el.style.display = 'block';
+        openTicket = el;
+    } else {
+        el.style.display = 'none';
+        openTicket = null;
+    }
+}
+</script>
 
 <!-- 
 (" .($responseMinutes >= 1440 ? floor($responseMinutes/1440)."d " : "") .
