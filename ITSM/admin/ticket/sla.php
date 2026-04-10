@@ -122,7 +122,7 @@ while($t=$result->fetch_assoc()){
         WHERE ticket_id=".$t['ticket_id']."
         AND field_name='status'
         AND old_value='waiting for support'
-        AND new_value IN('in progress','pending','ongoing')
+        AND new_value IN('in progress','pending','escalated','waiting for customer')
         ORDER BY created_at ASC LIMIT 1
     ")->fetch_assoc()['created_at']??null;
 

@@ -192,7 +192,7 @@
             WHERE ticket_id=$ticketId
             AND field_name='status'
             AND old_value='waiting for support'
-            AND new_value IN('in progress','pending','ongoing')
+            AND new_value IN('in progress','pending','escalated','waiting for customer')
             ORDER BY created_at ASC LIMIT 1
         ")->fetch_assoc()['created_at'] ?? null;
 
@@ -343,7 +343,9 @@
             card('Resolved Tickets',$totalResolved,'success');
             card('On Going Tickets',$totalOngoing,'success');
             card('Met SLA', $totalMet, 'success');
-            card('Not Met SLA', $totalNotMet, 'danger');
+            $finalTotalNotMet = 0;
+            $finalTotalNotMet = $totalNotMet - $totalOngoing;
+            card('Not Met SLA', $finalTotalNotMet, 'danger');
             card('Avg Response (min)', $avgResponse);
             $hours = floor($avgResolution / 60);
             $minutes = $avgResolution % 60;

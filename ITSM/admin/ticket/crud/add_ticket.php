@@ -366,6 +366,16 @@ if ($stmt->execute()) {
     </select>
 </div>
 
+<div class="col-md-2 mb-3">
+ <label class="form-label">Ticket Category</label>
+ <select name="ticket_category" class="form-select" required>
+<option value="incident" <?= $ticket_category=='incident'?'selected':'' ?>>Incident</option>
+<option value="service" <?= $ticket_category=='service'?'selected':'' ?>>Service</option>
+<option value="change" <?= $ticket_category=='change'?'selected':'' ?>>Change</option> 
+<option value="material" <?= $ticket_category=='material'?'selected':'' ?>>Material</option> 
+</select>
+</div>
+
 <div class="col-md-3 mb-3">
 <label class="form-label">Contact us about</label>
 <select name="subject_id" id="subjectSelect" class="form-select" required>
@@ -398,16 +408,6 @@ while ($row = $res->fetch_assoc()) {
 <option value="Individual" >Individual</option>
 <option value="Department" >Department</option>
 <option value="Organization" >Organization</option>
-</select>
-</div>
-
-<div class="col-md-2 mb-3">
- <label class="form-label">Ticket Category</label>
- <select name="ticket_category" class="form-select" required>
-<option value="incident" <?= $ticket_category=='incident'?'selected':'' ?>>Incident</option>
-<option value="service" <?= $ticket_category=='service'?'selected':'' ?>>Service</option>
-<option value="change" <?= $ticket_category=='change'?'selected':'' ?>>Change</option> 
-<option value="material" <?= $ticket_category=='material'?'selected':'' ?>>Material</option> 
 </select>
 </div>
 
