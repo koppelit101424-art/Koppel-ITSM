@@ -14,7 +14,7 @@ if (!isset($ticketId, $ticketMessage, $senderId, $senderRole, $conn)) {
 
 // GET TICKET INFO
 $stmt = $conn->prepare("
-    SELECT t.ticket_number, t.subject, t.priority, t.ticket_category, u.fullname, u.email
+    SELECT t.ticket_id, t.ticket_number, t.subject, t.priority, t.ticket_category, u.fullname, u.email
     FROM ticket_tb t
     JOIN user_tb u ON t.user_id = u.user_id
     WHERE t.ticket_id = ?
@@ -27,6 +27,7 @@ if (!$ticket) {
     return;
 }
 
+$id     = $ticket['ticket_id'];
 $userEmail     = $ticket['email'];
 $fullname      = $ticket['fullname'];
 $ticketNumber  = $ticket['ticket_number'];
@@ -43,6 +44,9 @@ if ($senderRole === 'admin') {
 $emailBody = "
 Hello {$fullname},<br><br>
 {$updateMessage}<br><br>
+
+<a href='http://115.88.1.63/koppel-itsm/ITSM/user/index.php?page=ticket/view&ticket_id=$id'><button>Click here to reply</button> </a> <br><br>
+
 Regards,<br>
 IT Support Team
 ";
