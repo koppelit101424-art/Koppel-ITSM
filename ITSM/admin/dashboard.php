@@ -69,12 +69,14 @@
     $filterType = $_GET['range'] ?? 'all'; // day, week, month, year, all
     $adminFilter = $_GET['admin'] ?? 'all';
 
-    $where = "WHERE 1";
+    $where = "WHERE 1=1";
+    $params = [];
 
     // Date range filter
     if (!empty($_GET['start']) && !empty($_GET['end'])) {
         $start = $_GET['start'];
         $end   = $_GET['end'];
+
         $where .= " AND DATE(t.date_created) BETWEEN '$start' AND '$end'";
     }
 
@@ -339,7 +341,44 @@
             </div>
         <div class="row mt-4">
             <h2 class="mb-4">Tickets</h2><br>
-            
+            <form method="GET" class="row mb-4">
+
+    <!-- User Filter -->
+    <div class="col-md-3">
+        <label>User</label>
+        <select name="admin" class="form-control">
+            <option value="all">All Users</option>
+            <?php
+            $users = $conn->query("SELECT user_id, fullname FROM user_tb where user_type='admin'");
+            while($u = $users->fetch_assoc()):
+            ?>
+                <option value="<?= $u['user_id'] ?>" 
+                    <?= ($_GET['admin'] ?? '') == $u['user_id'] ? 'selected' : '' ?>>
+                    <?= $u['fullname'] ?>
+                </option>
+            <?php endwhile; ?>
+        </select>
+    </div>
+
+    <!-- Start Date -->
+    <div class="col-md-3">
+        <label>Start Date</label>
+        <input type="date" name="start" class="form-control"
+            value="<?= $_GET['start'] ?? '' ?>">
+    </div>
+
+    <!-- End Date -->
+    <div class="col-md-3">
+        <label>End Date</label>
+        <input type="date" name="end" class="form-control"
+            value="<?= $_GET['end'] ?? '' ?>">
+    </div>
+
+    <!-- Submit -->
+    <div class="col-md-3 d-flex align-items-end">
+        <button type="submit" class="btn btn-primary w-100">Apply Filter</button>
+    </div>
+</form>
             <?php
             function card($title,$value,$color='primary'){
                 echo "
