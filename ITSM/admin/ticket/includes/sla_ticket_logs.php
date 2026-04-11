@@ -189,20 +189,21 @@ echo "<div class='ticket-card mb-3 border rounded '
         onclick='toggleTicket($ticketId)'>
 
         <div class='p-2'>
-            <h5>
+            <h6 class='mb-1'>
                 <a href='?page=ticket/view_ticket&ticket_id=$ticketId' 
                    class='fw-bold text-primary me-2' 
                    onclick='event.stopPropagation();'>
                    $ticketNumber
-                </a><br>
-            </h5>         
-            <h6 class='mb-1'>
-                Priority: <b style='color:{$priorityColor}'>".ucfirst($priority)."</b>
+                </a>
+                | Priority: <b style='color:{$priorityColor}'>".ucfirst($priority)."</b>
                 | Subject: <b>".ucfirst($subject)."</b>
                 | Details: <b>".ucfirst($subject_details)."</b>
                 | Date: <b>" . date("m/d/Y h:i A", strtotime($created)) . "</b>
             </h6> 
-                <i>$issue</i>
+                <i title='".htmlspecialchars($issue)."'
+                style='display:inline-block; max-width:1480px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;'>
+                ".htmlspecialchars($issue)."
+                </i>
         </div>
 
         <div id='ticket_$ticketId' class='ticket-body p-2' style='display:none;'>
