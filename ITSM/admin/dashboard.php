@@ -103,8 +103,14 @@
 <?php
     $totalResponseMinutes = 0;
     $totalResolutionMinutes = 0;
+    $totalResolutionMinutesLow = 0;
+    $totalResolutionMinutesMed = 0;
+    $totalResolutionMinutesHigh = 0;
     $countResponse = 0;
     $countResolution = 0;
+    $countResolutionLow = 0;
+    $countResolutionMed = 0;
+    $countResolutionHigh = 0;
 
     $totalMet = 0;
     $totalNotMet = 0;
@@ -222,6 +228,36 @@
             ORDER BY created_at ASC LIMIT 1
         ")->fetch_assoc()['created_at'] ?? null;
 
+         // RESOLVED TIME LOW
+        $resolvedTimeLow = $conn->query("
+            SELECT created_at FROM ticket_logs l
+            LEFT JOIN ticket_tb t on t.ticket_id = l.ticket_id
+            WHERE l.ticket_id=$ticketId and t.priority = 'low'
+            AND l.field_name='status'
+            AND l.new_value='resolved'
+            ORDER BY l.created_at ASC LIMIT 1
+        ")->fetch_assoc()['created_at'] ?? null;
+
+         // RESOLVED TIME MED
+        $resolvedTimeMed = $conn->query("
+            SELECT created_at FROM ticket_logs l
+            LEFT JOIN ticket_tb t on t.ticket_id = l.ticket_id
+            WHERE l.ticket_id=$ticketId and t.priority = 'medium'
+            AND l.field_name='status'
+            AND l.new_value='resolved'
+            ORDER BY l.created_at ASC LIMIT 1
+        ")->fetch_assoc()['created_at'] ?? null;
+
+         // RESOLVED TIME High/Highest
+        $resolvedTimeHigh = $conn->query("
+            SELECT created_at FROM ticket_logs l
+            LEFT JOIN ticket_tb t on t.ticket_id = l.ticket_id
+            WHERE l.ticket_id=$ticketId and t.priority = 'high'
+            AND l.field_name='status'
+            AND l.new_value='resolved'
+            ORDER BY l.created_at ASC LIMIT 1
+        ")->fetch_assoc()['created_at'] ?? null;
+
         $responseMet = false;
         $resolutionMet = false;
 
@@ -245,6 +281,32 @@
             $resolutionMet = $resMinutes <= ($slaMatrix[$priority] ?? 4320);
         }
 
+        if($resolvedTimeLow){
+            $resMinutesLow = calculateBusinessMinutes($conn,$ticketId,$created,$resolvedTimeLow);
+
+            $totalResolutionMinutesLow += $resMinutesLow;
+            $countResolutionLow++;
+
+            $resolutionMetLow = $resMinutesLow <= ($slaMatrix[$priority] ?? 4320);
+        }
+
+        if($resolvedTimeMed){
+            $resMinutesMed = calculateBusinessMinutes($conn,$ticketId,$created,$resolvedTimeMed);
+
+            $totalResolutionMinutesMed += $resMinutesMed;
+            $countResolutionMed++;
+
+            $resolutionMetMed = $resMinutesMed <= ($slaMatrix[$priority] ?? 4320);
+        }
+
+        if($resolvedTimeHigh){
+            $resMinutesHigh = calculateBusinessMinutes($conn,$ticketId,$created,$resolvedTimeHigh);
+
+            $totalResolutionMinutesHigh += $resMinutesHigh;
+            $countResolutionHigh++;
+
+            $resolutionMetHigh = $resMinutesHigh <= ($slaMatrix[$priority] ?? 4320);
+        }
         // FINAL SLA
         if($responseMet && $resolutionMet){
             $totalMet++;
@@ -259,6 +321,18 @@
 
     $avgResolution = $countResolution > 0 
         ? round($totalResolutionMinutes / $countResolution, 2) 
+        : 0;
+
+    $avgResolutionLow = $countResolutionLow > 0 
+        ? round($totalResolutionMinutesLow / $countResolutionLow, 2) 
+        : 0;
+
+    $avgResolutionMed = $countResolutionMed > 0 
+        ? round($totalResolutionMinutesMed / $countResolutionMed, 2) 
+        : 0;
+
+    $avgResolutionHigh = $countResolutionHigh > 0 
+        ? round($totalResolutionMinutesHigh / $countResolutionHigh, 2) 
         : 0;
         
     // PRIORITY
@@ -347,7 +421,7 @@
                 <div class="col-md-3">
                     <label>User</label>
                     <select name="admin" class="form-control" onchange="this.form.submit()">
-                        <option value="all">All Users</option>
+                        <option value="all">All</option>
                         <?php
                         $users = $conn->query("SELECT user_id, fullname FROM user_tb WHERE user_type='admin'");
                         while($u = $users->fetch_assoc()):
@@ -383,7 +457,7 @@
                 <div class='col-md-3 mb-3'>
                     <div class='card p-3 text-center'>
                         <h6 class='text-$color'>$title</h6>
-                        <h3>$value</h3>
+                        <h3 class='text-$color'>$value</h3>
                     </div>
                 </div>";
             }
@@ -398,15 +472,31 @@
             card('On Going Tickets',$totalOngoing,'success');
             card('Met SLA', $totalMet, 'success');
             $finalTotalNotMet = 0;
+
             $finalTotalNotMet = $totalNotMet - $totalOngoing;
             card('Not Met SLA', $finalTotalNotMet, 'danger');
+
+            // card('Avg Response (min)', $avgResponse);
+            // $hours = floor($avgResolution / 60);
+            // $minutes = $avgResolution % 60;
+            // $formatted = "{$hours}h {$minutes}m";
+            // card('Avg Resolution', $formatted);
+
             card('Avg Response (min)', $avgResponse);
-            $hours = floor($avgResolution / 60);
-            $minutes = $avgResolution % 60;
+            $hours4 = floor($avgResolutionHigh / 60);
+            $minutes4 = $avgResolutionHigh % 60;
+            $formatted4 = "{$hours4}h {$minutes4}m";
+            card('Avg Resolution (High)', $formatted4, 'danger');
 
-            $formatted = "{$hours}h {$minutes}m";
-            card('Avg Resolution', $formatted);
+            $hours3 = floor($avgResolutionMed / 60);
+            $minutes3 = $avgResolutionMed % 60;
+            $formatted3 = "{$hours3}h {$minutes3}m";
+            card('Avg Resolution (Medium)', $formatted3,'warning');
 
+            $hours2 = floor($avgResolutionLow / 60);
+            $minutes2 = $avgResolutionLow % 60;
+            $formatted2 = "{$hours2}h {$minutes2}m";
+            card('Avg Resolution (Low)', $formatted2);
             ?>
         </div>
         <div class="row mt-4">
