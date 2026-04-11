@@ -13,6 +13,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $area       = $_POST['area'];
     $date_hired = !empty($_POST['date_hired']) ? $_POST['date_hired'] : NULL;
     $user_type  = $_POST['user_type'];
+    $password   = password_hash("passw0rd", PASSWORD_DEFAULT); // auto default password
 
     $check = $conn->prepare("SELECT user_id FROM user_tb WHERE emp_id = ?");
     $check->bind_param("s", $emp_id);
@@ -23,10 +24,23 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         echo "<div class='alert alert-danger'>Employee ID already exists.</div>";
         exit;
     }
-    $sql = "INSERT INTO user_tb (emp_id, fullname, position, email, department, company, area, user_type, date_hired, created_at) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
+    $sql = "INSERT INTO user_tb 
+    (emp_id, fullname, position, email, department, company, area, user_type, password, date_hired, created_at) 
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
     $stmt = $conn->prepare($sql);
-    $stmt->bind_param("sssssssss", $emp_id, $fullname, $position, $email, $department, $company, $area, $user_type, $date_hired);
+    $stmt->bind_param(
+        "ssssssssss",
+        $emp_id,
+        $fullname,
+        $position,
+        $email,
+        $department,
+        $company,
+        $area,
+        $user_type,
+        $password,
+        $date_hired
+    );
 
     if ($stmt->execute()) {
         // header("Location: ../users.php?success=1");
@@ -109,7 +123,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
               </select>
             </div>
           </div>
-
+              <input type="hidden" name="password" class="form-control" value="passw0rd">
           <button type="submit" id="saveBtn" class="btn btn-primary">Save User</button>
         <a href="#" onclick="window.history.back(); return false;" class="btn btn-secondary">Back</a>
          
