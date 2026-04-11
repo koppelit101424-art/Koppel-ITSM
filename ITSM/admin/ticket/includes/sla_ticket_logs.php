@@ -110,6 +110,7 @@ function calculateBusinessMinutes($conn,$ticketId,$start,$end){
     WHERE u.fullname = ?
     AND DATE(t.date_created) BETWEEN ? AND ?
     AND t.status IN ('resolved','closed')
+    ORDER BY t.date_created DESC
     ";
 
 $stmt = $conn->prepare($sql);
@@ -127,6 +128,7 @@ while($ticket = $tickets->fetch_assoc()){
     $subject = strtolower($ticket['subject']);
     $subject_details = strtolower($ticket['subject_details']);
     $created  = $ticket['date_created'];
+    $issue = $ticket['issue'];
 
     $targetResolution = $slaMatrix[$priority]['resolution'] ?? 4320;
     $targetResponse   = $slaMatrix[$priority]['response'] ?? 60;
@@ -175,36 +177,44 @@ while($ticket = $tickets->fetch_assoc()){
 
     if($type=='met' && !$met) continue;
     if($type=='not_met' && $met) continue;
+    $priorityColor = match($priority){
+        'low'     => '#0d6efd', // blue
+        'medium'  => '#ffc107', // yellow
+        'high'    => '#dc3545', // red
+        'highest' => '#800000', // maroon
+        default   => '#6c757d'
+    };
+echo "<div class='ticket-card mb-3 border rounded ' 
+        style='border-left:5px solid {$priorityColor}; cursor:pointer;'
+        onclick='toggleTicket($ticketId)'>
 
-    echo "<div class='ticket-card mb-2 border rounded'>";
-    /* ================= HEADER (CLICKABLE) ================= */
-    echo "<div class='ticket-header p-2 bg-light'
-            style='cursor:pointer;'
-            onclick='toggleTicket($ticketId)'>
-
-            <h6 class='mb-1'>
+        <div class='p-2'>
+            <h5>
                 <a href='?page=ticket/view_ticket&ticket_id=$ticketId' 
-                class='fw-bold text-primary me-2'
-                onclick='event.stopPropagation();'>
-                $ticketNumber
+                   class='fw-bold text-primary me-2' 
+                   onclick='event.stopPropagation();'>
+                   $ticketNumber
                 </a><br>
-                Priority: <b>".ucfirst($priority)."</b>
+            </h5>         
+            <h6 class='mb-1'>
+                Priority: <b style='color:{$priorityColor}'>".ucfirst($priority)."</b>
                 | Subject: <b>".ucfirst($subject)."</b>
                 | Details: <b>".ucfirst($subject_details)."</b>
-            </h6>
-    </div>";
+                | Date: <b>" . date("m/d/Y h:i A", strtotime($created)) . "</b>
+            </h6> 
+                <i>$issue</i>
+        </div>
 
-    echo "<div id='ticket_$ticketId' class='ticket-body p-2' style='display:none;'>";
-
+        <div id='ticket_$ticketId' class='ticket-body p-2' style='display:none;'>
+";
     // ===== YOUR EXISTING TABLE =====
-    echo "<table class='table table-bordered table-sm'>";
-    echo "<tr>
+echo "<table class='table table-bordered table-sm'>
+        <tr>
             <th>From</th>
             <th>To</th>
             <th>Date</th>
-            <th>Resolution Minutes</th>
+            <th>Resolution Time</th>
         </tr>";
-    echo "</div>";    echo "</div>";
     $logs = $conn->query("
         SELECT old_value,new_value,created_at
         FROM ticket_logs
@@ -248,29 +258,25 @@ while($log = $logs->fetch_assoc()){
 
 
 
-echo "<div class='row'>
+echo "<div class='row mt-2'>
         <div class='col'>
-        <b>Response Time:</b> {$responseMinutes}m 
-
-        <br>
-        <b>Response Target:</b> {$targetResponse}m 
-
+            <b>Response Time:</b> {$responseMinutes}m <br>
+            <b>Response Target:</b> {$targetResponse}m
         </div>
+
         <div class='col'>
-        <b>Resolution Time:</b> " .
-            ($resolutionMinutes >= 1440 ? floor($resolutionMinutes/1440)."d " : "") .
-            ($resolutionMinutes >= 60 ? floor(($resolutionMinutes%1440)/60)."h " : "") .
-            ($resolutionMinutes%60 > 0 ? ($resolutionMinutes%60)."m" : "") .
-        "
-        <br>
-        <b>Resolution Target:</b> " .
-            ($targetResolution >= 1440 ? floor($targetResolution/1440)."d " : "") .
-            ($targetResolution >= 60 ? floor(($targetResolution%1440)/60)."h " : "") .
-            ($targetResolution%60 > 0 ? ($targetResolution%60)."m" : "") ."
-         
+            <b>Resolution Time:</b> " .
+                ($resolutionMinutes >= 1440 ? floor($resolutionMinutes/1440)."d " : "") .
+                ($resolutionMinutes >= 60 ? floor(($resolutionMinutes%1440)/60)."h " : "") .
+                ($resolutionMinutes%60 > 0 ? ($resolutionMinutes%60)."m" : "") .
+            "<br>
+            <b>Resolution Target:</b> " .
+                ($targetResolution >= 1440 ? floor($targetResolution/1440)."d " : "") .
+                ($targetResolution >= 60 ? floor(($targetResolution%1440)/60)."h " : "") .
+                ($targetResolution%60 > 0 ? ($targetResolution%60)."m" : "") ."
         </div>
-        </div>
-        </div>";
+    </div>";
+    echo "</div></div>"; // close ticket-body + card
 
 }
    

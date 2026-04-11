@@ -446,6 +446,10 @@ $priorityColor = match(strtolower($ticket['priority'])) {
                         <label class="fw-bold">Subject Details</label>
                         <div class="mb-3"><?= htmlspecialchars($ticket['subject_details']) ?></div>
 
+                        <label class="fw-bold">Date Created</label>
+                        <?php ?>
+                        <div class="mb-3"><?= date('m/d/Y h:i:s A', strtotime($ticket['date_created'])) ?></div>
+
                         <label class="fw-bold">Attachments</label>
                         <div class="mb-4">
                             <?php if ($attachments->num_rows > 0): ?>
