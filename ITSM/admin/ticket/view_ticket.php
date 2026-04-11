@@ -418,7 +418,7 @@ $priorityColor = match(strtolower($ticket['priority'])) {
         </div>
 
         <!-- RIGHT: Back Button -->
-        <a href="#" onclick="window.history.back(); return false;" class="btn btn-secondary btn-sm">
+        <a href="?page=ticket/all_tickets" class="btn btn-secondary btn-sm">
         Back
         </a>
     </div>

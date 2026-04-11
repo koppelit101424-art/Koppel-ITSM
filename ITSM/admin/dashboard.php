@@ -1,3 +1,26 @@
+<style>
+@media print, .html2pdf__container {
+
+    .card {
+        box-shadow: none !important;
+        border: 1px solid #ddd !important;
+    }
+
+    canvas {
+        max-width: 100% !important;
+        height: auto !important;
+    }
+
+    body {
+        background: #fff !important;
+    }
+}
+#printArea {
+    display: block !important;
+    visibility: visible !important;
+    background: white;
+}
+</style>
 <?php
     include '../includes/auth.php';
     include '../includes/db.php';
@@ -420,7 +443,7 @@
                 <!-- User Filter -->
                 <div class="col-md-3">
                     <label>User</label>
-                    <select name="admin" class="form-control" onchange="this.form.submit()">
+                    <select name="admin" class="form-control">
                         <option value="all">All</option>
                         <?php
                         $users = $conn->query("SELECT user_id, fullname FROM user_tb WHERE user_type='admin'");
@@ -439,7 +462,8 @@
                     <label>Start Date</label>
                     <input type="date" name="start" class="form-control"
                         value="<?= $_GET['start'] ?? '' ?>"
-                        onchange="this.form.submit()">
+                        
+                        >
                 </div>
 
                 <!-- End Date -->
@@ -449,8 +473,18 @@
                         value="<?= $_GET['end'] ?? '' ?>"
                         onchange="this.form.submit()">
                 </div>
-
+                <!-- <div class="col-md-3">
+                <button type="button" id="exportPdfBtn" class="btn btn-danger mb-3">
+                    Export to PDF
+                </button>    
+                </div> -->
+                <!-- Submit --> 
+                 <div class="col-md-3 d-flex align-items-end"> 
+                    <button type="submit" class="btn btn-primary w-100">Apply Filter</button> 
+                </div>
             </form>
+            
+            <!-- <div id="printArea"> -->
             <?php
             function card($title,$value,$color='primary'){
                 echo "
@@ -465,9 +499,9 @@
 
             <?php
             card('Total Tickets',$totalTickets);
-            card('Avg Ticket Day',round($avgPerDay,2));
-            card('Avg Ticket Week',round($avgPerWeek,2));
-            card('Avg Ticket Month',round($avgPerMonth,2));
+            card('Avg Ticket per Day',round($avgPerDay,2));
+            card('Avg Ticket per Week',round($avgPerWeek,2));
+            card('Avg Ticket per Month',round($avgPerMonth,2));
             card('Resolved Tickets',$totalResolved,'success');
             card('On Going Tickets',$totalOngoing,'success');
             card('Met SLA', $totalMet, 'success');
@@ -535,12 +569,13 @@
         </div>
 
      </div>
+     <!-- </div> -->
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
-
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="asset/js/inv_chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="asset/js/inv_toggle_table.js"></script>
@@ -1002,4 +1037,35 @@
         },
         plugins: [ChartDataLabels]
     });
+</script>
+<!-- export -->
+<script>
+function prepareChartsForExport() {
+    document.querySelectorAll('canvas').forEach(canvas => {
+        const img = new Image();
+        img.src = canvas.toDataURL("image/png");
+
+        img.style.width = canvas.style.width;
+        img.style.height = canvas.style.height;
+
+        canvas.parentNode.appendChild(img);
+        canvas.style.display = "none";
+    });
+}
+document.getElementById('exportPdfBtn').addEventListener('click', async function () {
+
+    prepareChartsForExport();
+
+    await new Promise(resolve => setTimeout(resolve, 800));
+
+    const element = document.getElementById('printArea');
+
+    html2pdf().set({
+        margin: 0.3,
+        filename: 'ticket-report.pdf',
+        image: { type: 'jpeg', quality: 1 },
+        html2canvas: { scale: 2, useCORS: true },
+        jsPDF: { unit: 'in', format: 'a4', orientation: 'landscape' }
+    }).from(element).save();
+});
 </script>
