@@ -124,7 +124,22 @@
         $subjectData[]=$r['total'];
     }
 
+    // SUBJECT Details
+    $subjectDetailsLabels=[];
+    $subjectDetailsData=[];
 
+    $res=$conn->query("
+        SELECT subject_details, COUNT(*) total 
+        FROM ticket_tb t 
+        $where
+        GROUP BY subject_details
+        ORDER BY total DESC LIMIT 10
+    ");
+
+    while($r=$res->fetch_assoc()){
+        $subjectDetailsLabels[]=$r['subject_details'];
+        $subjectDetailsData[]=$r['total'];
+    }
     // CATEGORY
     $catLabels=[];
     $catData=[];
@@ -277,6 +292,7 @@
 
             <!-- ================= USER GRAPHS ================= -->
             <div id="userGraphs" class="mt-5">
+                <h2>Users</h2><br>
                 <div class="row">
 
                     <!-- Active vs Disabled -->
@@ -322,7 +338,8 @@
                 </div>
             </div>
         <div class="row mt-4">
-
+            <h2 class="mb-4">Tickets</h2><br>
+            
             <?php
             function card($title,$value,$color='primary'){
                 echo "
@@ -356,22 +373,30 @@
             ?>
         </div>
         <div class="row mt-4">
-            <div class="col-md-3">
+            <div class="col-md-4">
                 <div class="card p-3">
                     <h6>Priority Distribution</h6>
                     <canvas id="priorityChart"></canvas><br>
                 </div>
             </div>
-            <div class="col-md-3">
+            <div class="col-md-8">
+                <div class="card p-3">
+                    <h6>Subjects</h6>
+                    <canvas id="subjectChart"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="row mt-4">
+            <div class="col-md-8">
+                <div class="card p-3">
+                    <h6>Top Subjects</h6>
+                    <canvas id="subjectDetialsChart"></canvas>
+                </div>
+            </div>
+            <div class="col-md-4">
                 <div class="card p-3">
                     <h6>Category Distribution</h6>
                     <canvas id="categoryTicketChart"></canvas><br>
-                </div>
-            </div>
-            <div class="col-md-6">
-                <div class="card p-3">
-                    <h6>Top Subjects</h6>
-                    <canvas id="subjectChart"></canvas>
                 </div>
             </div>
         </div>
@@ -714,6 +739,20 @@
         }
     });
 
+        // SUBJECT
+    new Chart(document.getElementById('subjectDetialsChart'), {
+        type: 'bar',
+        data: {
+            labels: <?= json_encode($subjectDetailsLabels) ?>,
+            datasets: [{
+                data: <?= json_encode($subjectDetailsData) ?>,
+                backgroundColor: '#0d6efd'
+            }]
+        },
+        options: {
+            indexAxis: 'y'
+        }
+    });
 
     // CATEGORY
     new Chart(document.getElementById('categoryTicketChart'), {

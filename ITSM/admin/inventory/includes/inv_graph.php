@@ -2,6 +2,7 @@
  
     <!-- Monthly Trend -->
     <div class="row mb-4">
+        <h2 class="mt-2 mb-4">Inventory</h2>
        <div class="col-md-8">
             <div class="card p-3 " >
                 <div class="">
