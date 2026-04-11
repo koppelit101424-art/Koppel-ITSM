@@ -343,42 +343,40 @@
             <h2 class="mb-4">Tickets</h2><br>
             <form method="GET" class="row mb-4">
 
-    <!-- User Filter -->
-    <div class="col-md-3">
-        <label>User</label>
-        <select name="admin" class="form-control">
-            <option value="all">All Users</option>
-            <?php
-            $users = $conn->query("SELECT user_id, fullname FROM user_tb where user_type='admin'");
-            while($u = $users->fetch_assoc()):
-            ?>
-                <option value="<?= $u['user_id'] ?>" 
-                    <?= ($_GET['admin'] ?? '') == $u['user_id'] ? 'selected' : '' ?>>
-                    <?= $u['fullname'] ?>
-                </option>
-            <?php endwhile; ?>
-        </select>
-    </div>
+                <!-- User Filter -->
+                <div class="col-md-3">
+                    <label>User</label>
+                    <select name="admin" class="form-control" onchange="this.form.submit()">
+                        <option value="all">All Users</option>
+                        <?php
+                        $users = $conn->query("SELECT user_id, fullname FROM user_tb WHERE user_type='admin'");
+                        while($u = $users->fetch_assoc()):
+                        ?>
+                            <option value="<?= $u['user_id'] ?>" 
+                                <?= ($_GET['admin'] ?? '') == $u['user_id'] ? 'selected' : '' ?>>
+                                <?= $u['fullname'] ?>
+                            </option>
+                        <?php endwhile; ?>
+                    </select>
+                </div>
 
-    <!-- Start Date -->
-    <div class="col-md-3">
-        <label>Start Date</label>
-        <input type="date" name="start" class="form-control"
-            value="<?= $_GET['start'] ?? '' ?>">
-    </div>
+                <!-- Start Date -->
+                <div class="col-md-3">
+                    <label>Start Date</label>
+                    <input type="date" name="start" class="form-control"
+                        value="<?= $_GET['start'] ?? '' ?>"
+                        onchange="this.form.submit()">
+                </div>
 
-    <!-- End Date -->
-    <div class="col-md-3">
-        <label>End Date</label>
-        <input type="date" name="end" class="form-control"
-            value="<?= $_GET['end'] ?? '' ?>">
-    </div>
+                <!-- End Date -->
+                <div class="col-md-3">
+                    <label>End Date</label>
+                    <input type="date" name="end" class="form-control"
+                        value="<?= $_GET['end'] ?? '' ?>"
+                        onchange="this.form.submit()">
+                </div>
 
-    <!-- Submit -->
-    <div class="col-md-3 d-flex align-items-end">
-        <button type="submit" class="btn btn-primary w-100">Apply Filter</button>
-    </div>
-</form>
+            </form>
             <?php
             function card($title,$value,$color='primary'){
                 echo "
@@ -412,13 +410,19 @@
             ?>
         </div>
         <div class="row mt-4">
-            <div class="col-md-4">
+            <div class="col-md-3">
                 <div class="card p-3">
                     <h6>Priority Distribution</h6>
                     <canvas id="priorityChart"></canvas><br>
                 </div>
             </div>
-            <div class="col-md-8">
+            <div class="col-md-3">
+                <div class="card p-3">
+                    <h6>Category Distribution</h6>
+                    <canvas id="categoryTicketChart"></canvas><br>
+                </div>
+            </div>
+            <div class="col-md-6">
                 <div class="card p-3">
                     <h6>Subjects</h6>
                     <canvas id="subjectChart"></canvas>
@@ -426,18 +430,18 @@
             </div>
         </div>
         <div class="row mt-4">
-            <div class="col-md-8">
+            <!-- <div class="col-md-8">
                 <div class="card p-3">
                     <h6>Top Subjects</h6>
                     <canvas id="subjectDetialsChart"></canvas>
                 </div>
-            </div>
-            <div class="col-md-4">
+            </div> -->
+            <!-- <div class="col-md-4">
                 <div class="card p-3">
                     <h6>Category Distribution</h6>
                     <canvas id="categoryTicketChart"></canvas><br>
                 </div>
-            </div>
+            </div> -->
         </div>
 
      </div>
@@ -750,17 +754,94 @@
 </script>
     
 <!-- tickets -->
+ <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
 <script>
-    // PRIORITY
+    // PRIORITY (fixed colors)
+    const priorityLabels = <?= json_encode($priorityLabels) ?>;
+    const priorityData   = <?= json_encode($priorityData) ?>;
+
+    // Map colors by priority name
+    const priorityColorMap = {
+        'highest': '#800000', // maroon
+        'high': '#dc3545',    // red
+        'medium': '#ffc107',  // yellow
+        'low': '#0d6efd'      // blue
+    };
+
+    // Generate colors dynamically based on label
+    const priorityColors = priorityLabels.map(label => {
+        return priorityColorMap[label.toLowerCase()] || '#6c757d'; // fallback gray
+    });
+
     new Chart(document.getElementById('priorityChart'), {
         type: 'doughnut',
         data: {
-            labels: <?= json_encode($priorityLabels) ?>,
+            labels: priorityLabels,
             datasets: [{
-                data: <?= json_encode($priorityData) ?>,
-                backgroundColor: ['#dc3545','#91111e','#0d6efd', '#ffc107']
+                data: priorityData,
+                backgroundColor: priorityColors
             }]
-        }
+        },
+        options: {
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                },
+                datalabels: {
+                    color: '#fff',
+                    font: {
+                        weight: 'bold',
+                        size: 14
+                    },
+                    formatter: (value) => value
+                }
+            }
+        },
+        plugins: [ChartDataLabels]
+    });
+
+    // CATEGORY (fixed colors)
+    const catLabels = <?= json_encode($catLabels) ?>;
+    const catData   = <?= json_encode($catData) ?>;
+
+    // Define your category colors here
+    const categoryColorMap = {
+        'incident': '#0d6efd',
+        'service': '#20c997',
+        'change': '#dc3545',
+        'material': '#6f42c1'
+    };
+
+    // Generate colors
+    const categoryColors = catLabels.map(label => {
+        return categoryColorMap[label.toLowerCase()] || '#adb5bd'; // fallback gray
+    });
+
+    new Chart(document.getElementById('categoryTicketChart'), {
+        type: 'pie',
+        data: {
+            labels: catLabels,
+            datasets: [{
+                data: catData,
+                backgroundColor: categoryColors
+            }]
+        },
+        options: {
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                },
+                datalabels: {
+                    color: '#fff',
+                    font: {
+                        weight: 'bold',
+                        size: 14
+                    },
+                    formatter: (value) => value
+                }
+            }
+        },
+        plugins: [ChartDataLabels]
     });
 
     // SUBJECT
@@ -774,34 +855,61 @@
             }]
         },
         options: {
-            indexAxis: 'y'
-        }
+            indexAxis: 'y',
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                },
+                datalabels: {
+                    anchor: 'end',
+                    align: 'right',
+                    color: '#000',
+                    font: {
+                        weight: 'bold'
+                    },
+                    formatter: (value) => value
+                }
+            },
+            scales: {
+                x: {
+                    beginAtZero: true
+                }
+            }
+        },
+        plugins: [ChartDataLabels]
     });
-
         // SUBJECT
-    new Chart(document.getElementById('subjectDetialsChart'), {
+    new Chart(document.getElementById('subjectChart'), {
         type: 'bar',
         data: {
-            labels: <?= json_encode($subjectDetailsLabels) ?>,
+            labels: <?= json_encode($subjectLabels) ?>,
             datasets: [{
-                data: <?= json_encode($subjectDetailsData) ?>,
+                data: <?= json_encode($subjectData) ?>,
                 backgroundColor: '#0d6efd'
             }]
         },
         options: {
-            indexAxis: 'y'
-        }
-    });
-
-    // CATEGORY
-    new Chart(document.getElementById('categoryTicketChart'), {
-        type: 'pie',
-        data: {
-            labels: <?= json_encode($catLabels) ?>,
-            datasets: [{
-                data: <?= json_encode($catData) ?>,
-                backgroundColor: ['#6610f2','#20c997','#fd7e14','#0dcaf0']
-            }]
-        }
+            indexAxis: 'y',
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                },
+                datalabels: {
+                    anchor: 'end',
+                    align: 'right',
+                    color: '#000',
+                    font: {
+                        weight: 'bold'
+                    },
+                    formatter: (value) => value
+                }
+            },
+            scales: {
+                x: {
+                    beginAtZero: true
+                }
+            }
+        },
+        plugins: [ChartDataLabels]
     });
 </script>
