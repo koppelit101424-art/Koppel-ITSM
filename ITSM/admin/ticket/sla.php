@@ -197,6 +197,53 @@ while ($row = $ongoingResult->fetch_assoc()) {
     $adminName = $row['admin_name'] ?? 'Unassigned';
     $ongoingStats[$adminName] = (int)$row['ongoing_count'];
 }
+
+/* ==============================
+   CSAT PER ADMIN (AVERAGE)
+============================== */
+$csatStats = [];
+
+$csatQuery = "
+SELECT 
+    t.assigned_to,
+    u.fullname AS admin_name,
+    AVG(r.rating) AS avg_rating,
+    COUNT(r.rating) AS rating_count
+FROM ticket_ratings r
+LEFT JOIN ticket_tb t ON r.ticket_id = t.ticket_id
+LEFT JOIN user_tb u ON t.assigned_to = u.user_id
+GROUP BY t.assigned_to
+";
+
+$csatResult = $conn->query($csatQuery);
+
+while ($row = $csatResult->fetch_assoc()) {
+    $adminName = $row['admin_name'] ?? 'Unassigned';
+
+    $csatStats[$adminName] = [
+        'avg' => round($row['avg_rating'], 2),
+        'count' => $row['rating_count']
+    ];
+}
+?>
+<?php
+/* ==============================
+   OVERALL CSAT %
+============================== */
+
+$overallCsatQuery = "
+SELECT AVG(r.rating) AS avg_rating, COUNT(r.rating) AS total_ratings
+FROM ticket_ratings r
+";
+
+$overallCsatResult = $conn->query($overallCsatQuery);
+$overallCsat = $overallCsatResult->fetch_assoc();
+
+$overallAvg = $overallCsat['avg_rating'] ?? 0;
+$overallCount = $overallCsat['total_ratings'] ?? 0;
+
+// convert to percentage (5-star scale → 100%)
+$overallPercent = $overallAvg > 0 ? round(($overallAvg / 5) * 100, 2) : 0;
 ?>
 
 <style>
@@ -224,7 +271,7 @@ while ($row = $ongoingResult->fetch_assoc()) {
 <div class="card-body">
 <div class="row mb-4">
 
-<div class="col-md-6">
+<div class="col-md-4">
 <div class="card shadow-sm border-0 text-center">
 <div class="card-body">
 <h6 class="text-muted">Team Response SLA</h6>
@@ -236,7 +283,7 @@ while ($row = $ongoingResult->fetch_assoc()) {
 </div>
 </div>
 
-<div class="col-md-6">
+<div class="col-md-4">
 <div class="card shadow-sm border-0 text-center">
 <div class="card-body">
 <h6 class="text-muted">Team Resolution SLA</h6>
@@ -248,7 +295,23 @@ while ($row = $ongoingResult->fetch_assoc()) {
 </div>
 </div>
 
+<div class="col-md-4">
+<div class="col-md-12 mb-3">
+    <div class="card shadow-sm border-0 text-center">
+        <div class="card-body">
+            <h6 class="text-muted">Overall Customer Satisfaction</h6>
 
+            <h2 class="<?= $overallPercent >= 80 ? 'text-success' : 'text-warning' ?>">
+                <?= $overallPercent ?>%
+            </h2>
+
+            <p class="mb-0 text-muted">
+                Based on <?= $overallCount ?> ratings
+            </p>
+        </div>
+    </div>
+</div>
+</div>
 
 </div>
 
@@ -303,14 +366,19 @@ class="text-danger fw-bold">
 </td>
 <td>
 <?php
-$rating = $row['csat'] ?? 0;
+$avg = $csatStats[$admin]['avg'] ?? 0;
 
-for ($i = 1; $i <= 5; $i++) {
-    if ($i <= $rating) {
-        echo '<i class="fa-solid fa-star text-primary"></i>';
-    } else {
-        echo '<i class="fa-regular fa-star text-primary"></i>';
+if ($avg > 0) {
+    for ($i = 1; $i <= 5; $i++) {
+        if ($i <= round($avg)) {
+            echo '<i class="fa-solid fa-star text-warning"></i>';
+        } else {
+            echo '<i class="fa-regular fa-star text-muted"></i>';
+        }
     }
+    echo "<br><small class='text-muted'>($avg)</small>";
+} else {
+    echo "<span class='text-muted'>Not rated</span>";
 }
 ?>
 </td>

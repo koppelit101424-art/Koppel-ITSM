@@ -503,7 +503,7 @@
             card('Avg Ticket per Week',round($avgPerWeek,2));
             card('Avg Ticket per Month',round($avgPerMonth,2));
             card('Resolved Tickets',$totalResolved,'success');
-            card('On Going Tickets',$totalOngoing,'success');
+            card('On Going Tickets',$totalOngoing,'primary');
             card('Met SLA', $totalMet, 'success');
             $finalTotalNotMet = 0;
 
