@@ -5,56 +5,55 @@ error_reporting(E_ALL);
 include 'includes/auth.php';
 include 'includes/db.php';
 
-if(isset($_POST['submit_rating'])){
+if(isset($_GET['ajax']) && $_GET['ajax'] === 'submit_rating'){
+
+    header('Content-Type: application/json');
 
     $ticket_id = intval($_POST['ticket_id'] ?? 0);
     $rating = intval($_POST['rating'] ?? 0);
+    $user_id = $_SESSION['user_id'] ?? 0;
 
-    // ✅ Validate
+    // ✅ Validate rating
     if($rating < 1 || $rating > 5){
-        $_SESSION['error'] = "Invalid rating";
-        header("Location: index.php?page=ticket/view&ticket_id=".$ticket_id);
+        echo json_encode(['success'=>false,'message'=>'Invalid rating']);
         exit;
     }
 
-    // ✅ Check ticket is closed
+    // ✅ Check if ticket is CLOSED
     $checkTicket = $conn->prepare("SELECT status FROM ticket_tb WHERE ticket_id=?");
     $checkTicket->bind_param("i", $ticket_id);
     $checkTicket->execute();
     $ticketData = $checkTicket->get_result()->fetch_assoc();
 
     if(!$ticketData || $ticketData['status'] !== 'closed'){
-        $_SESSION['error'] = "Ticket not closed";
-        header("Location: index.php?page=ticket/view&ticket_id=".$ticket_id);
+        echo json_encode(['success'=>false,'message'=>'Ticket not closed']);
         exit;
     }
 
-    // ✅ Check if already rated
-    $check = $conn->prepare("SELECT rating_id FROM ticket_ratings WHERE ticket_id=?");
-    $check->bind_param("i", $ticket_id);
+    // ✅ Check if THIS USER already rated
+    $check = $conn->prepare("SELECT rating_id FROM ticket_ratings WHERE ticket_id = ? AND user_id=?");
+    $check->bind_param("ii", $ticket_id, $user_id);
     $check->execute();
     $check->store_result();
 
     if($check->num_rows > 0){
-        $_SESSION['error'] = "Already rated";
-        header("Location: index.php?page=ticket/view&ticket_id=".$ticket_id);
+        echo json_encode(['success'=>false, 'message'=>'You already rated this ticket']);
         exit;
     }
 
     // ✅ Insert rating
     $stmt = $conn->prepare("
-        INSERT INTO ticket_ratings (ticket_id, rating)
-        VALUES (?, ?)
+        INSERT INTO ticket_ratings (ticket_id, user_id, rating)
+        VALUES (?, ?, ?)
     ");
-    $stmt->bind_param("ii", $ticket_id, $rating);
+    $stmt->bind_param("iii", $ticket_id, $user_id, $rating);
 
     if($stmt->execute()){
-        $_SESSION['success'] = "Thank you for your feedback!";
+        echo json_encode(['success'=>true]);
     } else {
-        $_SESSION['error'] = "DB Error: ".$stmt->error;
+        echo json_encode(['success'=>false,'message'=>'Database error']);
     }
 
-    header("Location: index.php?page=ticket/view&ticket_id=".$ticket_id);
     exit;
 }
 
@@ -191,11 +190,7 @@ p{
 }
 </style>
 
-<?php if(isset($_SESSION['success'])): ?>
-    <div class="alert alert-success">
-        <?= $_SESSION['success']; unset($_SESSION['success']); ?>
-    </div>
-<?php endif; ?>
+
 <div class="card">
 <div class="card-header d-flex justify-content-between align-items-center text-white">
 <h5><?= htmlspecialchars($ticket['ticket_number']) ?> - <?= htmlspecialchars($ticket['subject']) ?></h5>
@@ -334,53 +329,33 @@ p{
             Close Ticket
         </button> -->
     <?php endif; ?>
-</div>
+    <?php if($ticket['status'] === 'closed'): ?>
+        <hr>
+        <h6>Customer Satisfaction</h6>
 
-
-</div>
-</div>
-
-
-<?php if(isset($_SESSION['error'])): ?>
-    <div class="alert alert-danger">
-        <?= $_SESSION['error']; unset($_SESSION['error']); ?>
-    </div>
-<?php endif; ?>
-
-<div class="modal fade" id="ratingModal" tabindex="-1">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content text-center p-3">
-
-      <h5 class="mb-3">Rate Your Experience</h5>
-
-      <form method="POST">
-
-        <input type="hidden" name="ticket_id" value="<?= $ticket_id ?>">
-        <input type="hidden" name="rating" id="ratingInput">
-
-        <div id="modalRatingStars" style="font-size:30px; cursor:pointer;">
-          <span class="star" data-value="1">☆</span>
-          <span class="star" data-value="2">☆</span>
-          <span class="star" data-value="3">☆</span>
-          <span class="star" data-value="4">☆</span>
-          <span class="star" data-value="5">☆</span>
-        </div>
-
-        <small id="modalRatingText" class="text-muted d-block mt-2"></small>
-
-        <div class="mt-3">
-            <button type="submit" name="submit_rating" class="btn btn-primary btn-sm">
-               OK
-            </button>
-            <button type="button" id="skipRatingBtn" class="btn btn-secondary btn-sm">
+        <?php if(empty($ticket['rating'])): ?>
+            <div id="ratingSection" style="font-size: 25px; cursor:pointer;">
+                <span class="star" data-value="1">☆</span>
+                <span class="star" data-value="2">☆</span>
+                <span class="star" data-value="3">☆</span>
+                <span class="star" data-value="4">☆</span>
+                <span class="star" data-value="5">☆</span>
+            </div>
+            <small id="ratingText" class="text-muted"></small>
+                <!-- ✅ NEW SKIP BUTTON -->
+            <button id="skipRatingBtn" class="btn btn-sm btn-outline-secondary">
                 Skip
             </button>
-        </div>
+        <?php else: ?>
+            <p style="font-size: 25px;">
+                <?= str_repeat('⭐', $ticket['rating']) ?>
+            </p>
+        <?php endif; ?>
+    <?php endif; ?>
+</div>
 
-      </form>
 
-    </div>
-  </div>
+</div>
 </div>
  <?php include 'includes/image_modal.php'?>
 
@@ -562,9 +537,9 @@ chatTextarea.addEventListener('keydown', function(e) {
 });
 </script>
 <script>
-const stars = document.querySelectorAll('#modalRatingStars .star');
-const ratingInput = document.getElementById('ratingInput');
-const ratingText = document.getElementById('modalRatingText');
+const stars = document.querySelectorAll('.star');
+const ratingText = document.getElementById('ratingText');
+let selectedRating = 0;
 
 const ratingLabels = {
     1: "Very Unsatisfied",
@@ -576,8 +551,9 @@ const ratingLabels = {
 
 stars.forEach(star => {
 
+    // Hover
     star.addEventListener('mouseover', function(){
-        const val = parseInt(this.dataset.value);
+        const val = this.dataset.value;
 
         stars.forEach(s => {
             s.textContent = s.dataset.value <= val ? '⭐' : '☆';
@@ -586,51 +562,60 @@ stars.forEach(star => {
         ratingText.textContent = ratingLabels[val];
     });
 
+    // Click
     star.addEventListener('click', function(){
-        const value = parseInt(this.dataset.value);
-        ratingInput.value = value;
+
+        if(selectedRating !== 0) return;
+
+        const value = this.dataset.value;
+
+        if(!confirm(`Are you sure you want to rate this ticket ${value} star(s)?`)){
+            return;
+        }
+
+        selectedRating = value;
+
+        fetch('?ajax=submit_rating', {
+            method: 'POST',
+            headers: {'Content-Type':'application/x-www-form-urlencoded'},
+            body: new URLSearchParams({
+                ticket_id: <?= $ticket_id ?>,
+                rating: selectedRating
+            })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if(data.success){
+                alert("Thank you for your feedback!");
+                location.reload();
+            } else {
+                alert(data.message);
+            }
+        });
+
     });
 
 });
+const skipBtn = document.getElementById('skipRatingBtn');
 
+if(skipBtn){
+    skipBtn.addEventListener('click', function(){
 
-document.querySelector('#ratingModal form').addEventListener('submit', function(e){
+        if(!confirm("Skip rating? You can still rate later.")){
+            return;
+        }
 
-    const rating = document.getElementById('ratingInput').value;
-
-    if(!rating){
-        alert("Please select a rating first");
-        e.preventDefault();
-        return;
+        document.getElementById('ratingSection').style.display = 'none';
+        this.style.display = 'none';
+        ratingText.textContent = "You skipped rating.";
+    });
+}
+// Reset hover ONLY if not selected
+document.getElementById('ratingSection')?.addEventListener('mouseleave', function(){
+    if(selectedRating === 0){
+        stars.forEach(s => s.textContent = '☆');
+        ratingText.textContent = "";
     }
-
-    if(!confirm(`Submit ${rating} star rating?`)){
-        e.preventDefault();
-    }
-});
-// auto close
-document.addEventListener("DOMContentLoaded", function(){
-
-    const isClosed = "<?= $ticket['status'] ?>" === "closed";
-    const hasRating = <?= empty($ticket['rating']) ? 'false' : 'true' ?>;
-
-    if(isClosed && !hasRating){
-        const modal = new bootstrap.Modal(document.getElementById('ratingModal'));
-        modal.show();
-    }
-
-});
-</script>
-<script>
-    document.getElementById('skipRatingBtn').addEventListener('click', function(){
-
-    if(!confirm("Skip rating?")) return;
-
-    const modalEl = document.getElementById('ratingModal');
-    const modal = bootstrap.Modal.getInstance(modalEl);
-
-    modal.hide();
-
 });
 </script>
 
