@@ -7,11 +7,14 @@ $user_id = $_SESSION['user_id'];
 $sql = "
 SELECT 
     t.*,
-    u.fullname AS assigned_admin
+    u.fullname AS assigned_admin,
+    r.rating
 FROM ticket_tb t
 LEFT JOIN user_tb u 
     ON t.assigned_to = u.user_id 
     AND u.user_type = 'admin'
+LEFT JOIN ticket_ratings r
+    ON t.ticket_id = r.ticket_id
 WHERE t.user_id = ?
 ORDER BY t.ticket_id DESC
 ";
@@ -45,8 +48,21 @@ while ($ticket = $tickets->fetch_assoc()):
         </span>
     </td>
 
-<td><?= date('m-d-Y', strtotime($ticket['date_created'])) ?></td>
-<td><?= date('h:i A', strtotime($ticket['date_created'])) ?></td>
+    <td><?= date('m-d-Y', strtotime($ticket['date_created'])) ?></td>
+    <td><?= date('h:i A', strtotime($ticket['date_created'])) ?></td>
+    <td>
+        <?php if(!empty($ticket['rating'])): ?>
+            <?php for($i=1; $i<=5; $i++): ?>
+                <?php if($i <= $ticket['rating']): ?>
+                    <i class="fa-solid fa-star text-warning"></i>
+                <?php else: ?>
+                    <i class="fa-regular fa-star text-muted"></i>
+                <?php endif; ?>
+            <?php endfor; ?>
+        <?php else: ?>
+            <span class="text-muted">Not Rated</span>
+        <?php endif; ?>
+    </td>
 </tr>
 
 <?php endwhile; else: ?>
