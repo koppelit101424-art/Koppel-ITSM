@@ -128,7 +128,6 @@ $sql = "SELECT
     $deadline = clone $ticketCreated;
     $deadline->modify("+{$slaHours} hours");
     
-
     // Use closed time if ticket is closed
     $now = $ticketClosedTime ?? new DateTime();
 
@@ -156,13 +155,26 @@ $sql = "SELECT
     }
 ?>
 <?php
-$priorityColor = match(strtolower($ticket['priority'])) {
-    'low' => 'bg-primary',
-    'medium' => 'bg-warning',
-    'high' => 'bg-danger',
-    'highest' => 'bg-maroon',
-    default => 'bg-secondary'
-};
+    $priorityColor = match(strtolower($ticket['priority'])) {
+        'low' => 'bg-primary',
+        'medium' => 'bg-warning',
+        'high' => 'bg-danger',
+        'highest' => 'bg-maroon',
+        default => 'bg-secondary'
+    };
+    /* Fetch rating */
+    $ratingStmt = $conn->prepare("
+        SELECT rating 
+        FROM ticket_ratings 
+        WHERE ticket_id = ?
+        LIMIT 1
+    ");
+    $ratingStmt->bind_param("i", $ticket_id);
+    $ratingStmt->execute();
+    $ratingResult = $ratingStmt->get_result();
+    $ratingRow = $ratingResult->fetch_assoc();
+
+    $rating = $ratingRow['rating'] ?? null;
 ?>
 
 <!-- $slaStatus = '<span class="badge bg-success">SLA Met</span>'; -->
@@ -406,17 +418,42 @@ $priorityColor = match(strtolower($ticket['priority'])) {
         <?= htmlspecialchars($ticket['ticket_number']) ?> - <?= htmlspecialchars($ticket['subject']) ?> (<?= strtoupper($ticket['priority']) ?>)
         </h5>
 
-        <!-- CENTER: Remaining Time + SLA Status -->
+        <!-- CENTER: Conditional (Rating OR Remaining Time) -->
         <div class="d-flex align-items-center">
+
+        <?php if (strtolower($ticket['status']) === 'closed'): ?>
+
+            <label class="fw-bold me-2 mb-0">Customer Rating:</label>
+
+            <div>
+                <?php if (!empty($rating)): ?>
+                    <?php for($i = 1; $i <= 5; $i++): ?>
+                        <?php if ($i <= $rating): ?>
+                            <i class="fa-solid fa-star text-warning"></i>
+                        <?php else: ?>
+                            <i class="fa-regular fa-star text-muted"></i>
+                        <?php endif; ?>
+                    <?php endfor; ?>
+                <?php else: ?>
+                    <span class="text-white">Not Rated</span>
+                <?php endif; ?>
+            </div>
+
+        <?php else: ?>
+
             <label class="fw-bold me-2 mb-0">Remaining Time:</label>
+
             <div id="remainingHours" data-deadline="<?= $deadline->format('Y-m-d H:i:s') ?>">
                 <?= $remainingHMS ?>
             </div>
+
             <div class="ms-3">
                 <?= $slaStatus ?>
             </div>
-        </div>
 
+        <?php endif; ?>
+
+        </div>
         <!-- RIGHT: Back Button -->
         <a href="?page=ticket/all_tickets" class="btn btn-secondary btn-sm">
         Back
