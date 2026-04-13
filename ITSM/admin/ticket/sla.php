@@ -197,7 +197,14 @@ while ($row = $ongoingResult->fetch_assoc()) {
     $adminName = $row['admin_name'] ?? 'Unassigned';
     $ongoingStats[$adminName] = (int)$row['ongoing_count'];
 }
+$whereRatings = "WHERE 1=1";
 
+if (!empty($_GET['start']) && !empty($_GET['end'])) {
+    $start = $_GET['start'];
+    $end   = $_GET['end'];
+
+    $whereRatings .= " AND DATE(t.date_created) BETWEEN '$start' AND '$end'";
+}
 /* ==============================
    CSAT PER ADMIN (AVERAGE)
 ============================== */
@@ -212,6 +219,7 @@ SELECT
 FROM ticket_ratings r
 LEFT JOIN ticket_tb t ON r.ticket_id = t.ticket_id
 LEFT JOIN user_tb u ON t.assigned_to = u.user_id
+$whereRatings
 GROUP BY t.assigned_to
 ";
 
@@ -232,8 +240,12 @@ while ($row = $csatResult->fetch_assoc()) {
 ============================== */
 
 $overallCsatQuery = "
-SELECT AVG(r.rating) AS avg_rating, COUNT(r.rating) AS total_ratings
+SELECT 
+    AVG(r.rating) AS avg_rating,
+    COUNT(r.rating) AS total_ratings
 FROM ticket_ratings r
+LEFT JOIN ticket_tb t ON r.ticket_id = t.ticket_id
+$whereRatings
 ";
 
 $overallCsatResult = $conn->query($overallCsatQuery);
@@ -244,6 +256,7 @@ $overallCount = $overallCsat['total_ratings'] ?? 0;
 
 // convert to percentage (5-star scale → 100%)
 $overallPercent = $overallAvg > 0 ? round(($overallAvg / 5) * 100, 2) : 0;
+
 ?>
 
 <style>
