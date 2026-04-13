@@ -342,6 +342,10 @@ p{
                 <span class="star" data-value="5">☆</span>
             </div>
             <small id="ratingText" class="text-muted"></small>
+                <!-- ✅ NEW SKIP BUTTON -->
+            <button id="skipRatingBtn" class="btn btn-sm btn-outline-secondary">
+                Skip
+            </button>
         <?php else: ?>
             <p style="font-size: 25px;">
                 <?= str_repeat('⭐', $ticket['rating']) ?>
@@ -561,9 +565,15 @@ stars.forEach(star => {
     // Click
     star.addEventListener('click', function(){
 
-        if(selectedRating !== 0) return; // ✅ prevent re-rate
+        if(selectedRating !== 0) return;
 
-        selectedRating = this.dataset.value;
+        const value = this.dataset.value;
+
+        if(!confirm(`Are you sure you want to rate this ticket ${value} star(s)?`)){
+            return;
+        }
+
+        selectedRating = value;
 
         fetch('?ajax=submit_rating', {
             method: 'POST',
@@ -586,7 +596,20 @@ stars.forEach(star => {
     });
 
 });
+const skipBtn = document.getElementById('skipRatingBtn');
 
+if(skipBtn){
+    skipBtn.addEventListener('click', function(){
+
+        if(!confirm("Skip rating? You can still rate later.")){
+            return;
+        }
+
+        document.getElementById('ratingSection').style.display = 'none';
+        this.style.display = 'none';
+        ratingText.textContent = "You skipped rating.";
+    });
+}
 // Reset hover ONLY if not selected
 document.getElementById('ratingSection')?.addEventListener('mouseleave', function(){
     if(selectedRating === 0){
