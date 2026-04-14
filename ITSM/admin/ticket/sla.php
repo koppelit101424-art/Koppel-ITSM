@@ -341,7 +341,13 @@ $overallPercent = $overallAvg > 0 ? round(($overallAvg / 5) * 100, 2) : 0;
 <th>CSAT Rating</th>
 </tr>
 
-<?php foreach($adminStats as $admin=>$data):
+<?php 
+
+uasort($adminStats, function($a, $b) {
+    return $b['total'] <=> $a['total']; // DESC order
+});
+
+foreach($adminStats as $admin=>$data):
 $percent=$data['total']>0?round(($data['met']/$data['total'])*100,2):0;
 ?>
 <tr>
