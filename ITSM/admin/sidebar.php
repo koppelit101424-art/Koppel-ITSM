@@ -15,6 +15,8 @@ $organization_pages = [
 'organization/company','organization/departments','organization/users'
 ];
 
+'signature/signature.php';
+
 $fullname = $_SESSION['fullname'] ?? 'John Doe';
 
 $nameParts = explode(" ", $fullname);
@@ -209,6 +211,7 @@ $type = $_GET['type'] ?? '';
 </div>
 </div>
 
+
 <?php if ($_SESSION['user_type'] === 'admin'): ?>
 <div class="menu-group-title">Settings</div>
 
@@ -217,6 +220,10 @@ $type = $_GET['type'] ?? '';
 <span class="menu-text">Settings</span>
 </a>
 <?php endif; ?>
+<a class="<?= ($page=='signature') ? 'active' : '' ?>" href="?page=signature">
+<i class="fa-solid fa-signature"></i>
+<span class="menu-text">Signature</span>
+</a>
 
 <a class="sidebar-footer text-danger" href="logout.php">
 <i class="bi bi-box-arrow-right me-2"></i> Logout

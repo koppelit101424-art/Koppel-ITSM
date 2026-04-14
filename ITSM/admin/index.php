@@ -328,16 +328,17 @@ if(isset($_GET['ajax'])){
                     case "../forgot_password":
                         include "../forgot_password.php";
                         break;
+
                     case "../reset_password":
                         include "../reset_password.php";
                         break;
 
-                    case "reports":
-                    include "reports.php";
-                    break;
-
                     case "settings":
                     include "settings.php";
+                    break;
+
+                    case "signature":
+                    include "signature/signature.php";
                     break;
 
                     default:
