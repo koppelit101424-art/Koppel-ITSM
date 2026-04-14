@@ -123,6 +123,15 @@ $tickets = $stmt->get_result();
 while($ticket = $tickets->fetch_assoc()){
 
     $ticketId = $ticket['ticket_id'];
+    $ratingData = $conn->query("
+        SELECT rating 
+        FROM ticket_ratings 
+        WHERE ticket_id = $ticketId 
+        LIMIT 1
+    ")->fetch_assoc();
+
+    $rating = $ratingData['rating'] ?? null;
+
     $ticketNumber = htmlspecialchars($ticket['ticket_number']);
     $priority = strtolower($ticket['priority'] ?? 'medium');
     $subject = strtolower($ticket['subject']);
@@ -173,7 +182,10 @@ while($ticket = $tickets->fetch_assoc()){
         $conn,$ticketId,$created,$resolvedTime
     );
 
-    $met = $resolutionMinutes <= $targetResolution;
+$responseMet = $responseMinutes <= $targetResponse;
+$resolutionMet = $resolutionMinutes <= $targetResolution;
+
+$met = ($responseMet && $resolutionMet);
 
     if($type=='met' && !$met) continue;
     if($type=='not_met' && $met) continue;
@@ -184,12 +196,26 @@ while($ticket = $tickets->fetch_assoc()){
         'highest' => '#800000', // maroon
         default   => '#6c757d'
     };
-echo "<div class='ticket-card mb-3 border rounded ' 
+echo "<div class='ticket-card mb-3 border rounded position-relative' 
         style='border-left:5px solid {$priorityColor}; cursor:pointer;'
         onclick='toggleTicket($ticketId)'>
 
-        <div class='p-2'>
-            <h6 class='mb-1'>
+        <div class='p-2'>";
+            if ($rating) {
+                echo "<div style='position:absolute; top:10px; right:15px; font-size:14px;'>";
+
+                for ($i = 1; $i <= 5; $i++) {
+                    if ($i <= $rating) {
+                        echo '<i class="fa-solid fa-star text-warning"></i>';
+                    } else {
+                        echo '<i class="fa-regular fa-star text-muted"></i>';
+                    }
+                }
+
+                // echo "<br><small class='text-muted'>($rating)</small>";
+                echo "</div>";
+            }
+         echo "<h6 class='mb-1'>
                 <a href='?page=ticket/view_ticket&ticket_id=$ticketId' 
                    class='fw-bold text-primary me-2' 
                    onclick='event.stopPropagation();'>
