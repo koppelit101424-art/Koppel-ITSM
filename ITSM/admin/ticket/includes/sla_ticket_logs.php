@@ -227,7 +227,7 @@ echo "<div class='ticket-card mb-3 border rounded position-relative'
                 | Date: <b>" . date("m/d/Y h:i A", strtotime($created)) . "</b>
             </h6> 
                 <i title='".htmlspecialchars($issue)."'
-                style='display:inline-block; max-width:1480px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;'>
+                style='display:inline-block; max-width:1300px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;'>
                 ".htmlspecialchars($issue)."
                 </i>
         </div>
