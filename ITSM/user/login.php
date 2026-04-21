@@ -11,7 +11,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $username = trim($_POST['username']);
     $password = $_POST['password'];
 
-    $sql = "SELECT user_id, emp_id, email, fullname, user_type, password, is_active
+    $sql = "SELECT user_id, emp_id, email, fullname, user_type, department, password, is_active
             FROM user_tb 
             WHERE (emp_id = ? OR email = ?) AND user_type = 'user'
             LIMIT 1";
@@ -35,6 +35,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $_SESSION['user_id'] = $user['user_id'];
             $_SESSION['fullname'] = $user['fullname'];
             $_SESSION['user_type'] = $user['user_type'];
+            $_SESSION['department'] = $user['department'];
             $_SESSION['LAST_ACTIVITY'] = time();
 
             // after successful login

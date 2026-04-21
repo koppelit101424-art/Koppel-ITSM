@@ -8,6 +8,7 @@ $created_by = $_SESSION['user_id'];
 $sql = "
 SELECT 
     r.request_id,
+    r.user_id,
     r.lmr_no,
     r.department,
     r.item,
@@ -18,12 +19,10 @@ SELECT
     r.remarks,
     r.date_created,
     r.status,
-    r.created_by AS admin_id,
-    t.user_id
+    r.created_by,
+    r.ticket_id
 FROM request_tb r
-INNER JOIN ticket_tb t 
-    ON r.ticket_id = t.ticket_id
-WHERE t.user_id = ?
+WHERE r.user_id = ?
 ORDER BY r.date_created DESC
 ";
 
@@ -77,9 +76,9 @@ $requests = $stmt->get_result();
     <div class="card ">
         <div class="card-header d-flex justify-content-between text-white">
             <span>My Requests</span>
-            <!-- <a href="?page=ticket/includes/add_request" class="btn btn-primary">
+            <a href="?page=ticket/includes/add_request" class="btn btn-sm btn-primary">
                 <i class="fas fa-plus me-1"></i> Create LMR
-            </a> -->
+            </a>
         </div>
 
         <div class="card-body">

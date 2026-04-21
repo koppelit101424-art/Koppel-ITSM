@@ -78,7 +78,7 @@ $tickets = $stmt->get_result();
     </div>
     <div class="col-md-3">
         <button class="btn w-100 p-3 text-start request-btn service shadow-sm rounded"
-            onclick="location.href='?page=ticket/includes/add&type=material'">
+            onclick="location.href='?page=ticket/includes/add_request'">
             <h6 class="mb-1 fw-bold">
                 <i class="fas fa-cogs me-2"></i> Local Material Request
             </h6>

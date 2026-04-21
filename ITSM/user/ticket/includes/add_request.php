@@ -1,6 +1,29 @@
 <?php
-include __DIR__ . '/../../../includes/auth.php';
-include __DIR__ . '/../../../includes/db.php';
+include 'includes/auth.php';
+include 'includes/db.php';
+
+    $user_id = $_SESSION['user_id'];
+
+    $userQuery = $conn->prepare("SELECT fullname, department FROM user_tb WHERE user_id = ?");
+    $userQuery->bind_param("i", $user_id);
+    $userQuery->execute();
+    $result = $userQuery->get_result();
+    $user = $result->fetch_assoc();
+
+$lastLMR = $conn->query("
+    SELECT MAX(CAST(SUBSTRING(lmr_no, 4) AS UNSIGNED)) as max_id 
+    FROM request_tb
+    WHERE lmr_no LIKE 'IT-%'
+");
+
+$newLMR = 'IT-000001';
+
+if ($lastLMR) {
+    $row = $lastLMR->fetch_assoc();
+    $num = (int)$row['max_id'] + 1;
+    $newLMR = 'IT-' . str_pad($num, 6, '0', STR_PAD_LEFT);
+}
+
 $success = $error = '';
 $errors = [];
 $ticket_id = $_GET['ticket_id'] ?? null;
@@ -9,14 +32,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
     // Shared fields (same for all items)
     $lmr_no = trim($_POST['lmr_no'] ?? '');
+    $user_id = intval($_POST['user_id'] ?? 0);
     $requestor = trim($_POST['requestor'] ?? '');
     $department = trim($_POST['department'] ?? '');
     $created_by = intval($_POST['created_by'] ?? 0);
     $ticket_id = intval($_POST['ticket_id'] ?? 0);
     // Validate shared fields
     if (empty($lmr_no)) $errors[] = "LMR No is required";
-    if (empty($requestor)) $errors[] = "Requestor is required";
-    if (empty($department)) $errors[] = "Department is required";
+    if ($user_id <= 0) $errors[] = "User is required";
     if ($created_by <= 0) $errors[] = "Invalid request creator";
 
     // Process each item row
@@ -54,6 +77,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
     $sql = "INSERT INTO `request_tb`(
         `lmr_no`,
+        `user_id`,
         `requestor`,
         `department`,
         `item`,
@@ -68,15 +92,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         `created_by`,
         `ticket_id`
     )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW(), ?, ?)";
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW(), ?, ?)";
 
     $stmt = $conn->prepare($sql);
     if (!$stmt) die("Prepare failed: " . $conn->error);
 
     foreach ($validItems as $itemData) {
         $stmt->bind_param(
-            "sssssdssssii",
+            "ssssssdssssii",
             $lmr_no,
+            $user_id,
             $requestor,
             $department,
             $itemData['item'],
@@ -103,12 +128,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
    
     }
+
 ?>
 
 <style>
 .item-row { border-top: 1px dashed #ccc; padding-top: 15px; margin-top: 15px; }
 </style>
 </head>
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <body>
 <div class="card">
 
@@ -138,26 +166,36 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 <a href="?page=ticket/requests" class="alert-link">View Requests</a>
 </div>
 <?php endif; ?>
-
 <form method="POST" action="" id="requestForm">
 
 <div class="row mb-4">
 <div class="col-md-4">
 <label class="form-label">LMR No *</label>
-<input type="text" class="form-control" name="lmr_no" required>
+<input type="text" class="form-control" name="lmr_no"
+    value="<?= htmlspecialchars($_POST['lmr_no'] ?? $newLMR) ?>" readonly>
 </div>
 
 <div class="col-md-4">
+    <label class="form-label">Fullname</label>
+    <input type="hidden" name="user_id" value="<?= $_SESSION['user_id'] ?>">
+    <input type="text" class="form-control" value="<?= $_SESSION['fullname'] ?>">
+</div>
+<div class="col-md-4">
+    <label class="form-label">Reference Ticket</label><br>
+    <input type="text" class="form-control" name="ticket_id" value="<?= htmlspecialchars($ticket_id) ?>">
+</div>
+<!-- <div class="col-md-4">
 <label class="form-label">Requestor *</label>
-<input type="text" class="form-control" name="requestor" required>
+
 </div>
 
 <div class="col-md-4">
-<label class="form-label">Department *</label>
-<input type="text" class="form-control" name="department" required>
+<label class="form-label">Department *</label> </div>-->
+<input type="hidden" name="requestor" value="<?= htmlspecialchars($user['fullname'] ?? '') ?>">
+<input type="hidden" name="department" value="<?= htmlspecialchars($user['department'] ?? '') ?>">
+
 </div>
-</div>
-<input type="hidden" name="ticket_id" value="<?= htmlspecialchars($ticket_id) ?>">
+
 <!-- CREATED BY -->
 <input type="hidden" name="created_by" value="<?= $_SESSION['user_id'] ?>">
 
@@ -186,6 +224,24 @@ Save All Items
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
+
+$(document).ready(function() {
+    $('#user_id').select2({
+        placeholder: "Search user...",
+        allowClear: true,
+        width: '100%'
+    });
+    $('#user_id').trigger('change');
+});
+$('#user_id').on('change', function() {
+    let selected = $(this).find(':selected');
+
+    let fullname = selected.data('fullname') || '';
+    let department = selected.data('department') || '';
+
+    $('#requestor').val(fullname);
+    $('#department').val(department);
+});
 function addItemRow() {
     const container = document.getElementById('itemsContainer');
     const row = document.createElement('div');
