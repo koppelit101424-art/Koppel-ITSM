@@ -77,8 +77,8 @@ $requests = $stmt->get_result();
     <div class="card ">
         <div class="card-header d-flex justify-content-between text-white">
             <span>My Requests</span>
-            <!-- <a href="add_request.php" class="btn btn-blue btn-sm">
-                <i class="fas fa-plus"></i> Add Request
+            <!-- <a href="?page=ticket/includes/add_request" class="btn btn-primary">
+                <i class="fas fa-plus me-1"></i> Create LMR
             </a> -->
         </div>
 

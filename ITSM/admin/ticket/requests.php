@@ -72,6 +72,9 @@ $result = $conn->query($sql);
     <button type="button" onclick="exportRequestsCSV()" class="btn btn-info btn-sm">
         <i class="fas fa-file-csv me-1"></i> Export CSV
     </button>
+    <a href="?page=ticket/crud/add_request" class="btn btn-primary">
+        <i class="fas fa-plus me-1"></i> Create LMR
+    </a>
 </span>
 </div>
 

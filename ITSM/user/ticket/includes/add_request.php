@@ -9,14 +9,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
     // Shared fields (same for all items)
     $lmr_no = trim($_POST['lmr_no'] ?? '');
-    $user_id = intval($_POST['user_id'] ?? 0);
     $requestor = trim($_POST['requestor'] ?? '');
     $department = trim($_POST['department'] ?? '');
     $created_by = intval($_POST['created_by'] ?? 0);
     $ticket_id = intval($_POST['ticket_id'] ?? 0);
     // Validate shared fields
     if (empty($lmr_no)) $errors[] = "LMR No is required";
-    if ($user_id <= 0) $errors[] = "User is required";
+    if (empty($requestor)) $errors[] = "Requestor is required";
+    if (empty($department)) $errors[] = "Department is required";
     if ($created_by <= 0) $errors[] = "Invalid request creator";
 
     // Process each item row
@@ -54,7 +54,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
     $sql = "INSERT INTO `request_tb`(
         `lmr_no`,
-        `user_id`,
         `requestor`,
         `department`,
         `item`,
@@ -69,16 +68,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         `created_by`,
         `ticket_id`
     )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW(), ?, ?)";
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW(), ?, ?)";
 
     $stmt = $conn->prepare($sql);
     if (!$stmt) die("Prepare failed: " . $conn->error);
 
     foreach ($validItems as $itemData) {
         $stmt->bind_param(
-            "isssssdssssii",
+            "sssssdssssii",
             $lmr_no,
-            $user_id,
             $requestor,
             $department,
             $itemData['item'],
@@ -111,8 +109,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 .item-row { border-top: 1px dashed #ccc; padding-top: 15px; margin-top: 15px; }
 </style>
 </head>
-<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <body>
 <div class="card">
 
@@ -152,31 +148,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 </div>
 
 <div class="col-md-4">
-    <label class="form-label">Fullname</label>
-    <?php $users = $conn->query("SELECT user_id, fullname FROM user_tb ORDER BY fullname ASC"); ?>
-        <select name="user_id" id="user_id" class="form-select form-select" required>
-        <option value="">Select User</option>
-        <?php while ($u = $users->fetch_assoc()): ?>
-        <option value="<?= $u['user_id'] ?>"><?= $u['fullname'] ?></option>
-        <?php endwhile; ?>
-    </select>
-</div>
-<div class="col-md-4">
-    <label class="form-label">Reference Ticket</label><br>
-<input type="text" class="form-control" name="ticket_id" value="<?= htmlspecialchars($ticket_id) ?>">
-</div>
-<!-- <div class="col-md-4">
 <label class="form-label">Requestor *</label>
-
+<input type="text" class="form-control" name="requestor" required>
 </div>
 
 <div class="col-md-4">
-<label class="form-label">Department *</label> </div>-->
-<input type="hidden" value="0" class="form-control" name="requestor" >
-<input type="hidden" value="0" class="form-control" name="department" >
-
+<label class="form-label">Department *</label>
+<input type="text" class="form-control" name="department" required>
 </div>
-
+</div>
+<input type="hidden" name="ticket_id" value="<?= htmlspecialchars($ticket_id) ?>">
 <!-- CREATED BY -->
 <input type="hidden" name="created_by" value="<?= $_SESSION['user_id'] ?>">
 
@@ -205,14 +186,6 @@ Save All Items
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
-
-$(document).ready(function() {
-    $('#user_id').select2({
-        placeholder: "Search user...",
-        allowClear: true,
-        width: '100%'
-    });
-});
 function addItemRow() {
     const container = document.getElementById('itemsContainer');
     const row = document.createElement('div');
