@@ -1,6 +1,21 @@
 <?php
 include __DIR__ . '/../../../includes/auth.php';
 include __DIR__ . '/../../../includes/db.php';
+
+$lastLMR = $conn->query("
+    SELECT MAX(CAST(SUBSTRING(lmr_no, 4) AS UNSIGNED)) as max_id 
+    FROM request_tb
+    WHERE lmr_no LIKE 'IT-%'
+");
+
+$newLMR = 'IT-000001';
+
+if ($lastLMR) {
+    $row = $lastLMR->fetch_assoc();
+    $num = (int)$row['max_id'] + 1;
+    $newLMR = 'IT-' . str_pad($num, 6, '0', STR_PAD_LEFT);
+}
+
 $success = $error = '';
 $errors = [];
 $ticket_id = $_GET['ticket_id'] ?? null;
@@ -76,7 +91,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
     foreach ($validItems as $itemData) {
         $stmt->bind_param(
-            "isssssdssssii",
+            "ssssssdssssii",
             $lmr_no,
             $user_id,
             $requestor,
@@ -105,6 +120,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
    
     }
+
 ?>
 
 <style>
@@ -142,22 +158,25 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 <a href="?page=ticket/requests" class="alert-link">View Requests</a>
 </div>
 <?php endif; ?>
-
 <form method="POST" action="" id="requestForm">
 
 <div class="row mb-4">
 <div class="col-md-4">
 <label class="form-label">LMR No *</label>
-<input type="text" class="form-control" name="lmr_no" required>
+<input type="text" class="form-control" name="lmr_no"
+    value="<?= htmlspecialchars($_POST['lmr_no'] ?? $newLMR) ?>" readonly>
 </div>
 
 <div class="col-md-4">
     <label class="form-label">Fullname</label>
-    <?php $users = $conn->query("SELECT user_id, fullname FROM user_tb ORDER BY fullname ASC"); ?>
+    <?php $users = $conn->query("SELECT user_id, fullname, department FROM user_tb ORDER BY fullname ASC"); ?>
         <select name="user_id" id="user_id" class="form-select form-select" required>
         <option value="">Select User</option>
         <?php while ($u = $users->fetch_assoc()): ?>
-        <option value="<?= $u['user_id'] ?>"><?= $u['fullname'] ?></option>
+        <option value="<?= $u['user_id'] ?>"   
+        data-fullname="<?= htmlspecialchars($u['fullname']) ?>"
+        data-department="<?= htmlspecialchars($u['department']) ?>">
+        <?= $u['fullname'] ?></option>
         <?php endwhile; ?>
     </select>
 </div>
@@ -172,8 +191,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
 <div class="col-md-4">
 <label class="form-label">Department *</label> </div>-->
-<input type="hidden" value="0" class="form-control" name="requestor" >
-<input type="hidden" value="0" class="form-control" name="department" >
+<input type="hidden" name="requestor" id="requestor">
+<input type="hidden" name="department" id="department">
 
 </div>
 
@@ -212,6 +231,16 @@ $(document).ready(function() {
         allowClear: true,
         width: '100%'
     });
+    $('#user_id').trigger('change');
+});
+$('#user_id').on('change', function() {
+    let selected = $(this).find(':selected');
+
+    let fullname = selected.data('fullname') || '';
+    let department = selected.data('department') || '';
+
+    $('#requestor').val(fullname);
+    $('#department').val(department);
 });
 function addItemRow() {
     const container = document.getElementById('itemsContainer');
