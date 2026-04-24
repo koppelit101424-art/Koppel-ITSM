@@ -58,7 +58,7 @@ System
 
 <a data-title="Requests" class="<?= ($page=='ticket/requests') ? 'active' : '' ?>" href="?page=ticket/requests">
 <i class="fas fa-file-text"></i>
-<span class="menu-text">Requests</span>
+<span class="menu-text">Created LMR</span>
 </a>
 
 <div class="sidebar-footer">

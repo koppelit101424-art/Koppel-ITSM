@@ -650,6 +650,7 @@ columnDefs: [
 
             // show everything EXCEPT closed
             if (rowStatus === 'closed') return false;
+            if (rowStatus === 'canceled') return false;
 
         } else {
 

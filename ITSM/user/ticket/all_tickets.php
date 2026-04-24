@@ -60,7 +60,7 @@ $tickets = $stmt->get_result();
                 <i class="fas fa-cogs me-2"></i> Service Request
             </h6>
             <small class="fst-italic text-muted">
-                (Password reset, software install, access requests, etc.)
+                (Password reset, borrow assets, software install, access requests, etc.)
             </small>
         </button>
     </div>
@@ -72,7 +72,7 @@ $tickets = $stmt->get_result();
                 <i class="fas fa-random me-2"></i> Change Request
             </h6>
             <small class="fst-italic text-muted">
-                (System/process/hardware changes, upgrades, <br>etc.)
+                (System/process/hardware changes, upgrades, etc.)
             </small>
         </button>
     </div>
@@ -83,7 +83,7 @@ $tickets = $stmt->get_result();
                 <i class="fas fa-cogs me-2"></i> Local Material Request
             </h6>
             <small class="fst-italic text-muted">
-                (Request new Hardware, Software, <br>etc.)
+                (Request to purchase new Hardware, Software, etc.)
             </small>
         </button>
     </div>
