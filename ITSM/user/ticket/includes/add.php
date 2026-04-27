@@ -379,7 +379,7 @@ while ($row = $res->fetch_assoc()) {
 <label class="form-label">Priority</label>
 <select name="priority" class="form-select" required>
 <option value="">Select Priority</option>
-<option value="highest">Highest</option>
+<!-- <option value="highest">Highest</option> -->
 <option value="high">High</option>
 <option value="medium">Medium</option>
 <option value="low">Low</option>
