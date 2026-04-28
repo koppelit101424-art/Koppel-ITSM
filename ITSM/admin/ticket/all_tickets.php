@@ -254,6 +254,23 @@ include __DIR__ . '/../../includes/db.php';
     justify-content: center;
     align-items: center;
 }
+.ticket-hover-box {
+    position: absolute;
+    background: #fff;
+    border: 1px solid #ddd;
+    padding: 10px;
+    width: 280px;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+    font-size: 13px;
+    z-index: 9999;
+    display: none;
+    pointer-events: none;
+}
+
+.ticket-hover-box strong {
+    color: #333;
+}
 </style>
 <!-- Ticket Filter -->
 <div class="card shadow-sm mb-3">
@@ -480,7 +497,7 @@ include __DIR__ . '/../../includes/db.php';
         <?php endwhile; ?>
         </tbody>
     </table>
-
+<div id="ticketHover" class="ticket-hover-box"></div>
     </div>
 </div>
  <!-- STATUS MODAL -->
@@ -527,7 +544,37 @@ include __DIR__ . '/../../includes/db.php';
 <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.5/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.5/js/dataTables.bootstrap5.min.js"></script>
+<script>
+    $(document).ready(function () {
 
+    const hoverBox = $('#ticketHover');
+
+    $('#ticketsTable tbody').on('mouseenter', 'tr', function (e) {
+
+        let subjectDetails = $(this).data('subject-details') || 'N/A';
+        let issue = $(this).data('issue') || 'N/A';
+
+        hoverBox.html(`
+            <strong>Subject Details:</strong><br>${subjectDetails}<br><br>
+            <strong>Issue:</strong><br>${issue}
+        `);
+
+        hoverBox.fadeIn(150);
+    });
+
+    $('#ticketsTable tbody').on('mouseenter', 'tr', function (e) {
+        hoverBox.css({
+            top: e.pageY + 15,
+            left: e.pageX + 15
+        });
+    });
+
+    $('#ticketsTable tbody').on('mouseleave', 'tr', function () {
+        hoverBox.hide();
+    });
+
+});
+</script>
 <script>
     // PRIORITY SORT ORDER
 $.fn.dataTable.ext.type.order['priority-sort-pre'] = function (data) {

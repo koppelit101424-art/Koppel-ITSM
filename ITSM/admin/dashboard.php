@@ -499,9 +499,9 @@
 
             <?php
             card('Total Tickets',$totalTickets);
-            card('Avg Ticket per Day',round($avgPerDay,2));
-            card('Avg Ticket per Week',round($avgPerWeek,2));
-            card('Avg Ticket per Month',round($avgPerMonth,2));
+            card('Avg Ticket per Day',round($avgPerDay));
+            card('Avg Ticket per Week',round($avgPerWeek));
+            card('Avg Ticket per Month',round($avgPerMonth));
             card('Resolved Tickets',$totalResolved,'success');
             card('On Going Tickets',$totalOngoing,'primary');
             card('Met SLA', $totalMet, 'success');
