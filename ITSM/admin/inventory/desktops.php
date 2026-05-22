@@ -160,7 +160,7 @@ function exportDesktopsCSV() {
 
     // CSV Headers
     const headers = [
-        "ID","Area","Department","Position","User",
+        "ID","Area", "QR", "Department","Position","User",
         "CPU","RAM","ROM","IP Address","MAC Address",
         "Motherboard","Monitor","Computer Name",
         "Windows Key","Keyboard","Mouse","AVR","Antivirus","Tag","Remarks"
@@ -177,14 +177,15 @@ function exportDesktopsCSV() {
         // visible columns
         const id = cells[0]?.innerText || "";
         const area = row.dataset.area || ""; 
-        const department = cells[1]?.innerText || "";
-        const position = cells[2]?.innerText || "";
-        const user = cells[3]?.innerText || "";
-        const cpu = cells[4]?.innerText || "";
-        const ram = cells[5]?.innerText || "";
-        const rom = cells[6]?.innerText || "";
-        const ip = cells[7]?.innerText || "";
-        const mac = cells[8]?.innerText || "";
+        const qr = row.dataset.qr || ""; 
+        const department = cells[2]?.innerText || "";
+        const position = cells[3]?.innerText || "";
+        const user = cells[4]?.innerText || "";
+        const cpu = cells[5]?.innerText || "";
+        const ram = cells[6]?.innerText || "";
+        const rom = cells[7]?.innerText || "";
+        const ip = cells[8]?.innerText || "";
+        const mac = cells[9]?.innerText || "";
 
         // extra data from dataset
         const motherboard = row.dataset.motherboard || "";
@@ -199,7 +200,7 @@ function exportDesktopsCSV() {
         const remarks = row.dataset.remarks || "";
 
         const data = [
-            id, area, department, position, user,
+            id, area, qr,  department, position, user,
             cpu, ram, rom, ip, mac,
             motherboard, monitor, computer,
             windowsKey, keyboard, mouse, avr, antivirus, tag, remarks

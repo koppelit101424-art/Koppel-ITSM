@@ -760,7 +760,7 @@ $(document).ready(function () {
         if (currentValue == newValue) return; // nothing changed
 
         let confirmChange = confirm("Are you sure you want to change the assigned admin?");
-        window.location.href = '?page=ticket/all_tickets';
+        window.location.href = '?page=ticket/assigned_tickets';
         if (!confirmChange) {
             select.val(currentValue); // revert selection
             return;
