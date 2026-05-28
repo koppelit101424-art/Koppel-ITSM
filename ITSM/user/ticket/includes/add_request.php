@@ -126,7 +126,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     }
     $stmt->close();
 
-   
+        /* =========================================
+        SEND EMAIL AFTER SUCCESSFUL SAVE
+    ========================================= */
+    if (empty($errors)) {
+
+        include __DIR__ . '/request_email_notification.php';
+
+        $success = "Request submitted successfully under LMR No: " . htmlspecialchars($lmr_no);
+
+    }
     }
 
 ?>
@@ -150,7 +159,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
 <div class="card-body">
 
-<?php if (!empty($errors)): ?>
+<?php 
+    if (!empty($errors)):        
+?>
 <div class="alert alert-danger">
 <ul class="mb-0">
 <?php foreach ($errors as $err): ?>
@@ -266,7 +277,7 @@ function addItemRow() {
         </div>
         <div class="col-md-2">
             <label class="form-label">Date Needed *</label>
-            <input type="date" class="form-control" name="date_needed[]" value="ASAP" required>
+            <input type="date" class="form-control" name="date_needed[]" value="" required>
         </div>
     </div>
     <div class="row mt-2">
