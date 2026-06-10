@@ -21,11 +21,34 @@ SELECT
     s.os,
     s.`key`,
     s.antivirus,
-    s.comp_name
+    s.comp_name,
+    t.action,
+    t.quantity AS trans_quantity,
+    t.action_date,
+    t.date_returned,
+    t.remarks,
+    u.fullname,
+    u.position,
+    u.department,
+    u.company
+
 FROM qr_tb q
 JOIN item_tb i ON i.item_id = q.item_id
 LEFT JOIN item_condition_tb c ON i.condition_id = c.condition_id
 LEFT JOIN laptop_pc_specs s ON s.item_id = i.item_id
+
+LEFT JOIN (
+    SELECT t1.*
+    FROM transaction_tb t1
+    INNER JOIN (
+        SELECT item_id, MAX(transaction_id) AS latest_id
+        FROM transaction_tb
+        GROUP BY item_id
+    ) t2 ON t1.transaction_id = t2.latest_id
+) t ON t.item_id = i.item_id
+
+LEFT JOIN user_tb u ON t.user_id = u.user_id
+
 WHERE q.item_id = ?
 ";
 
@@ -181,14 +204,70 @@ h2 {
         </div>
     </div>
 </div>
-<?php endif; ?>
-
+<?php endif; ?> 
 <!-- DESCRIPTION -->
 <div class="section">
     <div class="title">Description</div>
     <div class="value wrap"><?= nl2br(htmlspecialchars($item['description'])) ?></div>
-</div>
+</div> <br>
+<!-- ISSUANCE -->
+<div class="section">
+    <div class="title">Issuance Status</div>
 
+    <?php if (!empty($item['action'])): ?>
+
+        <div class="label">Status</div>
+        <div class="value">
+            <?php
+            switch(strtolower($item['action'])) {
+                case 'issue':
+                    echo 'Issued';
+                    break;
+                case 'borrow':
+                    echo 'Borrowed';
+                    break;
+                default:
+                    echo ucfirst($item['action']);
+            }
+            ?>
+        </div>
+
+        <div class="label">Issued To</div>
+        <div class="value">
+            <?= htmlspecialchars($item['fullname'] ?? 'Unknown User') ?>
+        </div>
+
+        <?php if (!empty($item['position'])): ?>
+            <div class="label">Position</div>
+            <div class="value"><?= htmlspecialchars($item['position']) ?></div>
+        <?php endif; ?>
+
+        <?php if (!empty($item['department'])): ?>
+            <div class="label">Department</div>
+            <div class="value"><?= htmlspecialchars($item['department']) ?></div>
+        <?php endif; ?>
+
+        <?php if (!empty($item['company'])): ?>
+            <div class="label">Company</div>
+            <div class="value"><?= htmlspecialchars($item['company']) ?></div>
+        <?php endif; ?>
+
+        <div class="label">Action Date</div>
+        <div class="value">
+            <?= !empty($item['action_date']) ? htmlspecialchars($item['action_date']) : 'N/A' ?>
+        </div>
+
+        <?php if (!empty($item['remarks'])): ?>
+            <div class="label">Remarks</div>
+            <div class="value wrap"><?= htmlspecialchars($item['remarks']) ?></div>
+        <?php endif; ?>
+
+    <?php else: ?>
+
+        <div class="value">In Stock / Not Issued</div>
+
+    <?php endif; ?>
+</div> <br>
 <hr>
 
 </body>

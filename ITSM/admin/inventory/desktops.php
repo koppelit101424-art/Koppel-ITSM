@@ -141,7 +141,7 @@ include __DIR__ . '/includes/desktop_sql.php';
             </td>
             <td class="truncate-col"><?= $row['cpu'] ?></td>
             <td><?= $row['ram'] ?></td>
-            <td class="truncate-col"><?= $row['rom_w_serial'] ?></td>
+            <td class="truncate-col"><?= $row['computer_name'] ?></td>
             <td><?= $row['ip_address'] ?></td>
             <td><?= $row['mac_address'] ?></td>
             </tr>
