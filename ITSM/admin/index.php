@@ -270,6 +270,9 @@ if(isset($_GET['ajax'])){
                     case "ticket/view_ticket":
                         include "ticket/view_ticket.php";
                         break;
+                    case "ticket/view_request":
+                        include "ticket/view_request.php";
+                        break;
                     
                     case "ticket/includes/admin_tickets":
                         include "ticket/includes/admin_tickets.php";
@@ -285,6 +288,8 @@ if(isset($_GET['ajax'])){
                         break;
                     case "ticket/includes/update_status":
                         include "ticket/includes/update_status.php";
+                    case "ticket/includes/update_status_lmr":
+                        include "ticket/includes/update_status_lmr.php";
                         break;
                     case "ticket/includes/reassign_ticket":
                         include "ticket/includes/reassign_ticket.php";

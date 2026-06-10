@@ -31,6 +31,35 @@ $result = $conn->query($sql);
 ?>
 
 <style>
+    .status-blue {
+    background-color: #0d6efd !important;
+    color: #fff !important;
+    border-color: #0d6efd !important;
+}
+
+.status-green {
+    background-color: #198754 !important;
+    color: #fff !important;
+    border-color: #198754 !important;
+}
+
+.status-yellow {
+    background-color: #ffc107 !important;
+    color: #fff !important;
+    border-color: #ffc107 !important;
+}
+
+.status-grey {
+    background-color: #6c757d !important;
+    color: #fff !important;
+    border-color: #6c757d !important;
+}
+
+.status-red {
+    background-color: #dc3545 !important;
+    color: #fff !important;
+    border-color: #dc3545 !important;
+}
 .custom-menu {
     display: none;
     position: absolute;
@@ -59,6 +88,13 @@ $result = $conn->query($sql);
     background-color: #1E3A8A;
     color: white;
 }
+#requestsTable tbody tr {
+    cursor: pointer;
+}
+
+#requestsTable tbody tr:hover {
+    background-color: #f5f9ff;
+}
 </style>
 
 
@@ -83,10 +119,19 @@ $result = $conn->query($sql);
 <!-- FILTER BUTTONS (UNCHANGED) -->
 <div class="d-flex flex-wrap gap-2 mb-3">
 <button class="btn btn-outline-blue status-filter active" data-status="">All</button>
-<button class="btn btn-outline-blue status-filter" data-status="pending">Pending</button>
+<button class="btn btn-outline-blue status-filter" data-status="waiting for it approval">Waiting for IT Approval</button>
+<button class="btn btn-outline-blue status-filter" data-status="checking request">Checking Request</button>
+<button class="btn btn-outline-blue status-filter" data-status="on stock">On Stock</button>
+<button class="btn btn-outline-blue status-filter" data-status="requesting item">Requesting Item</button>
+<button class="btn btn-outline-blue status-filter" data-status="canvassing">Canvassing</button>
+<button class="btn btn-outline-blue status-filter" data-status="for po">For PO</button>
+<button class="btn btn-outline-blue status-filter" data-status="for manager approval">For Manager Approval</button>
 <button class="btn btn-outline-blue status-filter" data-status="approved">Approved</button>
-<button class="btn btn-outline-blue status-filter" data-status="rejected">Rejected</button>
+<button class="btn btn-outline-blue status-filter" data-status="ordered">Ordered</button>
+<button class="btn btn-outline-blue status-filter" data-status="delivered">Delivered</button>
+<button class="btn btn-outline-blue status-filter" data-status="closed">Closed</button>
 <button class="btn btn-outline-blue status-filter" data-status="received">Received</button>
+<button class="btn btn-outline-blue status-filter" data-status="rejected">Rejected</button>
 </div>
 
 <div class="table-responsive">
@@ -96,14 +141,14 @@ $result = $conn->query($sql);
 <th style="display:none;">ID</th>
 <th>LMR</th>
 <th>Requestor</th>
-<th>Ticket ID</th>
+<th style="width: 10px;">Ticket ID</th>
 <th>Department</th>
 <th>Item</th>
 <th>Description</th>
 <th>Qty</th>
 <th>UoM</th>
 <th>Created</th>
-<th>Status</th>
+<th style="width: 160px;">Status</th>
 <th>Needed</th>
 </tr>
 </thead>
@@ -129,19 +174,42 @@ $result = $conn->query($sql);
 <td><?= htmlspecialchars($row['UoM']) ?></td>
 <td><?= date('m-d-Y', strtotime($row['date_created'])) ?></td>
 
-<td>
-<span style="width: 100%;" class="badge
+
 <?php
-switch(strtolower($row['status'])) {
-    case 'pending': echo 'bg-warning'; break;
-    case 'approved': echo 'bg-success'; break;
-    case 'rejected': echo 'bg-danger'; break;
-    case 'received': echo 'bg-primary'; break;
-    default: echo 'bg-secondary';
-}
-?>">
-<?= htmlspecialchars($row['status']) ?>
-</span>
+$currentStatus = strtolower($row['status']);
+
+$allStatuses = [
+    'waiting for it approval',
+    'checking request',
+    'on stock',
+    'requesting item',
+    'canvassing',
+    'for po',
+    'for manager approval',
+    'approved',
+    'ordered',
+    'delivered',
+    'closed',
+    'received',
+    'rejected'
+];
+?>
+
+<td onclick="event.stopPropagation();" style="width:220px;">
+    <select
+        class="form-select form-select-sm request-status-select"
+        data-request-id="<?= $row['request_id'] ?>"
+        data-current="<?= $currentStatus ?>">
+
+        <?php foreach ($allStatuses as $status): ?>
+            <option
+                value="<?= $status ?>"
+                <?= $status === $currentStatus ? 'selected' : '' ?>>
+                <?= ucwords($status) ?>
+            </option>
+        <?php endforeach; ?>
+
+    </select>
 </td>
 
 
@@ -155,6 +223,43 @@ switch(strtolower($row['status'])) {
 </div>
 
 
+</div>
+<div class="modal fade" id="requestStatusModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5 class="modal-title">Change Request Status</h5>
+                <button type="button"
+                        class="btn-close"
+                        data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body">
+
+                <input type="hidden" id="requestNewStatus">
+
+                <label>Remarks</label>
+                <textarea id="requestComment"
+                          class="form-control"
+                          rows="3"></textarea>
+
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn btn-secondary"
+                        data-bs-dismiss="modal">
+                    Cancel
+                </button>
+
+                <button class="btn btn-primary"
+                        id="confirmRequestStatus">
+                    Confirm
+                </button>
+            </div>
+
+        </div>
+    </div>
 </div>
 <div id="contextMenu" class="custom-menu"></div>
 <script>const BASE_URL = '<?= $baseUrl ?>';</script>
@@ -215,20 +320,51 @@ document.addEventListener('DOMContentLoaded', function () {
             selectedLmrNo = this.dataset.lmrNo;
             const currentStatus = this.dataset.status;
 
-            const allStatuses = ['pending', 'approved', 'rejected', 'received'];
-            const statusLabels = {
-                pending: 'Mark as Pending',
-                approved: 'Mark as Approved',
-                rejected: 'Mark as Rejected',
-                received: 'Mark as Received'
-            };
-            const icons = {
-                pending: 'fa-clock text-warning',
-                approved: 'fa-check-double text-info',
-                rejected: 'fa-times text-danger',
-                received: 'fa-check text-success'
-            };
-
+            const allStatuses = [
+    'waiting for it approval',
+    'checking request',
+    'on stock',
+    'requesting item',
+    'canvassing',
+    'for po',
+    'for manager approval',
+    'approved',
+    'ordered',
+    'delivered',
+    'closed',
+    'received',
+    'rejected'
+];
+        const statusLabels = {
+            'waiting for it approval': 'Waiting for IT Approval',
+            'checking request': 'Checking Request',
+            'on stock': 'On Stock',
+            'requesting item': 'Requesting Item',
+            'canvassing': 'Canvassing',
+            'for po': 'For PO',
+            'for manager approval': 'For Manager Approval',
+            'approved': 'Approved',
+            'ordered': 'Ordered',
+            'delivered': 'Delivered',
+            'closed': 'Closed',
+             'received': 'Received',
+            'rejected': 'Rejected'
+        };
+        const icons = {
+            'waiting for it approval': 'fa-clock text-secondary',
+            'checking request': 'fa-search text-info',
+            'on stock': 'fa-box text-primary',
+            'requesting item': 'fa-shopping-cart text-warning',
+            'canvassing': 'fa-file-invoice-dollar text-warning',
+            'for po': 'fa-file-alt text-dark',
+            'for manager approval': 'fa-user-check text-dark',
+            'approved': 'fa-check-circle text-success',
+            'ordered': 'fa-truck-loading text-success',
+            'delivered': 'fa-truck text-primary',
+            'closed': 'fa-lock text-success',
+            'received': 'fa-lock text-success',
+            'rejected': 'fa-times text-danger'
+        };
             const statusItems = allStatuses
                 .filter(status => status !== currentStatus)
                 .map(status => `
@@ -258,8 +394,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     <i class="fas fa-print text-secondary"></i> Print
                 </a>    
 
-                ${addToInventory}
-                ${statusItems}
+    
             `;
 
             contextMenu.style.display = 'block';
@@ -309,15 +444,22 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 
 function updateRequestStatus(requestId, status) {
-    fetch('?page=ticket/includes/update_status', {
+    fetch('?page=ticket/includes/update_status_lmr', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: `request_id=${requestId}&status=${status.charAt(0).toUpperCase()+status.slice(1)}`
+        // body: `request_id=${requestId}&status=${status.charAt(0).toUpperCase()+status.slice(1)}`
+        body: `request_id=${requestId}&status=${encodeURIComponent(status)}`
     })
-    .then(data => {
-        if (!data.success) location.reload();
-        else alert('Update failed');
-    })
+.then(res => res.json())
+.then(data => {
+
+    if (data.success) {
+        location.reload();
+    } else {
+        alert('Update failed');
+    }
+
+})
 }
 </script>
 <!-- print -->
@@ -460,5 +602,185 @@ function exportRequestsCSV() {
     link.download = `requests_${new Date().toISOString().slice(0,10)}.csv`;
     link.click();
 }
+$(document).on('click', '#requestsTable tbody tr', function(e) {
+
+    // Ignore right-click
+    if (e.which === 3) return;
+
+    // Ignore clicks on links (Ticket ID)
+    if ($(e.target).closest('a').length) return;
+
+    const requestId = $(this).data('request-id');
+
+    window.location.href =
+        '?page=ticket/view_request&request_id=' + requestId;
+});
+</script>
+<script>
+    let requestModalInstance = null;
+let pendingRequestSelect = null;
+let previousRequestStatus = null;
+
+$(document).on('change', '.request-status-select', function(e){
+
+    e.stopPropagation();
+
+    let select = $(this);
+
+    let newStatus = select.val();
+    let currentStatus = select.data('current');
+
+    if(newStatus === currentStatus){
+        return;
+    }
+
+    pendingRequestSelect = select;
+    previousRequestStatus = currentStatus;
+
+    $('#requestNewStatus').val(newStatus);
+    $('#requestComment').val('');
+
+    let modalEl = document.getElementById('requestStatusModal');
+
+    if(!requestModalInstance){
+        requestModalInstance = new bootstrap.Modal(modalEl);
+    }
+
+    requestModalInstance.show();
+
+});
+</script>
+<script>
+    $('#confirmRequestStatus').on('click', function(){
+
+    if(!pendingRequestSelect) return;
+
+    let select = pendingRequestSelect;
+
+    let requestId = select.data('request-id');
+    let newStatus = $('#requestNewStatus').val();
+    let comment = $('#requestComment').val().trim();
+
+    fetch('?page=ticket/includes/update_status_lmr', {
+        method: 'POST',
+        headers: {
+            'Content-Type':'application/x-www-form-urlencoded'
+        },
+        body:
+            'request_id=' + encodeURIComponent(requestId) +
+            '&status=' + encodeURIComponent(newStatus) +
+            '&comment=' + encodeURIComponent(comment)
+    })
+    .then(async res => {
+
+    const text = await res.text();
+
+    try {
+        return JSON.parse(text);
+    } catch(err) {
+        console.log(text);
+        throw err;
+    }
+
+})
+    .then(data => {
+
+    if(data.success){
+
+        select.data('current', newStatus);
+
+        select.closest('tr')
+            .attr('data-status', newStatus.toLowerCase());
+
+        applyStatusColor(select[0]);
+
+        if(requestModalInstance){
+            requestModalInstance.hide();
+        }
+
+        $('#requestsTable').DataTable()
+            .row(select.closest('tr'))
+            .invalidate()
+            .draw(false);
+    }
+    })
+    .catch(() => {
+
+        alert('Error updating status.');
+        select.val(previousRequestStatus);
+
+    });
+
+});
+</script>
+<script>
+    function applyStatusColor(select) {
+
+    const status = select.value.toLowerCase();
+
+    select.classList.remove(
+        'status-blue',
+        'status-green',
+        'status-yellow',
+        'status-grey',
+        'status-red'
+    );
+
+    switch(status) {
+
+        case 'waiting for it approval':
+        case 'checking request':
+            select.classList.add('status-blue');
+            break;
+
+        case 'on stock':
+        case 'approved':
+        case 'ordered':
+        case 'delivered':
+            select.classList.add('status-green');
+            break;
+
+        case 'requesting item':
+        case 'canvassing':
+        case 'for po':
+        case 'for manager approval':
+            select.classList.add('status-yellow');
+            break;
+
+        case 'closed':
+        case 'received':
+            select.classList.add('status-grey');
+            break;
+
+        case 'rejected':
+            select.classList.add('status-red');
+            break;
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+
+    document.querySelectorAll('.request-status-select').forEach(select => {
+
+        applyStatusColor(select);
+
+        select.addEventListener('change', function() {
+            applyStatusColor(this);
+        });
+
+    });
+
+});
+
+ document.getElementById('requestStatusModal')
+.addEventListener('hidden.bs.modal', function(){
+
+    if(pendingRequestSelect){
+
+        pendingRequestSelect.val(previousRequestStatus);
+
+    }
+
+});
 </script>
 <?php $conn->close(); ?>
