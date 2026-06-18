@@ -30,7 +30,7 @@ if (!$request) {
              Request Details
         </h4>
        <div>
-            <a href="?page=ticket/request_management"
+            <a href="?page=ticket/requests"
             class="btn btn-secondary">
                 Back
             </a>

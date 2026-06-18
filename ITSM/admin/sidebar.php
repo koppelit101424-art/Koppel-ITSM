@@ -4,7 +4,7 @@ $inventory_pages = [
 'inventory/asset_listing',
 'inventory/desktops',
 'inventory/transactions',
-'inventory/credentials'
+// 'inventory/credentials'
 ];
 
 $tickets_pages = [
@@ -133,10 +133,10 @@ $type = $_GET['type'] ?? '';
     <span class="menu-text">Issuance</span>
 </a>
 
-<a class="<?= ($page=='inventory/credentials') ? 'active' : '' ?>" href="?page=inventory/credentials">
+<!-- <a class="<?= ($page=='inventory/credentials') ? 'active' : '' ?>" href="?page=inventory/credentials">
     <i class="bi bi-key"></i>
     <span class="menu-text">Credentials</span>
-</a>
+</a> -->
 
 </div>
 </div>
@@ -180,6 +180,10 @@ $type = $_GET['type'] ?? '';
 <a class="<?= ($page=='ticket/requests') ? 'active' : '' ?>" href="?page=ticket/requests">
 <i class="bi bi-file-text"></i>
 <span class="menu-text">Requests</span>
+</a>
+<a class="<?= ($page=='inventory/credentials') ? 'active' : '' ?>" href="?page=inventory/credentials">
+    <i class="bi bi-key"></i>
+    <span class="menu-text">Credentials</span>
 </a>
 <!-- ORGANIZATION -->
 <div class="menu-group">
