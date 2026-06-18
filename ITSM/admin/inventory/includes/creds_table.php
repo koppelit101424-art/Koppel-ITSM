@@ -221,21 +221,39 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Copy password to clipboard
-    window.copyPassword = function(icon) {
-        const input = icon.parentElement.querySelector('.password-field');
-        navigator.clipboard.writeText(input.value).then(() => {
-            const originalClass = icon.className;
-            icon.classList.remove("fa-copy");
-            icon.classList.add("fa-check");
+    // window.copyPassword = function(icon) {
+    //     const input = icon.parentElement.querySelector('.password-field');
+    //     navigator.clipboard.writeText(input.value).then(() => {
+    //         const originalClass = icon.className;
+    //         icon.classList.remove("fa-copy");
+    //         icon.classList.add("fa-check");
             
-            setTimeout(() => {
-                icon.className = originalClass;
-            }, 1500);
-        }).catch(err => {
-            console.error('Failed to copy: ', err);
-        });
-    }
+    //         setTimeout(() => {
+    //             icon.className = originalClass;
+    //         }, 1500);
+    //     }).catch(err => {
+    //         console.error('Failed to copy: ', err);
+    //     });
+    // }
+window.copyPassword = function(icon) {
+    const input = icon.parentElement.querySelector('.password-field');
 
+    input.type = "text";
+    input.select();
+    input.setSelectionRange(0, 99999);
+
+    document.execCommand("copy");
+
+    input.type = "password";
+
+    icon.classList.remove("fa-copy");
+    icon.classList.add("fa-check");
+
+    setTimeout(() => {
+        icon.classList.remove("fa-check");
+        icon.classList.add("fa-copy");
+    }, 1500);
+}
     // ============================================
     // SEARCH FUNCTIONALITY
     // ============================================
