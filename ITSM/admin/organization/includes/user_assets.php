@@ -10,7 +10,23 @@ if ($_SESSION['user_type'] !== 'admin') {
 }
 
 // Fetch user info
-$userStmt = $conn->prepare("SELECT fullname, emp_id FROM user_tb WHERE user_id = ?");
+// Fetch complete user info
+$userStmt = $conn->prepare("
+    SELECT
+        emp_id,
+        fullname,
+        position,
+        email,
+        department,
+        company,
+        area,
+        user_type,
+        date_hired,
+        date_resigned,
+        is_active
+    FROM user_tb
+    WHERE user_id = ?
+");
 $userStmt->bind_param("i", $user_id);
 $userStmt->execute();
 $userInfo = $userStmt->get_result()->fetch_assoc();
@@ -54,7 +70,82 @@ $desktopStmt->execute();
 $desktops = $desktopStmt->get_result();
 ?>
 
-<h4>User Assets: <?= htmlspecialchars($userInfo['fullname']) ?> (<?= htmlspecialchars($userInfo['emp_id']) ?>)</h4>
+<!-- <h4>User Assets: <?= htmlspecialchars($userInfo['fullname']) ?> (<?= htmlspecialchars($userInfo['emp_id']) ?>)</h4> -->
+
+<div class="card mb-3">
+    <div class="card-header text-white">
+        👤 User Information
+    </div>
+
+    <div class="card-body">
+
+        <div class="row">
+
+            <div class="col-md-4 mb-3">
+                <strong>Employee ID</strong><br>
+                <?= htmlspecialchars($userInfo['emp_id']) ?>
+            </div>
+
+            <div class="col-md-4 mb-3">
+                <strong>Full Name</strong><br>
+                <?= htmlspecialchars($userInfo['fullname']) ?>
+            </div>
+
+            <div class="col-md-4 mb-3">
+                <strong>Position</strong><br>
+                <?= htmlspecialchars($userInfo['position']) ?>
+            </div>
+
+            <div class="col-md-4 mb-3">
+                <strong>Email</strong><br>
+                <?= htmlspecialchars($userInfo['email']) ?>
+            </div>
+
+            <div class="col-md-4 mb-3">
+                <strong>Department</strong><br>
+                <?= htmlspecialchars($userInfo['department']) ?>
+            </div>
+
+            <div class="col-md-4 mb-3">
+                <strong>Company</strong><br>
+                <?= htmlspecialchars($userInfo['company']) ?>
+            </div>
+
+            <div class="col-md-4 mb-3">
+                <strong>Area</strong><br>
+                <?= htmlspecialchars($userInfo['area']) ?>
+            </div>
+
+            <div class="col-md-4 mb-3">
+                <strong>User Type</strong><br>
+                <?= ucfirst(htmlspecialchars($userInfo['user_type'])) ?>
+            </div>
+
+            <div class="col-md-4 mb-3">
+                <strong>Status</strong><br>
+
+                <?php if($userInfo['is_active']) : ?>
+                    <span class="badge bg-success">Active</span>
+                <?php else: ?>
+                    <span class="badge bg-danger">Inactive</span>
+                <?php endif; ?>
+
+            </div>
+
+            <div class="col-md-4 mb-3">
+                <strong>Date Hired</strong><br>
+                <?= !empty($userInfo['date_hired']) ? date('M d, Y', strtotime($userInfo['date_hired'])) : '-' ?>
+            </div>
+
+            <div class="col-md-4 mb-3">
+                <strong>Date Resigned</strong><br>
+                <?= !empty($userInfo['date_resigned']) ? date('M d, Y', strtotime($userInfo['date_resigned'])) : '-' ?>
+            </div>
+
+        </div>
+
+    </div>
+</div>
 
 <style>
 .table-hover tbody tr:hover { background-color: #f1f1f1; }
