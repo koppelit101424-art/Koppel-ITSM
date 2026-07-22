@@ -107,6 +107,9 @@ $stmt->close();
     .caps{
       text-transform: uppercase;
     }
+    table td {
+    white-space: pre-wrap;
+}
   </style>
 </head>
 <body>
@@ -151,18 +154,18 @@ $stmt->close();
       <?php foreach ($items as $index => $item): ?>
         <tr>
           <td><?= $index + 1 ?></td>
-          <td><?= $item['item'] ?></td>
-          <td><?= $item['description'] ?></td>
-          <td><?= $item['quantity'] ?></td>
-          <td><?= $item['UoM'] ?></td>
-          <td></td>
-          <td><?= $item['date_needed'] ?></td>
-          <td><?= $item['remarks'] ?></td>
+    <td style="white-space: pre-wrap; "><?= htmlspecialchars($item['item']) ?></td>
+    <td style="white-space: pre-wrap; text-align: left; padding-left: 5px;"><?= htmlspecialchars($item['description']) ?></td>
+    <td style="white-space: pre-wrap;"><?= htmlspecialchars($item['quantity']) ?></td>
+    <td style="white-space: pre-wrap;"><?= htmlspecialchars($item['UoM']) ?></td>
+    <td style="white-space: pre-wrap;"></td>
+    <td style="white-space: pre-wrap;"><?= htmlspecialchars($item['date_needed']) ?></td>
+    <td style="white-space: pre-wrap; text-align: left; padding-left: 5px;"><?= htmlspecialchars($item['remarks']) ?></td>
         </tr>
         <?php endforeach; ?>
         <!-- First row: populated with real data -->
          <!-- 19 blank rows for printing -->
-        <?php for ($i = 2; $i <= 15; $i++): ?>
+        <?php for ($i = 2; $i <= 17; $i++): ?>
         <tr>
           <td></td>
           <td></td><td></td><td></td><td></td><td></td><td></td><td></td>
