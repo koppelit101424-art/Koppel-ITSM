@@ -99,6 +99,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 <option name="" value="HIMC" id="">HIMC</option>
                 <option name="" value="HEEC" id="">HEEC</option>
                 <option name="" value="HI-AIRE" id="">HI-AIRE</option>
+                <option name="" value="Others" id="">Others</option>
               </select>
               <!-- <input type="text" name="company" class="form-control" required> -->
             </div>
