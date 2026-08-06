@@ -124,7 +124,7 @@ value="<?= htmlspecialchars($item['date_received']) ?>" required>
 
 <?php 
 $item_lower = strtolower($item['name']);
-if (strpos($item_lower, 'laptop') !== false || strpos($item_lower, 'system unit') !== false):
+if (strpos($item_lower, 'laptop') !== false || strpos($item_lower, 'system unit') !== false || strpos($item_lower, 'tablet') !== false):
 ?>
 
 <hr>

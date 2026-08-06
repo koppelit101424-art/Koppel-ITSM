@@ -185,7 +185,7 @@ include 'add_item_sql.php';
         // Show additional fields for Laptop / System Unit
         itemInput.addEventListener("input", function() {
             const value = itemInput.value.trim().toLowerCase();
-            if (value.includes("laptop") || value.includes("system unit")) {
+            if (value.includes("laptop") || value.includes("system unit") || value.includes("tablet")) {
                 pcSpecsFields.style.display = "flex";
             } else {
                 pcSpecsFields.style.display = "none";

@@ -29,7 +29,7 @@ $row = $result->fetch_assoc();
 
 /* Detect if Laptop or System Unit */
 $itemName = strtolower($row['item_name']);
-$isComputer = (strpos($itemName, 'laptop') !== false || strpos($itemName, 'system unit') !== false);
+$isComputer = (strpos($itemName, 'laptop') !== false || strpos($itemName, 'system unit') !== false || strpos($itemName, 'tablet') !== false);
 ?>
 
 <style>

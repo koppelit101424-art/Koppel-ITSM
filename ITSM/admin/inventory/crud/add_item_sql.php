@@ -85,7 +85,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
         // ===== Insert Laptop/System Unit specs if applicable =====
         $item_lower = strtolower($name);
-        if (strpos($item_lower, "laptop") !== false || strpos($item_lower, "system unit") !== false) {
+        if (strpos($item_lower, "laptop") !== false || strpos($item_lower, "system unit") !== false || strpos($item_lower, "tablet") !== false) {
 
             // Extra specs fields
             $cpu         = $_POST['cpu'] ?? '';
