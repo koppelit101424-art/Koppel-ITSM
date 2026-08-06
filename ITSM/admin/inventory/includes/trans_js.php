@@ -94,11 +94,17 @@
             $('#modalItem').text(row.data('item'));
             $('#modalBrand').text(row.data('brand'));
             $('#modalModel').text(row.data('model'));
+            $('#modalSerial').text(row.data('serial_number'));
             $('#modalQty').text(row.data('qty'));
             $('#modalDate').text(row.data('date'));
             $('#modalReturned').text(row.data('returned-label'));
             $('#modalRemarks').text(row.data('remarks'));
             $('#modalStatus').text(row.data('status'));
+            $('#modalCpu').text(row.data('cpu') || '—');
+            $('#modalRam').text(row.data('ram') || '—');
+            $('#modalRom').text(row.data('rom') || '—');
+            $('#modalOs').text(row.data('os') || '—');
+            $('#modalReceived').text(row.data('received') || '—');
 
             const modal = new bootstrap.Modal(document.getElementById('transactionModal'));
             modal.show();

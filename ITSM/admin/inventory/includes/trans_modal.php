@@ -16,10 +16,10 @@
               <h6 class="text-primary mb-3 fw-bold border-bottom pb-2">
                 <i class="fas fa-info-circle me-2"></i>Basic Info
               </h6>
-              <div class="mb-3">
+              <!-- <div class="mb-3">
                 <label class="text-muted small">Transaction ID</label>
                 <p class="fw-semibold mb-0" id="modalTransId">—</p>
-              </div>
+              </div> -->
               <div class="mb-3">
                 <label class="text-muted small">User</label>
                 <p class="fw-semibold mb-0" id="modalUser">—</p>
@@ -32,6 +32,10 @@
                 <label class="text-muted small">Brand</label>
                 <p class="fw-semibold mb-0" id="modalBrand">—</p>
               </div>
+              <div class="mb-3">
+                <label class="text-muted small">Model</label>
+                <p class="fw-semibold mb-0" id="modalModel">—</p>
+              </div>
             </div>
           </div>
           
@@ -39,18 +43,18 @@
           <div class="col-md-6">
             <div class="detail-card p-3 rounded-3 bg-light-subtle">
               <h6 class="text-primary mb-3 fw-bold border-bottom pb-2">
-                <i class="fas fa-cube me-2"></i>Item Details
+                <i class="fas fa-cube me-2"></i>Issuance Details
               </h6>
               <div class="mb-3">
-                <label class="text-muted small">Model</label>
-                <p class="fw-semibold mb-0" id="modalModel">—</p>
+                <label class="text-muted small">Serial</label>
+                <p class="fw-semibold mb-0" id="modalSerial">—</p>
               </div>
               <div class="mb-3">
-                <label class="text-muted small">Quantity</label>
-                <p class="fw-semibold mb-0" id="modalQty">—</p>
+                <label class="text-muted small">Date Received</label>
+                <p class="fw-semibold mb-0" id="modalReceived">—</p>
               </div>
               <div class="mb-3">
-                <label class="text-muted small">Date</label>
+                <label class="text-muted small">Date Issued</label>
                 <p class="fw-semibold mb-0" id="modalDate">—</p>
               </div>
               <div class="mb-3">
@@ -59,7 +63,43 @@
               </div>
             </div>
           </div>
-          
+          <!-- Laptop Specifications -->
+          <div class="col-12">
+              <div class="detail-card p-3 rounded-3 bg-light-subtle">
+                  <h6 class="text-primary mb-3 fw-bold border-bottom pb-2">
+                      <i class="fas fa-laptop me-2"></i>Laptop Specifications
+                  </h6>
+
+                  <div class="row">
+
+                      <div class="col-md-6 mb-3">
+                          <label class="text-muted small">CPU</label>
+                          <p class="fw-semibold mb-0" id="modalCpu">—</p>
+                      </div>
+
+                      <div class="col-md-6 mb-3">
+                          <label class="text-muted small">RAM</label>
+                          <p class="fw-semibold mb-0" id="modalRam">—</p>
+                      </div>
+
+                      <div class="col-md-6 mb-3">
+                          <label class="text-muted small">Storage</label>
+                          <p class="fw-semibold mb-0" id="modalRom">—</p>
+                      </div>
+
+                      <div class="col-md-6 mb-3">
+                          <label class="text-muted small">Operating System</label>
+                          <p class="fw-semibold mb-0" id="modalOs">—</p>
+                      </div>
+
+                      <!-- <div class="col-md-4 mb-3">
+                          <label class="text-muted small">Date Received</label>
+                          <p class="fw-semibold mb-0" id="modalReceived">—</p>
+                      </div> -->
+
+                  </div>
+              </div>
+          </div>
           <!-- Full-width Remarks -->
           <div class="col-12">
             <div class="detail-card p-3 rounded-3 bg-light-subtle">

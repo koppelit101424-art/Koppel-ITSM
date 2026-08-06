@@ -27,14 +27,38 @@ $typesArr = [];
 $q = $conn->query("SELECT type_name FROM item_type ORDER BY type_name ASC");
 while($r=$q->fetch_assoc()) $typesArr[]=$r;
 
+// $sql = "
+// SELECT t.*, u.user_id, u.fullname, i.name AS item_name, i.brand, i.model, i.serial_number, i.item_code, ty.type_name
+// FROM transaction_tb t
+// LEFT JOIN user_tb u ON t.user_id = u.user_id
+// LEFT JOIN item_tb i ON t.item_id = i.item_id
+// LEFT JOIN item_type ty ON i.type_id = ty.type_id
+// WHERE 1=1
+// ";
 $sql = "
-SELECT t.*, u.user_id, u.fullname, i.name AS item_name, i.brand, i.model, i.serial_number, i.item_code, ty.type_name
+SELECT
+    t.*,
+    u.user_id,
+    u.fullname,
+    i.name AS item_name,
+    i.brand,
+    i.model,
+    i.serial_number,
+    i.item_code,
+    i.date_received,
+    ty.type_name,
+
+    s.cpu,
+    s.ram,
+    s.rom,
+    s.os
+
 FROM transaction_tb t
 LEFT JOIN user_tb u ON t.user_id = u.user_id
 LEFT JOIN item_tb i ON t.item_id = i.item_id
 LEFT JOIN item_type ty ON i.type_id = ty.type_id
-WHERE 1=1
-";
+LEFT JOIN laptop_pc_specs s ON i.item_id = s.item_id
+WHERE 1=1";
 
 $params=[];
 $types="";
@@ -248,7 +272,12 @@ $result = $stmt->get_result();
                                 data-returned-label="<?= (empty($row['date_returned']) || $row['date_returned']=='0000-00-00 00:00:00') ? 'Not Returned' : date('m-d-Y', strtotime($row['date_returned'])) ?>" 
                                 data-returned="<?= (empty($row['date_returned']) || $row['date_returned']=='0000-00-00 00:00:00') ? '0' : '1' ?>" 
                                 data-remarks="<?= htmlspecialchars($row['remarks']) ?>" 
-                                data-status="<?= $row['action'] ?>">
+                                data-status="<?= $row['action'] ?>"
+                                data-cpu="<?= htmlspecialchars($row['cpu']) ?>"
+                                data-ram="<?= htmlspecialchars($row['ram']) ?>"
+                                data-rom="<?= htmlspecialchars($row['rom']) ?>"
+                                data-os="<?= htmlspecialchars($row['os']) ?>"
+                                data-received="<?= !empty($row['date_received']) ? date('m-d-Y', strtotime($row['date_received'])) : '' ?>">
                                 
                                 <td><?= $row['transaction_id'] ?></td>
                                 <!-- <td><?= $row['fullname'] ?></td> -->
