@@ -91,6 +91,9 @@ if(isset($_GET['ajax'])){
                     case "ticket/requests":
                         include "ticket/requests.php";
                         break;
+                   case "ticket/view_requests":
+                        include "ticket/view_requests.php";
+                        break;
                     case "ticket/includes/add_request":
                         include "ticket/includes/add_request.php";
                         break;

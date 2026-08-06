@@ -35,10 +35,11 @@ $requests = $stmt->get_result();
 <style>
 .table-hover tbody tr:hover { background-color: #f1f1f1; }
 /* .badge-open { background-color: #0d6efd; color:#fff; } */
-.badge-approved { background-color: #198754; color:#fff; }
-.badge-rejected { background-color: #dc3545; color:#fff; }
+.badge-proceed { background-color: #198754; color:#fff; }
+.badge-checking { background-color: #0d6efd; color:#fff; }
+.badge-canceled { background-color: #dc3545; color:#fff; }
 .badge-pending { background-color: #ffc107; color:#000; }
-/* .badge-cancelled { background-color: #6c757d; color:#fff; } */
+.badge-closed { background-color: #6c757d; color:#fff; }
 
 .status-filter.active { background-color: #1E3A8A; color: #fff; }
 .status-filter.active:hover { background-color: #1E3A8A; color: #fff; }
@@ -96,7 +97,10 @@ $requests = $stmt->get_result();
             <div class="table-responsive">
                 <table id="requestsTable" class="table table-hover align-middle">
                     <thead>
-                        <tr>
+                        <tr
+                            data-request-id="<?= $row['request_id'] ?>"
+                            data-status="<?= strtolower($row['status']) ?>"
+                            style="cursor:pointer;">
                             <th>#</th>
                             <th>LMR No.</th>
                             <th>Department</th>
@@ -107,6 +111,7 @@ $requests = $stmt->get_result();
                             <th>Status</th>
                             <th>Date Created</th>
                             <th>Remarks</th>
+                            <th>Action</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -128,10 +133,10 @@ $requests = $stmt->get_result();
                                             $statusClass = '';
                                             switch (strtolower($row['status'])) {
                                                 // case 'open': $statusClass = 'badge-open'; break;
-                                                case 'approved': $statusClass = 'badge-approved'; break;
-                                                case 'rejected': $statusClass = 'badge-rejected'; break;
+                                                case 'proceed': $statusClass = 'badge-proceed'; break;
+                                                case 'checking': $statusClass = 'badge-checking'; break;
                                                 case 'pending': $statusClass = 'badge-pending'; break;
-                                                // case 'cancelled': $statusClass = 'badge-cancelled'; break;
+                                                case 'closed': $statusClass = 'badge-closed'; break;
                                                 default: $statusClass = 'badge-pending'; break;
                                             }
                                         ?>
@@ -141,6 +146,12 @@ $requests = $stmt->get_result();
                                     </td>
                                     <td><?= date('m-d-Y', strtotime($row['date_created'])) ?></td>
                                     <td><?= htmlspecialchars($row['remarks'] ?? '-') ?></td>
+                                    <td>
+                                        <a href="?page=ticket/view_request&request_id=<?= $row['request_id'] ?>"
+                                        class="btn btn-sm btn-primary">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                    </td>
                                 </tr>
                             <?php endwhile; ?>
                         <?php else: ?>
@@ -207,6 +218,17 @@ document.getElementById('deleteRequest').addEventListener('click', (e) => {
     if (confirm("Are you sure you want to delete this request? This action cannot be undone.")) {
         window.location.href = "delete_request.php?id=" + currentRequestId;
     }
+});
+
+$(document).on('click', '#requestsTable tbody tr', function(e){
+
+    // Ignore clicks on links
+    if ($(e.target).closest('a').length) return;
+
+    const requestId = $(this).data('request-id');
+
+    window.location.href =
+        '?page=ticket/view_request&request_id=' + requestId;
 });
 </script>
 
