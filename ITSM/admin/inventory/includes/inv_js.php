@@ -119,6 +119,10 @@ $('#inventoryTable tbody').on('contextmenu', 'tr', function(e) {
 
         $('#editLink').attr('href', '?page=inventory/crud/edit_item&item_id=' + encodeURIComponent(itemId));
         $('#deleteLink').attr('href', '?page=inventory/crud/delete_item&item_id=' + encodeURIComponent(itemId));
+        $('#copyLink').attr(
+    'href',
+    '?page=inventory/crud/copy_item&copy_item=' + encodeURIComponent(itemId)
+);
         
         if (qty > 0) {
             $('#borrowLink').attr('href', '?page=inventory/crud/borrow_item&item_id=' + encodeURIComponent(itemId)).show();

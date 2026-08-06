@@ -14,4 +14,7 @@
     <a href="#" id="issueLink">
     <i class="fas fa-file-signature text-primary me-1"></i> Issue
     </a>
+    <a href="#" id="copyLink">
+    <i class="fas fa-copy text-success me-1"></i> Copy
+    </a>
 </div>

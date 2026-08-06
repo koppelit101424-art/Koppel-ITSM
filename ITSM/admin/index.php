@@ -144,6 +144,9 @@ if(isset($_GET['ajax'])){
                     case "inventory/crud/add_item":
                         include "inventory/crud/add_item.php";
                         break;
+                    case "inventory/crud/copy_item":
+                        include "inventory/crud/copy_item.php";
+                        break;
 
                     case "inventory/crud/add_desktop":
                         include "inventory/crud/add_desktop.php";
