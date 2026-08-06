@@ -118,7 +118,17 @@ $('#inventoryTable tbody').on('contextmenu', 'tr', function(e) {
         var qty = parseInt($row.data('qty'));
 
         $('#editLink').attr('href', '?page=inventory/crud/edit_item&item_id=' + encodeURIComponent(itemId));
-        $('#deleteLink').attr('href', '?page=inventory/crud/delete_item&item_id=' + encodeURIComponent(itemId));
+        // $('#deleteLink').attr('href', '?page=inventory/crud/delete_item&item_id=' + encodeURIComponent(itemId));
+        $('#deleteLink')
+    .attr('href', '#')
+    .off('click')
+    .on('click', function (e) {
+        e.preventDefault();
+
+        if (confirm('Are you sure you want to delete this item?\n\nThis action cannot be undone.')) {
+            window.location.href = '?page=inventory/crud/delete_item&item_id=' + encodeURIComponent(itemId);
+        }
+    });
         $('#copyLink').attr(
     'href',
     '?page=inventory/crud/copy_item&copy_item=' + encodeURIComponent(itemId)
