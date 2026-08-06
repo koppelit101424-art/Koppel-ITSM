@@ -117,10 +117,10 @@ $requests = $stmt->get_result();
                     <tbody>
                         <?php if ($requests->num_rows > 0): ?>
                             <?php $i = 1; while ($row = $requests->fetch_assoc()): ?>
-                                <tr 
-                                    data-request-id="<?= $row['request_id'] ?>" 
-                                    data-status="<?= strtolower($row['status']) ?>"
-                                    oncontextmenu="showContextMenu(event, <?= $row['request_id'] ?>)">
+                            <tr
+                                data-request-id="<?= $row['request_id'] ?>"
+                                data-lmr-no="<?= htmlspecialchars($row['lmr_no']) ?>"
+                                data-status="<?= strtolower($row['status']) ?>">
                                     <td><?= $i++ ?></td>
                                     <td><?= htmlspecialchars($row['lmr_no']) ?></td>
                                     <td><?= htmlspecialchars($row['department']) ?></td>
@@ -133,8 +133,8 @@ $requests = $stmt->get_result();
                                             $statusClass = '';
                                             switch (strtolower($row['status'])) {
                                                 // case 'open': $statusClass = 'badge-open'; break;
-                                                case 'proceed': $statusClass = 'badge-proceed'; break;
-                                                case 'checking': $statusClass = 'badge-checking'; break;
+                                                case 'proceed request': $statusClass = 'badge-proceed'; break;
+                                                case 'checking request': $statusClass = 'badge-checking'; break;
                                                 case 'pending': $statusClass = 'badge-pending'; break;
                                                 case 'closed': $statusClass = 'badge-closed'; break;
                                                 default: $statusClass = 'badge-pending'; break;
@@ -146,22 +146,23 @@ $requests = $stmt->get_result();
                                     </td>
                                     <td><?= date('m-d-Y', strtotime($row['date_created'])) ?></td>
                                     <td><?= htmlspecialchars($row['remarks'] ?? '-') ?></td>
-                                    <td>
-                                        <a href="?page=ticket/view_request&request_id=<?= $row['request_id'] ?>"
-                                        class="btn btn-sm btn-primary"
-                                        title="View">
-                                            <i class="fas fa-eye"></i>
-                                        </a>
+                            <td onclick="event.stopPropagation();">
 
-                                        <button
-                                            type="button"
-                                            class="btn btn-sm btn-success btn-print-request"
-                                            data-lmr="<?= htmlspecialchars($row['lmr_no']) ?>"
-                                            data-status="<?= strtolower($row['status']) ?>"
-                                            title="Print">
-                                            <i class="fas fa-print"></i>
-                                        </button>
-                                    </td>
+                                <a href="?page=ticket/view_request&request_id=<?= $row['request_id'] ?>"
+                                class="btn btn-sm btn-primary"
+                                title="View">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+
+                                <button
+                                    type="button"
+                                    class="btn btn-sm btn-success btn-print"
+                                    data-lmr="<?= htmlspecialchars($row['lmr_no']) ?>"
+                                    data-status="<?= strtolower(trim($row['status'])) ?>"
+                                    title="Print">
+                                    <i class="fas fa-print"></i>
+                                </button>
+                            </td>
                                 </tr>
                             <?php endwhile; ?>
                         <?php else: ?>
@@ -208,58 +209,28 @@ $(document).ready(function () {
 // Context menu
 let currentRequestId = null;
 
-function showContextMenu(e, requestId) {
-    e.preventDefault();
-    currentRequestId = requestId;
-    const menu = document.getElementById('contextMenu');
-    menu.style.top = e.pageY + 'px';
-    menu.style.left = e.pageX + 'px';
-    menu.style.display = 'block';
-}
+$(function () {
 
-document.addEventListener('click', () => {
-    document.getElementById('contextMenu').style.display = 'none';
-});
+    $('.btn-print').on('click', function (e) {
 
-document.getElementById('deleteRequest').addEventListener('click', (e) => {
-    e.preventDefault();
-    if (!currentRequestId) return;
+        e.preventDefault();
+        e.stopPropagation();
 
-    if (confirm("Are you sure you want to delete this request? This action cannot be undone.")) {
-        window.location.href = "delete_request.php?id=" + currentRequestId;
-    }
-});
+        const status = ($(this).data('status') || '').toLowerCase().trim();
+        const lmr = $(this).data('lmr');
 
-$(document).on('click', '.btn-print-request', function (e) {
+        if (status !== 'proceed request') {
+            alert('Printing is only available when the request status is "Proceed Request".');
+            return;
+        }
 
-    e.preventDefault();
+        window.open(
+            '?page=ticket/includes/print_request&lmr_no=' + encodeURIComponent(lmr),
+            '_blank'
+        );
 
-    const status = $(this).data('status');
-    const lmr = $(this).data('lmr');
-
-    if (status !== 'proceed request') {
-
-        alert('This request is not yet approved by IT.\n\nPrinting is only allowed once the status is "Proceed Request".');
-        return;
-    }
-
-    window.open(
-        '?page=ticket/includes/print_request&lmr_no=' + encodeURIComponent(lmr),
-        '_blank'
-    );
+    });
 
 });
-$(document).on('click', '#requestsTable tbody tr', function(e){
-
-    // Ignore clicks on links
-    if ($(e.target).closest('a').length) return;
-
-    const requestId = $(this).data('request-id');
-
-    window.location.href =
-        '?page=ticket/view_request&request_id=' + requestId;
-});
-
 </script>
-
 <?php $conn->close(); ?>

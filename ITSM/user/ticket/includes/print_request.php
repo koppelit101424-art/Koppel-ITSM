@@ -1,6 +1,6 @@
 <?php
-include __DIR__ . '/../../../includes/auth.php';
-include __DIR__ . '/../../../includes/db.php';
+include __DIR__ . '/../../includes/auth.php';
+include __DIR__ . '/../../includes/db.php';
 $fullname = $_SESSION['fullname'];
 // ✅ Get LMR No from URL (not request_id)
 $lmr_no = trim($_GET['lmr_no'] ?? '');
@@ -147,7 +147,7 @@ $recStmt->close();
     <div class="container"></div>
     <div class="row">
         <div class="col-4">
-          <img src="../asset/img/Koppel.jpg" alt="" width="100px">
+          <!-- <img src="../../asset/img/Koppel.jpg" width="100"> -->
           <p>Koppel, Inc</p>
         </div>
         <div class="col-4">
@@ -233,7 +233,7 @@ $recStmt->close();
           }
           ?>
 
-          <td class="checked_by"><?= htmlspecialchars($supervisorName); ?></td>
+          <td class="checked_by"></td>
             <td class="recom_by"></td>
             <td class="noted_by"></td>
             <td class="approved_by"></td>

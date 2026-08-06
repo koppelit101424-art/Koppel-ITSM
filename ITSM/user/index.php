@@ -4,6 +4,10 @@ session_start();
 $page = $_GET['page'] ?? 'announcements';
 
 include "includes/auth.php";
+/* PRINT PAGES (NO SIDEBAR / HEADER) */
+$print_pages = [
+    "ticket/includes/print_request",
+];
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -64,10 +68,14 @@ if(isset($_GET['ajax'])){
     }
 }
 ?>
-<?php if($page != "login"): ?>
-<?php include "sidebar.php"; ?>
-<div class="main">
-<?php include "header.php"; ?>
+<?php
+$isPrintPage = in_array($page, $print_pages);
+?>
+
+<?php if($page != "login" && !$isPrintPage): ?>
+    <?php include "sidebar.php"; ?>
+    <div class="main">
+    <?php include "header.php"; ?>
 <?php endif; ?>
         <div class="content">
             <?php
@@ -110,7 +118,7 @@ if(isset($_GET['ajax'])){
                 }
             ?>
         </div>
-<?php if($page != "login"): ?>
+<?php if($page != "login" && !$isPrintPage): ?>
 </div>
 <?php endif; ?>
 
