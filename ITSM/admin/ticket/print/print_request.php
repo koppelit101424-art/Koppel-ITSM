@@ -39,6 +39,36 @@ if (empty($items)) {
 }
 
 $stmt->close();
+// Fetch all recommendations for this LMR
+$recStmt = $conn->prepare("
+    SELECT
+        rr.recommendation,
+        u.fullname,
+        rr.created_at
+    FROM request_recommendations rr
+    INNER JOIN request_tb r
+        ON rr.request_id = r.request_id
+    LEFT JOIN user_tb u
+        ON rr.recommended_by = u.user_id
+    WHERE r.lmr_no = ?
+    ORDER BY rr.created_at ASC
+");
+
+$recStmt->bind_param("s", $lmr_no);
+$recStmt->execute();
+$recommendations = $recStmt->get_result();
+
+$recommendationText = "";
+
+while ($rec = $recommendations->fetch_assoc()) {
+    $recommendationText .=
+        $rec['recommendation'] .
+        "\n\n- " .
+        $rec['fullname'] .
+        "\n\n";
+}
+
+$recStmt->close();
 ?>
 
 <!DOCTYPE html>
@@ -147,7 +177,8 @@ $stmt->close();
           <th class="price">PRICE</th>
           <th class="date">DATE NEEDED</th>
           <th class="remarks">REMARKS</th>
-          <th class="empty"></th>
+          <th class="" >IT RECOMMENDATION: 
+        </th>
         </tr>
       </thead>
       <tbody>
@@ -161,6 +192,9 @@ $stmt->close();
     <td style="white-space: pre-wrap;"></td>
     <td style="white-space: pre-wrap;"><?= htmlspecialchars($item['date_needed']) ?></td>
     <td style="white-space: pre-wrap; text-align: left; padding-left: 5px;"><?= htmlspecialchars($item['remarks']) ?></td>
+    <td rowspan="17"><br><p style="text-align: left;font-weight: 300; padding-left: -15px;"><?= nl2br(htmlspecialchars($recommendationText)) ?></p>  
+   </td>
+
         </tr>
         <?php endforeach; ?>
         <!-- First row: populated with real data -->
@@ -230,3 +264,6 @@ $stmt->close();
 </body>
 </html>
 <?php $conn->close(); ?>
+       
+        
+</p>

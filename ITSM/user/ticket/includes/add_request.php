@@ -261,11 +261,11 @@ function addItemRow() {
     <div class="row">
         <div class="col-md-3">
             <label class="form-label">Item *</label>
-            <input type="text" class="form-control" name="item[]" required>
+            <input type="text" class="form-control" name="item[]" placeholder="(eg. Laptop)" required>
         </div>
         <div class="col-md-3">
             <label class="form-label">Description *</label>
-            <textarea class="form-control" name="description[]" rows="1" required></textarea>
+            <textarea class="form-control" name="description[]" rows="1" placeholder="(eg. New Laptop for Sales Engr.)"required></textarea>
         </div>
         <div class="col-md-2">
             <label class="form-label">Qty *</label>
@@ -281,24 +281,20 @@ function addItemRow() {
         </div>
     </div>
     <div class="row mt-2">
-        <div class="col-md-6">
+        <div class="col-md-10">
             <label class="form-label">Remarks</label>
-            <textarea class="form-control" name="remarks[]" rows="1"></textarea>
+            <textarea class="form-control" name="remarks[]" rows="10" placeholder="- indicate the reason for request
+- status of current device using"></textarea>
+
         </div>
-        <div class="col-md-3">
-            <label class="form-label">Status</label>
-            <select class="form-control" name="status[]">
-                <option value="Pending" selected>Pending</option>
-                <option value="Approved">Approved</option>
-                <option value="Rejected">Rejected</option>
-                <option value="Received">Received</option>
-            </select>
-        </div>
-        <div class="col-md-3 d-flex align-items-end">
+          <div class="col-md-2"><br><br>
             <button type="button" class="btn btn-sm btn-outline-danger" onclick="this.closest('.item-row').remove()">
                 <i class="fas fa-trash"></i> Remove
             </button>
+
         </div>
+     <input type="hidden" name="status[]" value="Pending">
+ 
     </div>`;
     container.appendChild(row);
 }

@@ -119,19 +119,20 @@ $result = $conn->query($sql);
 <!-- FILTER BUTTONS (UNCHANGED) -->
 <div class="d-flex flex-wrap gap-2 mb-3">
 <button class="btn btn-outline-blue status-filter active" data-status="">All</button>
-<button class="btn btn-outline-blue status-filter" data-status="waiting for it approval">Waiting for IT Approval</button>
+<button class="btn btn-outline-blue status-filter" data-status="pending">Pending</button>
 <button class="btn btn-outline-blue status-filter" data-status="checking request">Checking Request</button>
-<button class="btn btn-outline-blue status-filter" data-status="on stock">On Stock</button>
+<button class="btn btn-outline-blue status-filter" data-status="proceed request">Proceed Request</button>
+<!-- <button class="btn btn-outline-blue status-filter" data-status="on stock">On Stock</button>
 <button class="btn btn-outline-blue status-filter" data-status="requesting item">Requesting Item</button>
 <button class="btn btn-outline-blue status-filter" data-status="canvassing">Canvassing</button>
 <button class="btn btn-outline-blue status-filter" data-status="for po">For PO</button>
 <button class="btn btn-outline-blue status-filter" data-status="for manager approval">For Manager Approval</button>
 <button class="btn btn-outline-blue status-filter" data-status="approved">Approved</button>
 <button class="btn btn-outline-blue status-filter" data-status="ordered">Ordered</button>
-<button class="btn btn-outline-blue status-filter" data-status="delivered">Delivered</button>
+<button class="btn btn-outline-blue status-filter" data-status="delivered">Delivered</button> -->
 <button class="btn btn-outline-blue status-filter" data-status="closed">Closed</button>
-<button class="btn btn-outline-blue status-filter" data-status="received">Received</button>
-<button class="btn btn-outline-blue status-filter" data-status="rejected">Rejected</button>
+<!-- <button class="btn btn-outline-blue status-filter" data-status="received">Received</button> -->
+<button class="btn btn-outline-blue status-filter" data-status="canceled">Canceled</button>
 </div>
 
 <div class="table-responsive">
@@ -179,19 +180,21 @@ $result = $conn->query($sql);
 $currentStatus = strtolower($row['status']);
 
 $allStatuses = [
-    'waiting for it approval',
+    'pending',
     'checking request',
+    'proceed request',
     'on stock',
-    'requesting item',
-    'canvassing',
-    'for po',
-    'for manager approval',
-    'approved',
-    'ordered',
-    'delivered',
     'closed',
+    // 'on stock',
+    // 'requesting item',
+    // 'canvassing',
+    // 'for po',
+    // 'for manager approval',
+    // 'approved',
+    // 'ordered',
+    'delivered',
     'received',
-    'rejected'
+    'canceled'
 ];
 ?>
 
@@ -321,49 +324,53 @@ document.addEventListener('DOMContentLoaded', function () {
             const currentStatus = this.dataset.status;
 
             const allStatuses = [
-    'waiting for it approval',
-    'checking request',
-    'on stock',
-    'requesting item',
-    'canvassing',
-    'for po',
-    'for manager approval',
-    'approved',
-    'ordered',
-    'delivered',
-    'closed',
-    'received',
-    'rejected'
-];
+            'pending',
+            'checking request',
+            'on stock',
+            'closed'
+            // 'requesting item',
+            // 'canvassing',
+            // 'for po',
+            // 'for manager approval',
+            // 'approved',
+            // 'ordered',
+            // 'delivered',
+      
+            // 'received',
+            // 'rejected'
+            ];
         const statusLabels = {
-            'waiting for it approval': 'Waiting for IT Approval',
+            'pending': 'Pending',
             'checking request': 'Checking Request',
+            'proceed request': 'Proceed Request',
             'on stock': 'On Stock',
-            'requesting item': 'Requesting Item',
-            'canvassing': 'Canvassing',
-            'for po': 'For PO',
-            'for manager approval': 'For Manager Approval',
-            'approved': 'Approved',
-            'ordered': 'Ordered',
-            'delivered': 'Delivered',
-            'closed': 'Closed',
-             'received': 'Received',
-            'rejected': 'Rejected'
+            'closed': 'Closed'
+            // 'requesting item': 'Requesting Item',
+            // 'canvassing': 'Canvassing',
+            // 'for po': 'For PO',
+            // 'for manager approval': 'For Manager Approval',
+            // 'approved': 'Approved',
+            // 'ordered': 'Ordered',
+            // 'delivered': 'Delivered',
+
+            //  'received': 'Received',
+            // 'rejected': 'Rejected'
         };
         const icons = {
-            'waiting for it approval': 'fa-clock text-secondary',
+            'pending': 'fa-clock text-warning',
             'checking request': 'fa-search text-info',
+            'proceed request': 'fa-clock text-warning',
             'on stock': 'fa-box text-primary',
-            'requesting item': 'fa-shopping-cart text-warning',
-            'canvassing': 'fa-file-invoice-dollar text-warning',
-            'for po': 'fa-file-alt text-dark',
-            'for manager approval': 'fa-user-check text-dark',
-            'approved': 'fa-check-circle text-success',
-            'ordered': 'fa-truck-loading text-success',
-            'delivered': 'fa-truck text-primary',
-            'closed': 'fa-lock text-success',
-            'received': 'fa-lock text-success',
-            'rejected': 'fa-times text-danger'
+            'closed': 'fa-lock text-secondary'
+            // 'requesting item': 'fa-shopping-cart text-warning',
+            // 'canvassing': 'fa-file-invoice-dollar text-warning',
+            // 'for po': 'fa-file-alt text-dark',
+            // 'for manager approval': 'fa-user-check text-dark',
+            // 'approved': 'fa-check-circle text-success',
+            // 'ordered': 'fa-truck-loading text-success',
+            // 'delivered': 'fa-truck text-primary',
+            // 'received': 'fa-lock text-success',
+            // 'rejected': 'fa-times text-danger'
         };
             const statusItems = allStatuses
                 .filter(status => status !== currentStatus)
@@ -728,23 +735,22 @@ $(document).on('change', '.request-status-select', function(e){
 
     switch(status) {
 
-        case 'waiting for it approval':
-        case 'checking request':
-            select.classList.add('status-blue');
+        case 'pending':
+            select.classList.add('status-yellow');
             break;
 
         case 'on stock':
         case 'approved':
-        case 'ordered':
+        case 'proceed request':
         case 'delivered':
             select.classList.add('status-green');
             break;
 
-        case 'requesting item':
+        case 'checking request':
         case 'canvassing':
         case 'for po':
         case 'for manager approval':
-            select.classList.add('status-yellow');
+            select.classList.add('status-blue');
             break;
 
         case 'closed':
@@ -752,7 +758,7 @@ $(document).on('change', '.request-status-select', function(e){
             select.classList.add('status-grey');
             break;
 
-        case 'rejected':
+        case 'canceled':
             select.classList.add('status-red');
             break;
     }

@@ -276,7 +276,12 @@ if(isset($_GET['ajax'])){
                     case "ticket/view_request":
                         include "ticket/view_request.php";
                         break;
-                    
+                    case "ticket/crud/save_recommendation":
+                        include "ticket/crud/save_recommendation.php";
+                        break;
+                    case "ticket/crud/delete_recommendation":
+                        include "ticket/crud/delete_recommendation.php";
+                        break;
                     case "ticket/includes/admin_tickets":
                         include "ticket/includes/admin_tickets.php";
                         break;
