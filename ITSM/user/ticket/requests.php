@@ -148,9 +148,19 @@ $requests = $stmt->get_result();
                                     <td><?= htmlspecialchars($row['remarks'] ?? '-') ?></td>
                                     <td>
                                         <a href="?page=ticket/view_request&request_id=<?= $row['request_id'] ?>"
-                                        class="btn btn-sm btn-primary">
+                                        class="btn btn-sm btn-primary"
+                                        title="View">
                                             <i class="fas fa-eye"></i>
                                         </a>
+
+                                        <button
+                                            type="button"
+                                            class="btn btn-sm btn-success btn-print-request"
+                                            data-lmr="<?= htmlspecialchars($row['lmr_no']) ?>"
+                                            data-status="<?= strtolower($row['status']) ?>"
+                                            title="Print">
+                                            <i class="fas fa-print"></i>
+                                        </button>
                                     </td>
                                 </tr>
                             <?php endwhile; ?>
@@ -220,6 +230,25 @@ document.getElementById('deleteRequest').addEventListener('click', (e) => {
     }
 });
 
+$(document).on('click', '.btn-print-request', function (e) {
+
+    e.preventDefault();
+
+    const status = $(this).data('status');
+    const lmr = $(this).data('lmr');
+
+    if (status !== 'proceed request') {
+
+        alert('This request is not yet approved by IT.\n\nPrinting is only allowed once the status is "Proceed Request".');
+        return;
+    }
+
+    window.open(
+        '?page=ticket/includes/print_request&lmr_no=' + encodeURIComponent(lmr),
+        '_blank'
+    );
+
+});
 $(document).on('click', '#requestsTable tbody tr', function(e){
 
     // Ignore clicks on links
@@ -230,6 +259,7 @@ $(document).on('click', '#requestsTable tbody tr', function(e){
     window.location.href =
         '?page=ticket/view_request&request_id=' + requestId;
 });
+
 </script>
 
 <?php $conn->close(); ?>
