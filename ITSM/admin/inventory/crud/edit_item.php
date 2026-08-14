@@ -60,6 +60,66 @@ value="<?= htmlspecialchars($item['serial_number']) ?>">
 
 </div>
 
+
+<div class="mb-3">
+<label class="form-label">Description</label>
+<textarea name="description" class="form-control" rows="5"><?= htmlspecialchars($item['description']) ?></textarea>
+</div>
+
+
+<div class="row mb-3">
+
+<div class="col-md-3">
+<label class="form-label">Quantity</label>
+<input type="number" name="quantity" class="form-control"
+value="<?= htmlspecialchars($item['quantity']) ?>" required>
+</div>
+
+<div class="col-md-3">
+<label class="form-label">Date Received</label>
+<input type="date" name="date_received" class="form-control"
+value="<?= htmlspecialchars($item['date_received']) ?>" required>
+</div>
+
+<div class="col-md-3">
+<label class="form-label">Item Type</label>
+
+<select name="type_id" class="form-control" required>
+
+<option value="">Select Type</option>
+
+<?php while($type = $type_result->fetch_assoc()): ?>
+
+<option value="<?= $type['type_id'] ?>"
+<?= ($type['type_id'] == $item['type_id']) ? 'selected' : '' ?>>
+
+<?= htmlspecialchars($type['type_name']) ?>
+
+</option>
+
+<?php endwhile; ?>
+
+</select>
+
+</div>
+<div class="col-md-3">
+    <label class="form-label">Condition</label>
+    <select name="condition" class="form-control" required>
+        <option value="">Select Condition</option>
+
+        <?php foreach($conditionsArr as $cond): ?>
+            <option value="<?= $cond['condition_id'] ?>"
+                <?= ($item['condition_id'] == $cond['condition_id']) ? 'selected' : '' ?>>
+                
+                <?= htmlspecialchars($cond['condition_name']) ?>
+            </option>
+        <?php endforeach; ?>
+
+    </select>
+</div>
+</div>
+
+
 <!-- COMPUTER SPECS -->
 
 <?php 
@@ -131,66 +191,6 @@ value="<?= htmlspecialchars($specs['comp_name'] ?? '') ?>">
 </div>
 
 </div>
-<div class="mb-3">
-<label class="form-label">Description</label>
-<textarea name="description" class="form-control" rows="5"><?= htmlspecialchars($item['description']) ?></textarea>
-</div>
-
-
-<div class="row mb-3">
-
-<div class="col-md-3">
-<label class="form-label">Quantity</label>
-<input type="number" name="quantity" class="form-control"
-value="<?= htmlspecialchars($item['quantity']) ?>" required>
-</div>
-
-<div class="col-md-3">
-<label class="form-label">Date Received</label>
-<input type="date" name="date_received" class="form-control"
-value="<?= htmlspecialchars($item['date_received']) ?>" required>
-</div>
-
-<div class="col-md-3">
-<label class="form-label">Item Type</label>
-
-<select name="type_id" class="form-control" required>
-
-<option value="">Select Type</option>
-
-<?php while($type = $type_result->fetch_assoc()): ?>
-
-<option value="<?= $type['type_id'] ?>"
-<?= ($type['type_id'] == $item['type_id']) ? 'selected' : '' ?>>
-
-<?= htmlspecialchars($type['type_name']) ?>
-
-</option>
-
-<?php endwhile; ?>
-
-</select>
-
-</div>
-<div class="col-md-3">
-    <label class="form-label">Condition</label>
-    <select name="condition" class="form-control" required>
-        <option value="">Select Condition</option>
-
-        <?php foreach($conditionsArr as $cond): ?>
-            <option value="<?= $cond['condition_id'] ?>"
-                <?= ($item['condition_id'] == $cond['condition_id']) ? 'selected' : '' ?>>
-                
-                <?= htmlspecialchars($cond['condition_name']) ?>
-            </option>
-        <?php endforeach; ?>
-
-    </select>
-</div>
-</div>
-
-
-
 
 <?php endif; ?>
 

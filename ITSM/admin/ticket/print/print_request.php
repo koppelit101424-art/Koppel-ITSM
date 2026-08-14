@@ -62,10 +62,7 @@ $recommendationText = "";
 
 while ($rec = $recommendations->fetch_assoc()) {
     $recommendationText .=
-        $rec['recommendation'] .
-        "\n\n- " .
-        $rec['fullname'] .
-        "\n\n";
+        $rec['recommendation'];
 }
 
 $recStmt->close();

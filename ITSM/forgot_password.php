@@ -52,7 +52,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
             $mail->Username = 'koppelit101424@gmail.com';
 
-            $mail->Password = 'eymk qyiv awbw wvxb';
+            $mail->Password = 'qmol klsu mdqb itpk';
 
             $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
 

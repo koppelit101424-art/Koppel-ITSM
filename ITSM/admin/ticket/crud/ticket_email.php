@@ -34,10 +34,10 @@ try {
     $mail->Host       = 'smtp.gmail.com';
     $mail->SMTPAuth   = true;
     $mail->Username   = 'koppelit101424@gmail.com';
-    $mail->Password   = 'eymk qyiv awbw wvxb';
+    $mail->Password   = 'qmol klsu mdqb itpk';
     $mail->SMTPSecure = 'tls';
     $mail->Port       = 587;
-
+// eymk qyiv awbw wvxb
     $mail->setFrom('koppelit101424@gmail.com', 'IT Support');
     $mail->addAddress($userEmail, $fullname);
     $mail->addCC('itticketing@koppel.ph');
