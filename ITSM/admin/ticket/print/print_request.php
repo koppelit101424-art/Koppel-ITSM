@@ -174,7 +174,7 @@ $recStmt->close();
           <th class="price">PRICE</th>
           <th class="date">DATE NEEDED</th>
           <th class="remarks">REMARKS</th>
-          <th class="" >IT RECOMMENDATION: 
+          <th class="" >
         </th>
         </tr>
       </thead>
@@ -189,8 +189,8 @@ $recStmt->close();
     <td style="white-space: pre-wrap;"></td>
     <td style="white-space: pre-wrap;"><?= htmlspecialchars($item['date_needed']) ?></td>
     <td style="white-space: pre-wrap; text-align: left; padding-left: 5px;"><?= htmlspecialchars($item['remarks']) ?></td>
-    <td rowspan="17"><br><p style="text-align: left;font-weight: 300; padding-left: -15px;"><?= nl2br(htmlspecialchars($recommendationText)) ?></p>  
-   </td>
+    <!-- <td rowspan="17"><br><p style="text-align: left;font-weight: 300; padding-left: -15px;"><?= nl2br(htmlspecialchars($recommendationText)) ?></p>  
+   </td> -->
 
         </tr>
         <?php endforeach; ?>
