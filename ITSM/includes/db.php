@@ -1,15 +1,14 @@
 <?php
-    // Database connection
-    $host = "localhost";
-    $user = "root";
-    $pass = "";
-    $db   = "inventory_db";
-
-    // Database connection
     // $host = "localhost";
     // $user = "root";
-    // $pass = "Koppels3cur1ty";
+    // $pass = "";
     // $db   = "inventory_db";
+
+    Database connection
+    $host = "localhost";
+    $user = "root";
+    $pass = "Koppels3cur1ty";
+    $db   = "inventory_db";
 
     $conn = new mysqli($host, $user, $pass, $db);
 
