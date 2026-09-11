@@ -364,7 +364,7 @@ include __DIR__ . '/../../includes/db.php';
         <label class="form-label">Status</label>
         <select id="statusSelectFilter" class="form-select">
           <option value="">All</option>
-          <option value="open">All Open</option>
+          <option value="open" selected>All Open</option>
           <option value="waiting for support">Waiting for Support</option>
           <option value="waiting for customer">Waiting for Customer</option>
           <option value="in progress">In Progress</option>
