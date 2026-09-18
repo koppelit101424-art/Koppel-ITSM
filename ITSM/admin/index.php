@@ -72,6 +72,9 @@ if(isset($_GET['ajax'])){
         case "get_models":
             include "includes/get_models.php";
             exit;
+        case "update_status_lmr":
+            include "ticket/includes/update_status_lmr.php";
+            exit;
     }
 }
 ?>
@@ -296,9 +299,9 @@ if(isset($_GET['ajax'])){
                         break;
                     case "ticket/includes/update_status":
                         include "ticket/includes/update_status.php";
-                    case "ticket/includes/update_status_lmr":
-                        include "ticket/includes/update_status_lmr.php";
-                        break;
+                    // case "ticket/includes/update_status_lmr":
+                    //     include "ticket/includes/update_status_lmr.php";
+                    //     break;
                     case "ticket/includes/reassign_ticket":
                         include "ticket/includes/reassign_ticket.php";
                         break;

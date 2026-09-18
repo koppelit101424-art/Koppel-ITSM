@@ -33,18 +33,62 @@ include __DIR__ . '/../../includes/db.php';
     /* ==============================
     FETCH TICKETS
     ============================== */
+    // $sql = "
+    // SELECT 
+    //     t.*,
+    //     u.fullname AS user_fullname,
+    //     a.fullname AS assigned_admin
+    // FROM ticket_tb t
+    // LEFT JOIN user_tb u ON t.user_id = u.user_id
+    // LEFT JOIN user_tb a 
+    //     ON t.assigned_to = a.user_id 
+    //     AND a.user_type = 'admin'
+    // ORDER BY t.ticket_id DESC
+    // ";
     $sql = "
-    SELECT 
-        t.*,
-        u.fullname AS user_fullname,
-        a.fullname AS assigned_admin
-    FROM ticket_tb t
-    LEFT JOIN user_tb u ON t.user_id = u.user_id
-    LEFT JOIN user_tb a 
-        ON t.assigned_to = a.user_id 
-        AND a.user_type = 'admin'
-    ORDER BY t.ticket_id DESC
-    ";
+SELECT 
+    t.*,
+    u.fullname AS user_fullname,
+    a.fullname AS assigned_admin
+FROM ticket_tb t
+LEFT JOIN user_tb u ON t.user_id = u.user_id
+LEFT JOIN user_tb a 
+    ON t.assigned_to = a.user_id 
+    AND a.user_type = 'admin'
+ORDER BY
+    CASE LOWER(t.status)
+        WHEN 'closed' THEN 8
+        WHEN 'canceled' THEN 7
+        WHEN 'resolved' THEN 6
+        WHEN 'escalated' THEN 5
+        WHEN 'pending' THEN 4
+        WHEN 'in progress' THEN 3
+        WHEN 'waiting for customer' THEN 2
+        WHEN 'waiting for support' THEN 1
+        ELSE 99
+    END ASC,
+
+    CASE LOWER(t.priority)
+        WHEN 'highest' THEN 1
+        WHEN 'high' THEN 2
+        WHEN 'medium' THEN 3
+        WHEN 'low' THEN 4
+        WHEN 'lowest' THEN 5
+        ELSE 99
+    END ASC,
+
+    COALESCE(a.fullname, '') ASC,
+
+    CASE LOWER(t.impact)
+        WHEN 'organization' THEN 1
+        WHEN 'department' THEN 2
+        WHEN 'individual' THEN 3
+        ELSE 99
+    END ASC,
+
+    t.date_created DESC
+";
+
 
     $result = $conn->query($sql);
 
@@ -606,57 +650,24 @@ $.fn.dataTable.ext.type.order['impact-sort-pre'] = function (data) {
 
     $(document).ready(function () {
 
-const table = $('#ticketsTable').DataTable({
-    pageLength: 25,
-    lengthMenu: [10, 25, 50, 100, 250, 500, 1000, 3000, 5000],
-    order: [
-        [7, "desc"],
-        [4, "asc"],// PRIORITY (highest first)
-        [6, "asc"], 
-        [3, "asc"], // IMPACT (organization first)
-        [8, "desc"] // DATE (latest)
-    ]
-    ,
-columnDefs: [
+    const table = $('#ticketsTable').DataTable({
+        pageLength: 25,
+        lengthMenu: [10, 25, 50, 100, 250, 500, 1000, 3000, 5000],
 
-    // PRIORITY (COLUMN 4)
-    {
-        targets: 4,
-        render: function (data, type, row) {
+        order: [],
 
-            let text = $('<div>').html(data).text().toLowerCase().trim();
+        columnDefs: [
+            {
+                targets: 4,
+                orderable: true
+            },
+            {
+                targets: 3,
+                orderable: true
+            }
+        ]
+    });
 
-            let order = {
-                'highest': 1,
-                'high': 2,
-                'medium': 3,
-                'low': 4,
-                'lowest': 5
-            };
-
-            return type === 'sort' ? (order[text] || 99) : data;
-        }
-    },
-
-    // IMPACT (COLUMN 3)
-    {
-        targets: 3,
-        render: function (data, type, row) {
-
-            let text = data.toLowerCase().trim();
-
-            let order = {
-                'organization': 1,
-                'department': 2,
-                'individual': 3
-            };
-
-            return type === 'sort' ? (order[text] || 99) : data;
-        }
-    }
-
-]
-});
            $.fn.dataTable.ext.search.push(function (settings, data, dataIndex) {
 
     const row = table.row(dataIndex).node();
