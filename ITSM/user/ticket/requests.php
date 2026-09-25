@@ -144,25 +144,38 @@ $requests = $stmt->get_result();
                                             <?= ucfirst($row['status']) ?>
                                         </span>
                                     </td>
+                                    
                                     <td><?= date('m-d-Y', strtotime($row['date_created'])) ?></td>
                                     <td><?= htmlspecialchars($row['remarks'] ?? '-') ?></td>
-                            <td onclick="event.stopPropagation();">
+                                    <td onclick="event.stopPropagation();">
 
-                                <a href="?page=ticket/view_request&request_id=<?= $row['request_id'] ?>"
-                                class="btn btn-sm btn-primary"
-                                title="View">
-                                    <i class="fas fa-eye"></i>
-                                </a>
+                                        <a href="?page=ticket/view_request&request_id=<?= $row['request_id'] ?>"
+                                        class="btn btn-sm btn-primary"
+                                        title="View">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
 
-                                <button
-                                    type="button"
-                                    class="btn btn-sm btn-success btn-print"
-                                    data-lmr="<?= htmlspecialchars($row['lmr_no']) ?>"
-                                    data-status="<?= strtolower(trim($row['status'])) ?>"
-                                    title="Print">
-                                    <i class="fas fa-print"></i>
-                                </button>
-                            </td>
+                                        <?php if (strtolower(trim($row['status'])) === 'pending'): ?>
+
+                                            <a href="?page=ticket/includes/edit_it_request&request_id=<?= $row['request_id'] ?>"
+                                            class="btn btn-sm btn-warning"
+                                            title="Edit">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+
+                                        <?php endif; ?>
+
+                                        <button
+                                            type="button"
+                                            class="btn btn-sm btn-success btn-print"
+                                            data-lmr="<?= htmlspecialchars($row['lmr_no']) ?>"
+                                            data-status="<?= strtolower(trim($row['status'])) ?>"
+                                            title="Print">
+                                            <i class="fas fa-print"></i>
+                                        </button>
+
+                                    </td>
+
                                 </tr>
                             <?php endwhile; ?>
                         <?php else: ?>

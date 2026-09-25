@@ -354,7 +354,8 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
                                     <td><?= $i++ ?></td>
                                     <td><?= htmlspecialchars($row['lmr_no']) ?></td>
                                     <td><?= htmlspecialchars($row['department']) ?></td>
-                                    <td><?= htmlspecialchars(string: $row['item']) ?></td>
+                                    <td><?= htmlspecialchars($row['item']) ?></td>
+
                                     <td><?= $row['quantity'] ?></td>
                                     <td><?= htmlspecialchars($row['UoM']) ?></td>
                                     <?php
@@ -408,23 +409,41 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
                                     <td><?= date('m-d-Y', strtotime($row['date_created'])) ?></td>
                                     <td><?= date('m-d-Y', strtotime( $row['date_needed'])) ?></td>
                                     <td><?= htmlspecialchars($row['remarks'] ?? '-') ?></td>
-                            <td onclick="event.stopPropagation();">
+                                        <td onclick="event.stopPropagation();">
 
-                                <a href="?page=ticket/view_request&request_id=<?= $row['request_id'] ?>"
-                                class="btn btn-sm btn-primary"
-                                title="View">
-                                    <i class="fas fa-eye"></i>
-                                </a>
+                                            <a href="?page=ticket/view_request&request_id=<?= $row['request_id'] ?>"
+                                            class="btn btn-sm btn-primary"
+                                            title="View">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
 
-                                <button
-                                    type="button"
-                                    class="btn btn-sm btn-success btn-print"
-                                    data-lmr="<?= htmlspecialchars($row['lmr_no']) ?>"
-                                    data-status="<?= strtolower(trim($row['status'])) ?>"
-                                    title="Print">
-                                    <i class="fas fa-print"></i>
-                                </button>
-                            </td>
+                                            <?php
+                                            $isLocalUser =
+                                                (int)$row['created_by'] === (int)$_SESSION['user_id'];
+
+                                            $isPending =
+                                                strcasecmp(trim($row['status']), 'pending') === 0;
+                                            ?>
+
+                                            <?php if ($isLocalUser && $isPending): ?>
+                                                <a href="?page=ticket/includes/edit_request&request_id=<?= (int)$row['request_id'] ?>"
+                                                class="btn btn-sm btn-warning"
+                                                title="Edit">
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+                                            <?php endif; ?>
+
+                                            <button
+                                                type="button"
+                                                class="btn btn-sm btn-success btn-print"
+                                                data-lmr="<?= htmlspecialchars($row['lmr_no']) ?>"
+                                                data-status="<?= htmlspecialchars(strtolower(trim($row['status']))) ?>"
+                                                title="Print">
+                                                <i class="fas fa-print"></i>
+                                            </button>
+
+                                        </td>
+
                                 </tr>
                             <?php endwhile; ?>
                         <?php else: ?>

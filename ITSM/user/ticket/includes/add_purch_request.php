@@ -150,6 +150,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         if (!$stmt->execute()) {
             $errors[] = "Failed to insert item " . $itemData['item'] . ": " . $stmt->error;
         }
+        if (empty($errors)) {
+
+            echo '<script>
+
+                window.location.href = "?page=ticket/purch_lmr";
+            </script>';
+
+            exit;
+        }
         //      if ($insertCount > 0) {
         //     $success = "$insertCount item(s) added successfully under LMR No: " . htmlspecialchars($lmr_no);
         // } else {
@@ -337,11 +346,7 @@ function addItemRow() {
 
 window.onload = addItemRow;
 </script>
-<script>
-document.getElementById('requestForm').addEventListener('submit', function () {
-    window.location.href = 'purch_lmr.php';
-});
-</script>
+
 
 </body>
 </html>
