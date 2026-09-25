@@ -191,7 +191,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 <div class="card">
 
 <div class="card-header d-flex justify-content-between align-items-center text-white">
-<span>Add New Request (Multiple Items)</span>
+<span>Add Purchasing LMR (Multiple Items)</span>
 <a href="?page=ticket/purch_lmr"  class="btn btn-secondary btn-sm">
 <!-- <i class="fas fa-arrow-left me-1"></i> -->
  Back to Requests
