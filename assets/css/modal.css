@@ -1,0 +1,7 @@
+
+.modal {
+    z-index: 1200; /* higher than header */
+}
+.modal-backdrop {
+    z-index: 1150; /* higher than header but below modal */
+}

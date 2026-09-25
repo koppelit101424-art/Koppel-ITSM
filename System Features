@@ -1,0 +1,82 @@
+LOGIN
+    - cannot login wrong creds
+    - cannot login disabled account
+    - can reset password 
+    - send reset link on email registered
+    - user cannot login on admin login page (vice versa)
+    - auto logout if not active for 15 minutes
+    - employee id unique 
+
+IT Manager
+    - Mostly viewing only
+    - Change status of LMR (Approver)
+    - Cannot see/change any settings
+    <!-- - Can create announcement (CRUD)-->
+
+Admin
+    -Dashboard
+        - See summary/monitoring of items, tickets, request and users through graphs and charts
+
+    <!-- -Announcements (TBA) -->
+
+    -Inventory Management
+        - Inventory Management (CRUD)
+        - Clickable Asset to see other details (modal view)
+        - Filter Inventory 
+        <!-- - Print Inventory Excel/PDF(Filter base) (TBA) -->
+        - Asset Borrow and Issuance
+        - Credential Management
+        - Computer Set Management
+        - Computer to User Assignment
+        - Computer filter depending on company/area
+        - unique serial 
+        - auto generated item code
+
+    -Ticketing
+        - Ticket Management (CRUD)
+        - Ticket Creation for User
+        - Ticket Change status, 
+        - Ticket Filter and Print Excel/PDF
+        - Ticket Timer (depending on company hours)
+        - Ticket Pause if Pending
+        - Ticket Chat
+        - Ticket comment and status logs
+        - Ticket Attachment, Downloadable
+        - SLA Monitoring (Resolved, Ongoing Tickets, Failed and Met SLA)
+        - SLA Rating
+        - SLA settings modification (depending on company hours, holidays)
+        - Set SLA targets
+        <!-- - CSAT (to be added) -->
+        - Creation of LMR linked to tickets
+
+    -LMR
+        - Request Management and monitoring
+        - Manager can approve or reject LMR
+        - Clickable ticket reference
+        <!-- - Can chat inside LMR (to be added) -->
+
+    -User Management
+        - User Management (CRUD)
+        - Can change user password
+        - Enable and Disable Account
+        - Cannot delete user if has issued asset
+        - clickable user to see all issued asset
+        <!-- - Ticket Filter and Print Excel/PDF (TBA) -->
+        - Filter Users Deparment/Company
+
+    -Settings Customization
+        - Create Backup button (Instantly download Database backup without accessing database)
+
+Agent
+    - Viewing on inventory
+    - cannot add/edit/delete/assign/issue asset inventory/users/announcement
+    - all ticket function availabel
+    - cannot view/change settings
+
+User
+    <!-- - View Announcements(TBA) -->
+    - View Issued Asset and Requests
+    - Create Ticket
+    - View Status of ticket
+    - chat inside the ticket
+    <!-- - Support Rating (TBA) -->

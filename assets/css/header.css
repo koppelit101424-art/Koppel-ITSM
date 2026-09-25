@@ -1,0 +1,102 @@
+   /* HEADER */
+.header {
+    height: 60px;
+    padding: 0 15px;
+    background: white;
+    border-bottom: 1px solid #e5e7eb;
+    display: flex;
+    align-items: center;
+
+
+    position: sticky;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 1100; 
+}
+ /* .header{
+height:60px;
+padding:0 15px;
+background:white;
+border-bottom:1px solid #e5e7eb;
+display:flex;
+align-items:center;
+} */
+
+/* LOGO */
+.sidebar-logo{
+height:38px;
+object-fit:contain;
+}
+
+/* USER AVATAR */
+.avatar-circle{
+width:36px;
+height:36px;
+border-radius:50%;
+background:#1E3A8A;
+color:white;
+display:flex;
+align-items:center;
+justify-content:center;
+font-weight:600;
+font-size:14px;
+}
+
+/* USER NAME */
+.user-name{
+font-weight:500;
+font-size:14px;
+white-space:nowrap;
+}
+
+/* NOTIFICATION BADGE */
+.notification-badge{
+position:absolute;
+top:-5px;
+right:-5px;
+background:#ef4444;
+color:white;
+font-size:11px;
+padding:2px 6px;
+border-radius:20px;
+}
+
+/* ================= MOBILE ================= */
+
+@media (max-width:768px){
+
+.user-name{
+display:none;
+}
+
+.user-arrow{
+display:none;
+}
+
+.sidebar-logo{
+height:30px;
+}
+
+.header{
+padding:0 10px;
+}
+
+/* MOBILE SIDEBAR */
+
+#sidebar{
+position:fixed;
+left:-260px;
+top:0;
+height:100%;
+width:260px;
+background:#1E3A8A;
+transition:0.3s;
+z-index:1050;
+}
+
+#sidebar.active{
+left:0;
+}
+
+}

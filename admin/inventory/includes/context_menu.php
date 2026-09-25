@@ -1,0 +1,20 @@
+ <div id="contextMenu" class="custom-menu">
+    <a href="#" id="editLink">
+    <i class="fas fa-edit text-primary me-1"></i> Edit
+    </a>
+
+    <a href="#" id="deleteLink">
+    <i class="fas fa-trash text-danger me-1"></i> Delete
+    </a>
+
+    <a href="#" id="borrowLink">
+    <i class="fas fa-hand-holding text-primary me-1"></i> Borrow
+    </a>
+
+    <a href="#" id="issueLink">
+    <i class="fas fa-file-signature text-primary me-1"></i> Issue
+    </a>
+    <a href="#" id="copyLink">
+    <i class="fas fa-copy text-success me-1"></i> Copy
+    </a>
+</div>

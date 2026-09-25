@@ -1,0 +1,49 @@
+<?php
+session_start();
+include __DIR__ . '/../../../includes/auth.php';
+include __DIR__ . '/../../../includes/db.php';
+header('Content-Type: application/json');
+
+$currentUserId = $_SESSION['user_id'] ?? null;
+$role = $_SESSION['user_type'] ?? 'user';
+
+if (!$currentUserId) {
+    echo json_encode(['success'=>false, 'error'=>'Not logged in']);
+    exit;
+}
+
+$data = json_decode(file_get_contents('php://input'), true);
+$ticket_id = $data['ticket_id'] ?? null;
+$message = trim($data['message'] ?? '');
+
+if (!$ticket_id || !$message) {
+    echo json_encode(['success'=>false,'error'=>'Ticket ID or message missing']);
+    exit;
+}
+
+$senderRole = ($role === 'admin') ? 'admin' : 'user';
+
+// INSERT MESSAGE (without is_public)
+$stmt = $conn->prepare("INSERT INTO ticket_messages (ticket_id, sender_id, sender_role, message, created_at) VALUES (?, ?, ?, ?, NOW())");
+$stmt->bind_param("iiss", $ticket_id, $currentUserId, $senderRole, $message);
+
+if (!$stmt->execute()) {
+    echo json_encode(['success'=>false, 'error'=>$stmt->error]);
+    exit;
+}
+
+// -------------------------------------------------
+// TRIGGER EMAIL AFTER INSERT
+// -------------------------------------------------
+
+// Variables for email script
+$ticketId = $ticket_id;
+$ticketMessage = $message;
+$senderId = $currentUserId;
+$senderRole = $senderRole;
+
+// Include email script
+include __DIR__ . '/../crud/ticket_message_email.php';
+
+echo json_encode(['success'=>true]);
+$conn->close();

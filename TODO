@@ -1,0 +1,58 @@
+ADMIN
+    USER CRUD - 3/9/26
+    USER ENABLE ACCOUNT - 3/9/26
+    USER CHANGE PASSWORD - 3/8/26
+    USER RESET PASSWORD - 3/8/26
+    USER_EMP CODE unique - 3/10/26
+    issued item - 3/14/26
+    desktop/laptop currently using - 3/14/26
+    create ticket - 3/14/26
+
+    make asset code unique as well as serial - 3/10/26
+    change item code auto generate - 3/10/26
+    ticket function - 3/12/26
+    Issuance and request right click - 3/12/26
+    request approval - 3/13/26
+    download and viewing of image - 3/14/26
+    polish add ticket on admin - 3/14/26
+    add desktop - 3/14/26
+    edit desktop - 3/14/26
+    assign desktop - 3/14/26
+    viewing of issued asset - 3/14/26
+    laptop details - 3/15/26
+    add ticket time - 3/19/26
+    ticket comment - 3/19/26
+    auto refresh ticket  - 3/19/26
+    clickable issuance and desktop user - 3/20/26
+    add condition on asset- 3/20/26
+    change color of status - 3/20/26
+    sidebar assets - 3/20/26
+    check issuance/inventory before deleting/disabling users - 3/20/26
+    announcement CRUD- 3/21/26
+    view modal desktop- 3/21/26
+    context menu modal fix- 3/21/26
+    header blocking modal fix - 3/21/26
+    print LMR, Issuance form - 3/21/26
+    database whole backup- 3/25/26
+    notif on email- 3/26/26
+    QR on asset - 3/27/26
+    cc email- 3/27/26
+    loader on add ticket- 3/27/26
+    fetch qr on modal - 3/28/26
+    print and export xls function filtered assets  - 3/28/26
+    print and export xls function (all issued assets)  - 3/29/26
+    print & export credentials - 3/29/26
+    print & export desktops - 3/29/26
+    notif each status change - 4/1/26
+    user email notif, ticket assignment notif - 4/1/26
+    chat UI, auto reset text area after enter - 4/4/26
+    ticket pause on weekends - 4/4/26
+
+    print list filtered lmr, filtered sla tally, list of filtered users
+    clickable request, chat inside request
+    On select filter
+    Inventory image     
+    fix modal on announcement 
+
+
+    

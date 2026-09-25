@@ -1,0 +1,1071 @@
+<style>
+@media print, .html2pdf__container {
+
+    .card {
+        box-shadow: none !important;
+        border: 1px solid #ddd !important;
+    }
+
+    canvas {
+        max-width: 100% !important;
+        height: auto !important;
+    }
+
+    body {
+        background: #fff !important;
+    }
+}
+#printArea {
+    display: block !important;
+    visibility: visible !important;
+    background: white;
+}
+</style>
+<?php
+    include '../includes/auth.php';
+    include '../includes/db.php';
+    include 'inventory/includes/inv_sql.php';
+    require_once 'ticket/includes/sla_functions.php';
+    // include '../config/config.php';
+
+// USERS
+    // ================= USER GRAPH DATA =================
+
+    // Active vs Disabled
+    $activeCount = 0;
+    $disabledCount = 0;
+
+    $statusQuery = $conn->query("
+        SELECT 
+            SUM(CASE WHEN is_active = 1 THEN 1 ELSE 0 END) as active,
+            SUM(CASE WHEN is_active = 0 THEN 1 ELSE 0 END) as disabled
+        FROM user_tb
+    ");
+    $statusRow = $statusQuery->fetch_assoc();
+    $activeCount = $statusRow['active'] ?? 0;
+    $disabledCount = $statusRow['disabled'] ?? 0;
+
+
+    // Users per Department
+    $deptLabels = [];
+    $deptCounts = [];
+    $deptQuery = $conn->query("
+        SELECT department, COUNT(*) as total 
+        FROM user_tb 
+        GROUP BY department
+    ");
+    while($row = $deptQuery->fetch_assoc()){
+        $deptLabels[] = $row['department'];
+        $deptCounts[] = $row['total'];
+    }
+
+
+    // Users per Company
+    $companyLabels = [];
+    $companyCounts = [];
+    $companyQuery = $conn->query("
+        SELECT company, COUNT(*) as total 
+        FROM user_tb 
+        GROUP BY company
+    ");
+    while($row = $companyQuery->fetch_assoc()){
+        $companyLabels[] = $row['company'];
+        $companyCounts[] = $row['total'];
+    }
+
+
+    // Users per Area
+    $areaLabels = [];
+    $areaCounts = [];
+    $areaQuery = $conn->query("
+        SELECT area, COUNT(*) as total 
+        FROM user_tb 
+        GROUP BY area
+    ");
+    while($row = $areaQuery->fetch_assoc()){
+        $areaLabels[] = $row['area'];
+        $areaCounts[] = $row['total'];
+    }
+?>
+
+<?php
+    $filterType = $_GET['range'] ?? 'all'; // day, week, month, year, all
+    $adminFilter = $_GET['admin'] ?? 'all';
+
+    $where = "WHERE 1=1";
+    $params = [];
+
+    // Date range filter
+    if (!empty($_GET['start']) && !empty($_GET['end'])) {
+        $start = $_GET['start'];
+        $end   = $_GET['end'];
+
+        $where .= " AND DATE(t.date_created) BETWEEN '$start' AND '$end'";
+    }
+
+    // Range filter
+    if ($filterType == 'day') {
+        $where .= " AND DATE(t.date_created) = CURDATE()";
+    }
+    elseif ($filterType == 'week') {
+        $where .= " AND YEARWEEK(t.date_created,1) = YEARWEEK(CURDATE(),1)";
+    }
+    elseif ($filterType == 'month') {
+        $where .= " AND MONTH(t.date_created) = MONTH(CURDATE()) 
+                    AND YEAR(t.date_created)=YEAR(CURDATE())";
+    }
+    elseif ($filterType == 'year') {
+        $where .= " AND YEAR(t.date_created)=YEAR(CURDATE())";
+    }
+
+    // Admin filter
+    if ($adminFilter !== 'all') {
+        $where .= " AND t.assigned_to = '$adminFilter'";
+    }
+?>
+<?php
+    $totalResponseMinutes = 0;
+    $totalResolutionMinutes = 0;
+    $totalResolutionMinutesLow = 0;
+    $totalResolutionMinutesMed = 0;
+    $totalResolutionMinutesHigh = 0;
+    $countResponse = 0;
+    $countResolution = 0;
+    $countResolutionLow = 0;
+    $countResolutionMed = 0;
+    $countResolutionHigh = 0;
+
+    $totalMet = 0;
+    $totalNotMet = 0;
+
+    // SUBJECT
+    $subjectLabels=[];
+    $subjectData=[];
+
+    $res=$conn->query("
+        SELECT subject, COUNT(*) total 
+        FROM ticket_tb t 
+        $where
+        GROUP BY subject
+        ORDER BY total DESC LIMIT 10
+    ");
+
+    while($r=$res->fetch_assoc()){
+        $subjectLabels[]=$r['subject'];
+        $subjectData[]=$r['total'];
+    }
+
+    // SUBJECT Details
+    $subjectDetailsLabels=[];
+    $subjectDetailsData=[];
+
+    $res=$conn->query("
+        SELECT subject_details, COUNT(*) total 
+        FROM ticket_tb t 
+        $where
+        GROUP BY subject_details
+        ORDER BY total DESC LIMIT 10
+    ");
+
+    while($r=$res->fetch_assoc()){
+        $subjectDetailsLabels[]=$r['subject_details'];
+        $subjectDetailsData[]=$r['total'];
+    }
+    // CATEGORY
+    $catLabels=[];
+    $catData=[];
+
+    $res=$conn->query("
+        SELECT ticket_category, COUNT(*) total 
+        FROM ticket_tb t 
+        $where
+        GROUP BY ticket_category
+    ");
+
+    while($r=$res->fetch_assoc()){
+        $catLabels[]=$r['ticket_category'];
+        $catData[]=$r['total'];
+    }
+
+    // TOTAL TICKETS
+    $totalTickets = $conn->query("SELECT COUNT(*) total FROM ticket_tb t $where")
+                        ->fetch_assoc()['total'] ?? 0;
+
+    // RESOLVED
+    $totalResolved = $conn->query("
+        SELECT COUNT(*) total FROM ticket_tb t 
+        $where AND t.status IN('resolved','closed')
+    ")->fetch_assoc()['total'] ?? 0;
+
+    // ON GOING
+    $totalOngoing = $conn->query("
+        SELECT COUNT(*) total FROM ticket_tb t 
+        $where AND t.status NOT IN('resolved','closed')
+    ")->fetch_assoc()['total'] ?? 0;
+
+    // AVG PER DAY
+    $avgPerDay = $conn->query("
+        SELECT COUNT(*) / COUNT(DISTINCT DATE(date_created)) avg_val
+        FROM ticket_tb t $where
+    ")->fetch_assoc()['avg_val'] ?? 0;
+
+    // AVG PER WEEK
+    $avgPerWeek = $conn->query("
+        SELECT COUNT(*) / COUNT(DISTINCT YEARWEEK(date_created)) avg_val
+        FROM ticket_tb t $where
+    ")->fetch_assoc()['avg_val'] ?? 0;
+
+    // AVG PER MONTH
+    $avgPerMonth = $conn->query("
+        SELECT COUNT(*) / COUNT(DISTINCT DATE_FORMAT(date_created,'%Y-%m')) avg_val
+        FROM ticket_tb t $where
+    ")->fetch_assoc()['avg_val'] ?? 0;
+
+    $tickets = $conn->query("
+        SELECT * FROM ticket_tb t
+        $where
+    ");
+
+    while($t = $tickets->fetch_assoc()){
+
+        $priority = strtolower($t['priority'] ?? 'medium');
+        $created  = $t['date_created'];
+        $ticketId = $t['ticket_id'];
+
+        // FIRST RESPONSE
+        $firstResponse = $conn->query("
+            SELECT created_at FROM ticket_logs
+            WHERE ticket_id=$ticketId
+            AND field_name='status'
+            AND old_value='waiting for support'
+            AND new_value IN('in progress','pending','escalated','waiting for customer')
+            ORDER BY created_at ASC LIMIT 1
+        ")->fetch_assoc()['created_at'] ?? null;
+
+        // RESOLVED TIME
+        $resolvedTime = $conn->query("
+            SELECT created_at FROM ticket_logs
+            WHERE ticket_id=$ticketId
+            AND field_name='status'
+            AND new_value='resolved'
+            ORDER BY created_at ASC LIMIT 1
+        ")->fetch_assoc()['created_at'] ?? null;
+
+         // RESOLVED TIME LOW
+        $resolvedTimeLow = $conn->query("
+            SELECT created_at FROM ticket_logs l
+            LEFT JOIN ticket_tb t on t.ticket_id = l.ticket_id
+            WHERE l.ticket_id=$ticketId and t.priority = 'low'
+            AND l.field_name='status'
+            AND l.new_value='resolved'
+            ORDER BY l.created_at ASC LIMIT 1
+        ")->fetch_assoc()['created_at'] ?? null;
+
+         // RESOLVED TIME MED
+        $resolvedTimeMed = $conn->query("
+            SELECT created_at FROM ticket_logs l
+            LEFT JOIN ticket_tb t on t.ticket_id = l.ticket_id
+            WHERE l.ticket_id=$ticketId and t.priority = 'medium'
+            AND l.field_name='status'
+            AND l.new_value='resolved'
+            ORDER BY l.created_at ASC LIMIT 1
+        ")->fetch_assoc()['created_at'] ?? null;
+
+         // RESOLVED TIME High/Highest
+        $resolvedTimeHigh = $conn->query("
+            SELECT created_at FROM ticket_logs l
+            LEFT JOIN ticket_tb t on t.ticket_id = l.ticket_id
+            WHERE l.ticket_id=$ticketId and t.priority = 'high'
+            AND l.field_name='status'
+            AND l.new_value='resolved'
+            ORDER BY l.created_at ASC LIMIT 1
+        ")->fetch_assoc()['created_at'] ?? null;
+
+        $responseMet = false;
+        $resolutionMet = false;
+
+        // RESPONSE TIME
+        if($firstResponse){
+            $respMinutes = calculateBusinessMinutes($conn,$ticketId,$created,$firstResponse);
+
+            $totalResponseMinutes += $respMinutes;
+            $countResponse++;
+
+            $responseMet = $respMinutes <= ($responseMatrix[$priority] ?? 240);
+        }
+
+        // RESOLUTION TIME
+        if($resolvedTime){
+            $resMinutes = calculateBusinessMinutes($conn,$ticketId,$created,$resolvedTime);
+
+            $totalResolutionMinutes += $resMinutes;
+            $countResolution++;
+
+            $resolutionMet = $resMinutes <= ($slaMatrix[$priority] ?? 4320);
+        }
+
+        if($resolvedTimeLow){
+            $resMinutesLow = calculateBusinessMinutes($conn,$ticketId,$created,$resolvedTimeLow);
+
+            $totalResolutionMinutesLow += $resMinutesLow;
+            $countResolutionLow++;
+
+            $resolutionMetLow = $resMinutesLow <= ($slaMatrix[$priority] ?? 4320);
+        }
+
+        if($resolvedTimeMed){
+            $resMinutesMed = calculateBusinessMinutes($conn,$ticketId,$created,$resolvedTimeMed);
+
+            $totalResolutionMinutesMed += $resMinutesMed;
+            $countResolutionMed++;
+
+            $resolutionMetMed = $resMinutesMed <= ($slaMatrix[$priority] ?? 4320);
+        }
+
+        if($resolvedTimeHigh){
+            $resMinutesHigh = calculateBusinessMinutes($conn,$ticketId,$created,$resolvedTimeHigh);
+
+            $totalResolutionMinutesHigh += $resMinutesHigh;
+            $countResolutionHigh++;
+
+            $resolutionMetHigh = $resMinutesHigh <= ($slaMatrix[$priority] ?? 4320);
+        }
+        // FINAL SLA
+        if($responseMet && $resolutionMet){
+            $totalMet++;
+        } else {
+            $totalNotMet++;
+        }
+    }
+
+    $avgResponse = $countResponse > 0 
+    ? round($totalResponseMinutes / $countResponse, 2) 
+    : 0;
+
+    $avgResolution = $countResolution > 0 
+        ? round($totalResolutionMinutes / $countResolution, 2) 
+        : 0;
+
+    $avgResolutionLow = $countResolutionLow > 0 
+        ? round($totalResolutionMinutesLow / $countResolutionLow, 2) 
+        : 0;
+
+    $avgResolutionMed = $countResolutionMed > 0 
+        ? round($totalResolutionMinutesMed / $countResolutionMed, 2) 
+        : 0;
+
+    $avgResolutionHigh = $countResolutionHigh > 0 
+        ? round($totalResolutionMinutesHigh / $countResolutionHigh, 2) 
+        : 0;
+        
+    // PRIORITY
+    $priorityLabels = [];
+    $priorityData = [];
+
+    $res = $conn->query("
+        SELECT priority, COUNT(*) total 
+        FROM ticket_tb t 
+        $where
+        GROUP BY priority
+    ");
+
+    while($r=$res->fetch_assoc()){
+        $priorityLabels[] = $r['priority'];
+        $priorityData[] = $r['total'];
+    }  
+?>
+<style>
+    .card {
+    border-radius: 0.75rem;
+    box-shadow:
+        0 10px 20px rgba(32, 71, 190, 0.35),
+        0 10px 25px rgba(23, 10, 144, 0.25);
+}
+</style>
+  <div id="inventoryTableContainer" style="display: none;">
+    <?php include 'inventory/all_assets.php'; ?>
+</div>
+
+            <!-- ================= Inventory GRAPHS ================= -->
+            <?php include __DIR__ . '/inventory/includes/inv_graph.php'; ?>
+
+            <!-- ================= USER GRAPHS ================= -->
+            <div id="userGraphs" class="mt-5">
+                <h2>Users</h2><br>
+                <div class="row">
+
+                    <!-- Active vs Disabled -->
+                    <div class="col-md-6 mb-4">
+                        <div class="card p-3">
+                            <h6 class="text-primary">Active vs Disabled Accounts</h6>
+                            <div style="height:300px">
+                                <canvas id="userStatusChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Users per Department -->
+                    <div class="col-md-6 mb-4">
+                        <div class="card p-3">
+                            <h6 class="text-primary">Users per Department</h6>
+                            <div style="height:300px">
+                                <canvas id="userDeptChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Users per Company -->
+                    <div class="col-md-6 mb-4">
+                        <div class="card p-3">
+                            <h6 class="text-primary">Users per Company</h6>
+                            <div style="height:300px">
+                                <canvas id="userCompanyChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Users per Area -->
+                    <div class="col-md-6 mb-4">
+                        <div class="card p-3">
+                            <h6 class="text-primary">Users per Area</h6>
+                            <div style="height:300px">
+                                <canvas id="userAreaChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        <div class="row mt-4">
+            <h2 class="mb-4">Tickets</h2><br>
+            <form method="GET" class="row mb-4">
+
+                <!-- User Filter -->
+                <div class="col-md-3">
+                    <label>User</label>
+                    <select name="admin" class="form-control">
+                        <option value="all">All</option>
+                        <?php
+                        $users = $conn->query("SELECT user_id, fullname FROM user_tb WHERE user_type='admin'");
+                        while($u = $users->fetch_assoc()):
+                        ?>
+                            <option value="<?= $u['user_id'] ?>" 
+                                <?= ($_GET['admin'] ?? '') == $u['user_id'] ? 'selected' : '' ?>>
+                                <?= $u['fullname'] ?>
+                            </option>
+                        <?php endwhile; ?>
+                    </select>
+                </div>
+
+                <!-- Start Date -->
+                <div class="col-md-3">
+                    <label>Start Date</label>
+                    <input type="date" name="start" class="form-control"
+                        value="<?= $_GET['start'] ?? '' ?>"
+                        
+                        >
+                </div>
+
+                <!-- End Date -->
+                <div class="col-md-3">
+                    <label>End Date</label>
+                    <input type="date" name="end" class="form-control"
+                        value="<?= $_GET['end'] ?? '' ?>"
+                        onchange="this.form.submit()">
+                </div>
+                <!-- <div class="col-md-3">
+                <button type="button" id="exportPdfBtn" class="btn btn-danger mb-3">
+                    Export to PDF
+                </button>    
+                </div> -->
+                <!-- Submit --> 
+                 <div class="col-md-3 d-flex align-items-end"> 
+                    <button type="submit" class="btn btn-primary w-100">Apply Filter</button> 
+                </div>
+            </form>
+            
+            <!-- <div id="printArea"> -->
+            <?php
+            function card($title,$value,$color='primary'){
+                echo "
+                <div class='col-md-3 mb-3'>
+                    <div class='card p-3 text-center'>
+                        <h6 class='text-$color'>$title</h6>
+                        <h3 class='text-$color'>$value</h3>
+                    </div>
+                </div>";
+            }
+            ?>
+
+            <?php
+            card('Total Tickets',$totalTickets);
+            card('Avg Ticket per Day',round($avgPerDay));
+            card('Avg Ticket per Week',round($avgPerWeek));
+            card('Avg Ticket per Month',round($avgPerMonth));
+            card('Resolved Tickets',$totalResolved,'success');
+            card('On Going Tickets',$totalOngoing,'primary');
+            card('Met SLA', $totalMet, 'success');
+            $finalTotalNotMet = 0;
+
+            $finalTotalNotMet = $totalNotMet - $totalOngoing;
+            card('Not Met SLA', $finalTotalNotMet, 'danger');
+
+            // card('Avg Response (min)', $avgResponse);
+            // $hours = floor($avgResolution / 60);
+            // $minutes = $avgResolution % 60;
+            // $formatted = "{$hours}h {$minutes}m";
+            // card('Avg Resolution', $formatted);
+
+            card('Avg Response (min)', $avgResponse);
+            $hours4 = floor($avgResolutionHigh / 60);
+            $minutes4 = $avgResolutionHigh % 60;
+            $formatted4 = "{$hours4}h {$minutes4}m";
+            card('Avg Resolution (High)', $formatted4, 'danger');
+
+            $hours3 = floor($avgResolutionMed / 60);
+            $minutes3 = $avgResolutionMed % 60;
+            $formatted3 = "{$hours3}h {$minutes3}m";
+            card('Avg Resolution (Medium)', $formatted3,'warning');
+
+            $hours2 = floor($avgResolutionLow / 60);
+            $minutes2 = $avgResolutionLow % 60;
+            $formatted2 = "{$hours2}h {$minutes2}m";
+            card('Avg Resolution (Low)', $formatted2);
+            ?>
+        </div>
+        <div class="row mt-4">
+            <div class="col-md-3">
+                <div class="card p-3">
+                    <h6>Priority Distribution</h6>
+                    <canvas id="priorityChart"></canvas><br>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card p-3">
+                    <h6>Category Distribution</h6>
+                    <canvas id="categoryTicketChart"></canvas><br>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card p-3">
+                    <h6>Subjects</h6>
+                    <canvas id="subjectChart"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="row mt-4">
+            <!-- <div class="col-md-8">
+                <div class="card p-3">
+                    <h6>Top Subjects</h6>
+                    <canvas id="subjectDetialsChart"></canvas>
+                </div>
+            </div> -->
+            <!-- <div class="col-md-4">
+                <div class="card p-3">
+                    <h6>Category Distribution</h6>
+                    <canvas id="categoryTicketChart"></canvas><br>
+                </div>
+            </div> -->
+        </div>
+
+     </div>
+     <!-- </div> -->
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="asset/js/inv_chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="asset/js/inv_toggle_table.js"></script>
+
+<!-- Charts --> 
+
+ <!-- INVENTORY -->
+<script>
+       
+        document.addEventListener('DOMContentLoaded', function() {
+        // Category Chart Data
+        const catLabels = <?php 
+            $labels = [];
+            $data = [];
+            $availableData = [];
+            $issuedData = [];
+            $catResult->data_seek(0); // Reset result pointer
+            while($row = $catResult->fetch_assoc()) {
+                $labels[] = $row['type_name'];
+                $data[] = $row['total'];
+                $availableData[] = $row['available'];
+                $issuedData[] = $row['issued'];
+            }
+            echo json_encode($labels);
+        ?>;
+        const catData = <?php echo json_encode($data); ?>;
+        const availableCounts = <?php echo json_encode($availableData); ?>;
+        const issuedCounts = <?php echo json_encode($issuedData); ?>;
+
+        // Status Chart Data
+        const statusData = [<?php echo $available; ?>, <?php echo $outOfStock; ?>];
+
+        // Monthly Trend Data
+        const monthLabels = <?php 
+            $months = [];
+            $counts = [];
+            while($row = $monthResult->fetch_assoc()) {
+                $months[] = $row['month'];
+                $counts[] = $row['count'];
+            }
+            echo json_encode($months);
+        ?>;
+        const monthData = <?php echo json_encode($counts); ?>;
+
+        // Category Chart
+        const catCtx = document.getElementById('categoryChart').getContext('2d');
+        new Chart(catCtx, {
+            type: 'bar',
+            data: {
+                labels: catLabels,
+                datasets: [{
+                    label: 'Total Assets',
+                    data: catData,
+                    backgroundColor: catLabels.map((_, i) => 
+                        `hsl(${i * 60}, 70%, 60%)`
+                    ),
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { beginAtZero: true, ticks: { precision: 0 } }
+                },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const index = context.dataIndex;
+                                const total = context.parsed.y;
+                                const available = availableCounts[index];
+                                const issued = issuedCounts[index];
+                                
+                                return [
+                                    `Total: ${total}`,
+                                    `Available: ${available}`,
+                                    `Issued: ${issued}`
+                                ];
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        // Status Chart
+        const statusCtx = document.getElementById('statusChart').getContext('2d');
+        new Chart(statusCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Available', 'Issued'],
+                datasets: [{
+                    data: statusData,
+                    backgroundColor: ['#28a745', '#dc3545']
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom' }
+                }
+            }
+        });
+
+        // Trend Chart
+        const trendCtx = document.getElementById('trendChart').getContext('2d');
+        new Chart(trendCtx, {
+            type: 'line',
+            data: {
+                labels: monthLabels,
+                datasets: [{
+                    label: 'New Assets Added',
+                    data: monthData,
+                    borderColor: '#0d6efd',
+                    backgroundColor: 'rgba(13, 110, 253, 0.1)',
+                    fill: true,
+                    tension: 0.3
+                }]
+            },
+            options: {
+                indexAxis: 'x',
+                responsive: true,
+                maintainAspectRatio: false,
+                barThickness: 28, // ←←← This makes bars noticeably bigger
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        ticks: { precision: 0 }
+                    }
+                },
+                plugins: {
+                    legend: { display: false }
+                }
+            }
+        });
+        
+    });
+    
+    // === NEW CHART: Available Stock Per Item (colored by type_id) ===
+    const itemLabels = <?php echo json_encode($itemLabels); ?>;
+    const itemStocks = <?php echo json_encode($itemStocks); ?>;
+    const itemType = <?php echo json_encode($itemType); ?>;
+
+    if (itemLabels.length > 0) {
+        // Define color mapping by type_id (customize as needed)
+        const typeColorMap = {
+            1: 'rgba(214, 58, 219, 0.8)',   //  — PC Parts
+            2: 'rgba(31, 184, 39, 0.8)',    // — Peripherals
+            8: 'rgba(53, 43, 192, 0.8)',   //  — Software
+            6: 'rgba(226, 56, 47, 0.8)',   //  — Devices
+            7: 'rgba(207, 219, 40, 0.8)',   // — Storage
+            4: 'rgba(203, 119, 24, 0.8)',   //  — Cosumables
+            // Add more type_id → color mappings as needed
+        };
+
+        // Default color if type_id not in map
+        const defaultColor = 'rgba(120, 120, 120, 0.8)'; // Grey
+
+        const backgroundColors = [];
+        const borderColors = [];
+
+        for (let i = 0; i < itemType.length; i++) {
+            const typeId = itemType[i];
+            const color = typeColorMap[typeId] || defaultColor;
+            backgroundColors.push(color);
+            // Solid border (opacity 1)
+            const borderColor = color.replace(/0\.8/, '1').replace(/rgba\((\d+,\s*\d+,\s*\d+),\s*0\.\d+\)/, 'rgb($1)');
+            borderColors.push(borderColor);
+        }
+
+        const stockCtx = document.getElementById('stockPerItemChart').getContext('2d');
+        new Chart(stockCtx, {
+            type: 'bar',
+            data: {
+                labels: itemLabels,
+                datasets: [{
+                    label: 'Available Stock',
+                    data: itemStocks,
+                    backgroundColor: backgroundColors,
+                    borderColor: borderColors,
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        ticks: { precision: 0 }
+                    }
+                },
+                plugins: {
+                    legend: { display: false }
+                },
+                barThickness: 18
+            }
+        });
+    }
+</script>
+
+<!-- users -->
+ <script>
+    // ================= USER CHARTS =================
+
+    // Active vs Disabled (Pie)
+    new Chart(document.getElementById('userStatusChart'), {
+        type: 'doughnut',
+        data: {
+            labels: ['Active', 'Disabled'],
+            datasets: [{
+                data: [<?= $activeCount ?>, <?= $disabledCount ?>],
+                backgroundColor: ['#28a745', '#dc3545']
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false
+        }
+    });
+
+
+    // Users per Department (Horizontal Bar)
+    new Chart(document.getElementById('userDeptChart'), {
+        type: 'bar',
+        data: {
+            labels: <?= json_encode($deptLabels) ?>,
+            datasets: [{
+                label: 'Users',
+                data: <?= json_encode($deptCounts) ?>,
+                backgroundColor: '#0d6efd'
+            }]
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                x: { beginAtZero: true }
+            }
+        }
+    });
+
+
+    // Users per Company (Pie)
+    new Chart(document.getElementById('userCompanyChart'), {
+        type: 'pie',
+        data: {
+            labels: <?= json_encode($companyLabels) ?>,
+            datasets: [{
+                data: <?= json_encode($companyCounts) ?>,
+                backgroundColor: [
+                    '#0d6efd','#20c997','#ffc107','#6610f2',
+                    '#fd7e14','#dc3545','#198754'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false
+        }
+    });
+
+
+    // Users per Area (Vertical Bar)
+    new Chart(document.getElementById('userAreaChart'), {
+        type: 'bar',
+        data: {
+            labels: <?= json_encode($areaLabels) ?>,
+            datasets: [{
+                label: 'Users',
+                data: <?= json_encode($areaCounts) ?>,
+                backgroundColor: '#6f42c1'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: { beginAtZero: true }
+            }
+        }
+    });
+ </script>
+
+<script>
+    // Show only user graphs when Users card clicked
+    document.getElementById('usersCard')?.addEventListener('click', function() {
+
+        // Hide inventory graphs
+        document.getElementById('inventoryTableContainer').style.display = 'none';
+
+        // Show user graphs
+        document.getElementById('userGraphs').style.display = 'block';
+
+    });
+</script>
+    
+<!-- tickets -->
+ <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+<script>
+    // PRIORITY (fixed colors)
+    const priorityLabels = <?= json_encode($priorityLabels) ?>;
+    const priorityData   = <?= json_encode($priorityData) ?>;
+
+    // Map colors by priority name
+    const priorityColorMap = {
+        'highest': '#800000', // maroon
+        'high': '#dc3545',    // red
+        'medium': '#ffc107',  // yellow
+        'low': '#0d6efd'      // blue
+    };
+
+    // Generate colors dynamically based on label
+    const priorityColors = priorityLabels.map(label => {
+        return priorityColorMap[label.toLowerCase()] || '#6c757d'; // fallback gray
+    });
+
+    new Chart(document.getElementById('priorityChart'), {
+        type: 'doughnut',
+        data: {
+            labels: priorityLabels,
+            datasets: [{
+                data: priorityData,
+                backgroundColor: priorityColors
+            }]
+        },
+        options: {
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                },
+                datalabels: {
+                    color: '#fff',
+                    font: {
+                        weight: 'bold',
+                        size: 14
+                    },
+                    formatter: (value) => value
+                }
+            }
+        },
+        plugins: [ChartDataLabels]
+    });
+
+    // CATEGORY (fixed colors)
+    const catLabels = <?= json_encode($catLabels) ?>;
+    const catData   = <?= json_encode($catData) ?>;
+
+    // Define your category colors here
+    const categoryColorMap = {
+        'incident': '#0d6efd',
+        'service': '#20c997',
+        'change': '#dc3545',
+        'material': '#6f42c1'
+    };
+
+    // Generate colors
+    const categoryColors = catLabels.map(label => {
+        return categoryColorMap[label.toLowerCase()] || '#adb5bd'; // fallback gray
+    });
+
+    new Chart(document.getElementById('categoryTicketChart'), {
+        type: 'pie',
+        data: {
+            labels: catLabels,
+            datasets: [{
+                data: catData,
+                backgroundColor: categoryColors
+            }]
+        },
+        options: {
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                },
+                datalabels: {
+                    color: '#fff',
+                    font: {
+                        weight: 'bold',
+                        size: 14
+                    },
+                    formatter: (value) => value
+                }
+            }
+        },
+        plugins: [ChartDataLabels]
+    });
+
+    // SUBJECT
+    new Chart(document.getElementById('subjectChart'), {
+        type: 'bar',
+        data: {
+            labels: <?= json_encode($subjectLabels) ?>,
+            datasets: [{
+                data: <?= json_encode($subjectData) ?>,
+                backgroundColor: '#0d6efd'
+            }]
+        },
+        options: {
+            indexAxis: 'y',
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                },
+                datalabels: {
+                    anchor: 'end',
+                    align: 'right',
+                    color: '#000',
+                    font: {
+                        weight: 'bold'
+                    },
+                    formatter: (value) => value
+                }
+            },
+            scales: {
+                x: {
+                    beginAtZero: true
+                }
+            }
+        },
+        plugins: [ChartDataLabels]
+    });
+        // SUBJECT
+    new Chart(document.getElementById('subjectChart'), {
+        type: 'bar',
+        data: {
+            labels: <?= json_encode($subjectLabels) ?>,
+            datasets: [{
+                data: <?= json_encode($subjectData) ?>,
+                backgroundColor: '#0d6efd'
+            }]
+        },
+        options: {
+            indexAxis: 'y',
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                },
+                datalabels: {
+                    anchor: 'end',
+                    align: 'right',
+                    color: '#000',
+                    font: {
+                        weight: 'bold'
+                    },
+                    formatter: (value) => value
+                }
+            },
+            scales: {
+                x: {
+                    beginAtZero: true
+                }
+            }
+        },
+        plugins: [ChartDataLabels]
+    });
+</script>
+<!-- export -->
+<script>
+function prepareChartsForExport() {
+    document.querySelectorAll('canvas').forEach(canvas => {
+        const img = new Image();
+        img.src = canvas.toDataURL("image/png");
+
+        img.style.width = canvas.style.width;
+        img.style.height = canvas.style.height;
+
+        canvas.parentNode.appendChild(img);
+        canvas.style.display = "none";
+    });
+}
+document.getElementById('exportPdfBtn').addEventListener('click', async function () {
+
+    prepareChartsForExport();
+
+    await new Promise(resolve => setTimeout(resolve, 800));
+
+    const element = document.getElementById('printArea');
+
+    html2pdf().set({
+        margin: 0.3,
+        filename: 'ticket-report.pdf',
+        image: { type: 'jpeg', quality: 1 },
+        html2canvas: { scale: 2, useCORS: true },
+        jsPDF: { unit: 'in', format: 'a4', orientation: 'landscape' }
+    }).from(element).save();
+});
+</script>
