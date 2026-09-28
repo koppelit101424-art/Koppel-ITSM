@@ -8,7 +8,7 @@ $created_by = (int)$_SESSION['user_id'];
 $request_id = isset($_POST['request_id'])
     ? (int)$_POST['request_id']
     : 0;
-
+$lmr_no  = trim($_POST['lmr_no'] ?? '');
 $department  = trim($_POST['department'] ?? '');
 $item        = trim($_POST['item'] ?? '');
 $description = trim($_POST['description'] ?? '');
@@ -68,6 +68,7 @@ if (strcasecmp(trim($request['status']), 'pending') !== 0) {
 $update = $conn->prepare("
     UPDATE purch_request_tb
     SET
+         lmr_no = ?,
         department = ?,
         item = ?,
         description = ?,
@@ -81,7 +82,8 @@ $update = $conn->prepare("
 ");
 
 $update->bind_param(
-    "sssisssii",
+    "ssssisssii",
+      $lmr_no,
     $department,
     $item,
     $description,
