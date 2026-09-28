@@ -8,13 +8,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $user_id  = $_POST['user_id'];
     $quantity = $_POST['quantity'];
     $remarks  = $_POST['remarks'];
+    $date_returned = "N/A";
 
     try {
         // 1. Insert into transaction log (Executes ONCE)
-        $sql = "INSERT INTO transaction_tb (item_id, user_id, action, quantity, remarks) 
-                VALUES (?, ?, 'issued', ?, ?)";
+        $sql = "INSERT INTO transaction_tb (item_id, user_id, action, quantity, remarks, date_returned) 
+            VALUES (?, ?, 'issued', ?, ?, ?)";
         $stmt = $conn->prepare($sql);
-        $stmt->bind_param("iiis", $item_id, $user_id, $quantity, $remarks);
+        $stmt->bind_param("iiiss", $item_id, $user_id, $quantity, $remarks, $date_returned);
         $stmt->execute();
 
         // 2. Update stock (Executes ONCE)
