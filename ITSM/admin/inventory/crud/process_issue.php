@@ -8,7 +8,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $user_id  = $_POST['user_id'];
     $quantity = $_POST['quantity'];
     $remarks  = $_POST['remarks'];
-    $date_returned = "N/A";
+    $date_returned = "0000-00-00 00:00:00";
 
     try {
         // 1. Insert into transaction log (Executes ONCE)
