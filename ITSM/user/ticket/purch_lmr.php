@@ -642,16 +642,17 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
 
                                     <?php
                                     $purchaserQuery = $conn->query("
-                                        SELECT user_id, fullname
+                                        SELECT user_id, fullname, company
                                         FROM user_tb
-                                        WHERE department = 'Purchasing'
-                                        ORDER BY fullname ASC
+                                        WHERE department = 'Purchasing' AND is_active = 1
+                                        ORDER BY company ASC
                                     ");
 
                                     while ($purchaser = $purchaserQuery->fetch_assoc()):
                                     ?>
 
                                         <option value="<?= (int)$purchaser['user_id'] ?>">
+                                            <?= htmlspecialchars($purchaser['company']) ?>-
                                             <?= htmlspecialchars($purchaser['fullname']) ?>
                                         </option>
 

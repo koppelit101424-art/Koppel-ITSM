@@ -13,10 +13,10 @@ include 'includes/db.php';
 $lastLMR = $conn->query("
     SELECT MAX(CAST(SUBSTRING(lmr_no, 4) AS UNSIGNED)) as max_id 
     FROM request_tb
-    WHERE lmr_no LIKE 'IT-%'
+    WHERE lmr_no LIKE 'PURCH-%'
 ");
 
-$newLMR = 'IT-000001';
+$newLMR = 'PURCH-000001';
 
 // Determine LMR prefix based on department
 $departmentPrefixes = [
@@ -33,7 +33,7 @@ $departmentPrefixes = [
 // Get department from logged-in user
 $department = $user['department'] ?? '';
 
-$prefix = $departmentPrefixes[$department] ?? 'IT';
+$prefix = $departmentPrefixes[$department] ?? 'PURCH';
 
 // Get the latest number for this department/prefix
 $lastLMR = $conn->prepare("
