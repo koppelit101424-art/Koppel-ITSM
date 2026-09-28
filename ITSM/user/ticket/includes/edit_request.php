@@ -180,7 +180,7 @@ if (strcasecmp(trim($request['status']), 'pending') !== 0) {
                         type="text"
                         class="form-control"
                         value="<?= htmlspecialchars($request['lmr_no'] ?? '') ?>"
-                        readonly
+                        
                     >
 
                     <input
