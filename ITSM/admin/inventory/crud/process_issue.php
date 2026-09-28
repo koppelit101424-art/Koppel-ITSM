@@ -8,7 +8,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $user_id  = $_POST['user_id'];
     $quantity = $_POST['quantity'];
     $remarks  = $_POST['remarks'];
-    $action_date = "0000-00-00 00:00:00";
+    // $action_date = "0000-00-00 00:00:00";
     $date_returned = "0000-00-00 00:00:00";
 
     try {
