@@ -1330,197 +1330,119 @@ $(document).ready(function () {
         );
 
 
-        $.ajax({
+$.ajax({
+url: 'ticket/includes/assign_request.php',
+    type: 'POST',
+    dataType: 'json',
 
-            url: 'ticket/includes/assign_request.php',
+    data: {
+        request_id: requestId,
+        status: status,
+        purchaser_id: purchaserId
+    },
 
-            type: 'POST',
+    success: function (response) {
 
-            dataType: 'json',
+        if (response.success) {
 
-            data: {
-                request_id: requestId,
-                status: status,
-                purchaser_id: purchaserId
-            },
+            originalStatus = status;
+            originalPurchaserId = purchaserId;
 
+            const row =
+                $('#requestsTable tbody tr[data-request-id="' +
+                requestId +
+                '"]');
 
-            success: function (response) {
+            row.attr('data-status', status);
+            row.attr('data-purchaser-id', purchaserId);
 
-                if (response.success) {
+            row.data('status', status);
+            row.data('purchaser-id', purchaserId);
 
-                    // -----------------------------------------
-                    // Update original values
-                    // -----------------------------------------
+            const statusBadge =
+                row.find('td').eq(8).find('.badge');
 
-                    originalStatus = status;
-                    originalPurchaserId = purchaserId;
+            statusBadge.removeClass(
+                'badge-proceed badge-checking badge-pending badge-closed badge-canceled'
+            );
 
+            let statusClass = 'badge-pending';
 
-                    // -----------------------------------------
-                    // Update table row
-                    // -----------------------------------------
-
-                    const row =
-                        $('#requestsTable tbody tr[data-request-id="' +
-                        requestId +
-                        '"]');
-
-
-                    row.attr(
-                        'data-status',
-                        status
-                    );
-
-                    row.attr(
-                        'data-purchaser-id',
-                        purchaserId
-                    );
-
-
-                    row.data(
-                        'status',
-                        status
-                    );
-
-                    row.data(
-                        'purchaser-id',
-                        purchaserId
-                    );
-
-
-                    // -----------------------------------------
-                    // Update visible status badge
-                    // -----------------------------------------
-
-                    const statusBadge =
-                        row.find('td').eq(8).find('.badge');
-
-                    statusBadge
-                        .removeClass(
-                            'badge-proceed badge-checking badge-pending badge-closed badge-canceled'
-                        );
-
-
-                    let statusClass = 'badge-pending';
-
-                    if (status === 'proceed request') {
-                        statusClass = 'badge-proceed';
-                    }
-                    else if (status === 'checking request') {
-                        statusClass = 'badge-checking';
-                    }
-                    else if (status === 'closed') {
-                        statusClass = 'badge-closed';
-                    }
-
-
-                    statusBadge
-                        .addClass(statusClass)
-                        .text(formatStatus(status));
-
-
-                    // -----------------------------------------
-                    // Update purchaser name
-                    // -----------------------------------------
-
-                    if (response.purchaser_name) {
-
-                        row.attr(
-                            'data-purchaser-name',
-                            response.purchaser_name
-                        );
-
-                        row.data(
-                            'purchaser-name',
-                            response.purchaser_name
-                        );
-
-                        // Assigned purchaser column
-                        row.find('td').eq(7).text(
-                            response.purchaser_name
-                        );
-
-                    }
-
-
-                    // -----------------------------------------
-                    // Update modal purchaser display
-                    // -----------------------------------------
-
-                    if (!isPurchasing) {
-
-                        $('#modalPurchaserDisplay').val(
-                            response.purchaser_name
-                        );
-
-                        $('#modalStatusDisplay').val(
-                            formatStatus(status)
-                        );
-
-                    }
-
-
-                    // -----------------------------------------
-                    // Success message
-                    // -----------------------------------------
-
-                    $('#modalSaveMessage')
-                        .removeClass('d-none alert-danger')
-                        .addClass('alert-success')
-                        .text(
-                            response.message ||
-                            'Request updated successfully.'
-                        );
-
-
-                    // -----------------------------------------
-                    // Disable save
-                    // -----------------------------------------
-
-                    button
-                        .prop('disabled', true)
-                        .html(
-                            '<i class="fas fa-check me-1"></i> Saved'
-                        );
-
-
-                    // Re-draw DataTable
-                    table.draw(false);
-
-
-                    setTimeout(function () {
-
-                        button.html(
-                            '<i class="fas fa-save me-1"></i> Save Changes'
-                        );
-
-                    }, 1500);
-
-
-                } else {
-
-                    showSaveError(
-                        response.message ||
-                        'Unable to update request.'
-                    );
-
-                }
-
-            },
-
-
-            error: function (xhr) {
-
-                console.error(xhr.responseText);
-
-                showSaveError(
-                    'An error occurred while saving the request.'
-                );
-
+            if (status === 'proceed request') {
+                statusClass = 'badge-proceed';
+            }
+            else if (status === 'checking request') {
+                statusClass = 'badge-checking';
+            }
+            else if (status === 'closed') {
+                statusClass = 'badge-closed';
             }
 
-        });
+            statusBadge
+                .addClass(statusClass)
+                .text(formatStatus(status));
+
+            if (response.purchaser_name) {
+
+                row.attr(
+                    'data-purchaser-name',
+                    response.purchaser_name
+                );
+
+                row.data(
+                    'purchaser-name',
+                    response.purchaser_name
+                );
+
+                row.find('td').eq(7).text(
+                    response.purchaser_name
+                );
+            }
+
+            $('#modalSaveMessage')
+                .removeClass('d-none alert-danger')
+                .addClass('alert-success')
+                .text(
+                    response.message ||
+                    'Request updated successfully.'
+                );
+
+            button
+                .prop('disabled', true)
+                .html(
+                    '<i class="fas fa-check me-1"></i> Saved'
+                );
+
+            table.draw(false);
+
+            setTimeout(function () {
+                button.html(
+                    '<i class="fas fa-save me-1"></i> Save Changes'
+                );
+            }, 1500);
+
+        } else {
+
+            showSaveError(
+                response.message ||
+                'Unable to update request.'
+            );
+        }
+    },
+
+    error: function (xhr) {
+
+        console.error('HTTP Status:', xhr.status);
+        console.error('Response:', xhr.responseText);
+
+        showSaveError(
+            'Server error (' +
+            xhr.status +
+            '): ' +
+            xhr.responseText
+        );
+    }
+});
 
     });
 

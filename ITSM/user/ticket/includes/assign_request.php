@@ -1,7 +1,7 @@
 <?php
 
-include '../../includes/auth.php';
-include '../../includes/db.php';
+require_once __DIR__ . '/../../includes/auth.php';
+require_once __DIR__ . '/../../includes/db.php';
 
 header('Content-Type: application/json; charset=utf-8');
 
@@ -198,16 +198,17 @@ try {
 
         $purchaserCheck->execute();
 
-        $purchaserResult =
-            $purchaserCheck->get_result();
-
-        $purchaserCheck->close();
+        $purchaserResult = $purchaserCheck->get_result();
 
         if ($purchaserResult->num_rows === 0) {
+            $purchaserCheck->close();
+
             throw new Exception(
                 'Selected purchaser is not a valid Purchasing user.'
             );
         }
+
+        $purchaserCheck->close();
     }
 
 
