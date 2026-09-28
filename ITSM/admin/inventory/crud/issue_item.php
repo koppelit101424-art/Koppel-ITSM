@@ -15,7 +15,7 @@
   $users = $conn->query("SELECT user_id, fullname FROM user_tb ORDER BY fullname ASC");
 
 
-  $date_today = date('Y-m-d');
+$date_today = date('Y-m-d H:i:s');
 ?>
 
   <!-- Select2 CSS -->
