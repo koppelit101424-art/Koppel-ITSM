@@ -634,7 +634,7 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
                             <div class="input-group">
 
                                 <select id="modalPurchaser"
-                                        class="form-select" readonly>
+                                        class="form-select" disabled>
 
                                     <option value="1">
                                         Unassigned
@@ -676,7 +676,7 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
                             </label>
 
                             <select id="modalStatus"
-                                    class="form-select" readonly>
+                                    class="form-select" disabled>
 
                                 <option value="pending">
                                     Pending
