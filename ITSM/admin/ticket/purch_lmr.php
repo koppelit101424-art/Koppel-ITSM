@@ -42,6 +42,7 @@ $sql = "
         r.request_id,
         r.user_id,
         r.lmr_no,
+        u.fullname,
         u.company,
         r.department,
         r.item,
@@ -57,7 +58,7 @@ $sql = "
     FROM purch_request_tb r
     LEFT JOIN user_tb u 
         ON r.created_by = u.user_id
-    ORDER BY r.date_created DESC
+    ORDER BY r.date_created ASC
 ";
 
 $stmt = $conn->prepare($sql);
@@ -71,6 +72,7 @@ $sql = "
     SELECT 
         r.request_id,
         r.user_id,
+        u.fullname,
         r.lmr_no,
         u.company AS company,
         r.department,
@@ -88,7 +90,7 @@ $sql = "
     LEFT JOIN user_tb u 
         ON r.created_by = u.user_id
     WHERE r.created_by = ?
-    ORDER BY r.date_created DESC
+    ORDER BY r.date_created ASC
 ";
 
     $stmt = $conn->prepare($sql);
@@ -145,9 +147,9 @@ $requests = $stmt->get_result();
     <div class="card ">
         <div class="card-header d-flex justify-content-between text-white">
             <span>Purchasing LMR</span>
-            <a href="?page=ticket/includes/add_purch_request" class="btn btn-sm btn-primary">
+            <!-- <a href="?page=ticket/includes/add_purch_request" class="btn btn-sm btn-primary">
                 <i class="fas fa-plus me-1"></i> Create LMR
-            </a>
+            </a> -->
         </div>
 
         <div class="card-body">
@@ -203,11 +205,7 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
 
 ?>
 
-    <?php if (    strcasecmp(trim($currentDepartment), 'Purchasing') === 0
-    || (
-        isset($_SESSION['user_type'])
-        && strcasecmp(trim($_SESSION['user_type']), 'admin') === 0
-    )): ?>
+    <?php if (strcasecmp($currentDepartment, 'Purchasing') === 0): ?>
 
         <!-- ==========================================
              PURCHASING FILTERS
@@ -266,8 +264,9 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
                 <select id="statusSelectFilter" class="form-select">
                     <option value="">All Status</option>
                     <option value="pending">Pending</option>
-                    <option value="approved">Approved</option>
-                    <option value="rejected">Rejected</option>
+                    <option value="proceed request">Proceed Request</option>
+                    <option value="checking request">Checking Request</option>
+                    <option value="closed">Closed</option>
                 </select>
             </div>
 
@@ -330,6 +329,7 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
                         <tr>
                             <th>#</th>
                             <th>LMR No.</th>
+                            <th>User</th>
                             <th>Department</th>
                             <th>Item</th>
                             <th>Qty</th>
@@ -339,59 +339,88 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
                             <th>Status</th>
                             <th>Date Created</th>
                             <th>Date Needed</th>
-                            <th>Remarks</th>
+                            <!-- <th>Remarks</th> -->
                             <th>Action</th>
                         </tr>
                     </thead>
                     <tbody>
+                        <?php
+                            
+                            ?>
                         <?php if ($requests->num_rows > 0): ?>
-                            <?php $i = 1; while ($row = $requests->fetch_assoc()): ?>
-                                <tr
-                                    data-request-id="<?= $row['request_id'] ?>"
-                                    data-lmr-no="<?= htmlspecialchars($row['lmr_no']) ?>"
-                                    data-status="<?= htmlspecialchars(strtolower(trim($row['status']))) ?>"
-                                    data-company="<?= htmlspecialchars(strtolower(trim($row['company']))) ?>"
-                                    data-department="<?= htmlspecialchars(strtolower(trim($row['department']))) ?>"
-                                    data-purchaser-id="<?= htmlspecialchars($row['purchaser_id']) ?>"
-                                    data-date="<?= htmlspecialchars(date('Y-m-d', strtotime($row['date_created']))) ?>"
-                                    style="cursor:pointer;">
+                            <?php $i = 1; while ($row = $requests->fetch_assoc()): 
+                                $purchaser_id = (int)$row['purchaser_id'];
+
+                            if ($purchaser_id == 1) {
+                                $purchaser_name = 'Unassigned';
+                            } else {
+                                $stmtPurchaser = $conn->prepare("
+                                    SELECT fullname
+                                    FROM user_tb
+                                    WHERE user_id = ?
+                                    LIMIT 1
+                                ");
+
+                                $stmtPurchaser->bind_param("i", $purchaser_id);
+                                $stmtPurchaser->execute();
+
+                                $purchaserResult = $stmtPurchaser->get_result();
+                                $purchaser = $purchaserResult->fetch_assoc();
+
+                                $purchaser_name = $purchaser['fullname'] ?? 'Unknown';
+
+                                $stmtPurchaser->close();
+                            }
+
+                            $createdById = (int)$row['created_by'];
+
+                            $stmtRequestor = $conn->prepare("
+                                SELECT fullname
+                                FROM user_tb
+                                WHERE user_id = ?
+                                LIMIT 1
+                            ");
+
+                            $stmtRequestor->bind_param("i", $createdById);
+                            $stmtRequestor->execute();
+
+                            $requestorResult = $stmtRequestor->get_result();
+                            $requestor = $requestorResult->fetch_assoc();
+
+                            $requestor_name = $requestor['fullname'] ?? 'Unknown';
+
+                            $stmtRequestor->close();
+                                ?>
+ 
+                        <tr
+                            data-request-id="<?= (int)$row['request_id'] ?>"
+                            data-lmr-no="<?= htmlspecialchars($row['lmr_no'], ENT_QUOTES) ?>"
+                            data-status="<?= htmlspecialchars(strtolower(trim($row['status'])), ENT_QUOTES) ?>"
+                            data-company="<?= htmlspecialchars($row['company'], ENT_QUOTES) ?>"
+                            data-department="<?= htmlspecialchars($row['department'], ENT_QUOTES) ?>"
+                            data-item="<?= htmlspecialchars($row['item'], ENT_QUOTES) ?>"
+                            data-description="<?= htmlspecialchars($row['description'] ?? '', ENT_QUOTES) ?>"
+                            data-quantity="<?= htmlspecialchars($row['quantity'], ENT_QUOTES) ?>"
+                            data-uom="<?= htmlspecialchars($row['UoM'], ENT_QUOTES) ?>"
+                            data-date-needed="<?= htmlspecialchars($row['date_needed'], ENT_QUOTES) ?>"
+                            data-date-created="<?= htmlspecialchars($row['date_created'], ENT_QUOTES) ?>"
+                            data-remarks="<?= htmlspecialchars($row['remarks'] ?? '', ENT_QUOTES) ?>"
+                            data-purchaser-id="<?= (int)$row['purchaser_id'] ?>"
+                            data-purchaser-name="<?= htmlspecialchars($purchaser_name, ENT_QUOTES) ?>"
+                            data-requestor-name="<?= htmlspecialchars($requestor_name, ENT_QUOTES) ?>"
+                            style="cursor:pointer;"
+                        >
+
                                     <td><?= $i++ ?></td>
                                     <td><?= htmlspecialchars($row['lmr_no']) ?></td>
+                                    <td><?= htmlspecialchars($requestor_name) ?></td>
+                                 
                                     <td><?= htmlspecialchars($row['department']) ?></td>
-                                    <td><?= htmlspecialchars(string: $row['item']) ?></td>
+                                    <td><?= htmlspecialchars($row['item']) ?></td>
+
                                     <td><?= $row['quantity'] ?></td>
                                     <td><?= htmlspecialchars($row['UoM']) ?></td>
-                                    <?php
-                                    $purchaser_id = $row['purchaser_id'];
-
-                                    if ($purchaser_id == 1) {
-                                        $purchaser_name = 'Unassigned';
-                                    } else {
-                                        $stmt = $conn->prepare("SELECT fullname FROM user_tb WHERE user_id = ?");
-                                        $stmt->bind_param("i", $purchaser_id);
-                                        $stmt->execute();
-
-                                        $result = $stmt->get_result();
-                                        $purchaser = $result->fetch_assoc();
-
-                                        $purchaser_name = $purchaser['fullname'] ?? 'Unknown';
-                                    }
-                                    ?>
-
                                     <td><?= htmlspecialchars($purchaser_name) ?></td>
-                                    <?php
-                                    $created_by = $row['created_by'];
-                                        $stmt = $conn->prepare("SELECT fullname FROM user_tb WHERE user_id = ?");
-                                        $stmt->bind_param("i", $created_by);
-                                        $stmt->execute();
-
-                                        $result = $stmt->get_result();
-                                        $created_by = $result->fetch_assoc();
-
-                                        $requestor_name = $created_by['fullname'] ?? 'Unknown';
-                                    ?>
-
-                                    <!-- <td><?= htmlspecialchars($requestor_name) ?></td> -->
                                     <td>
                                         <?php 
                                             $statusClass = '';
@@ -411,24 +440,42 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
                                     
                                     <td><?= date('m-d-Y', strtotime($row['date_created'])) ?></td>
                                     <td><?= date('m-d-Y', strtotime( $row['date_needed'])) ?></td>
-                                    <td><?= htmlspecialchars($row['remarks'] ?? '-') ?></td>
-                            <td onclick="event.stopPropagation();">
+                                    <!-- <td><?= htmlspecialchars($row['remarks'] ?? '-') ?></td> -->
+                                    <td onclick="event.stopPropagation();">
 
-                                <a href="?page=ticket/view_request&request_id=<?= $row['request_id'] ?>"
-                                class="btn btn-sm btn-primary"
-                                title="View">
-                                    <i class="fas fa-eye"></i>
-                                </a>
+                                        <a href="?page=ticket/view_request&request_id=<?= $row['request_id'] ?>"
+                                        class="btn btn-sm btn-primary"
+                                        title="View">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
 
-                                <button
-                                    type="button"
-                                    class="btn btn-sm btn-success btn-print"
-                                    data-lmr="<?= htmlspecialchars($row['lmr_no']) ?>"
-                                    data-status="<?= strtolower(trim($row['status'])) ?>"
-                                    title="Print">
-                                    <i class="fas fa-print"></i>
-                                </button>
-                            </td>
+                                        <?php
+                                        $isLocalUser =
+                                            (int)$row['created_by'] === (int)$_SESSION['user_id'];
+
+                                        $isPending =
+                                            strcasecmp(trim($row['status']), 'pending') === 0;
+                                        ?>
+
+                                        <?php if ($isLocalUser && $isPending): ?>
+                                            <a href="?page=ticket/includes/edit_request&request_id=<?= (int)$row['request_id'] ?>"
+                                            class="btn btn-sm btn-warning"
+                                            title="Edit">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                        <?php endif; ?>
+
+                                        <button
+                                            type="button"
+                                            class="btn btn-sm btn-success btn-print"
+                                            data-lmr="<?= htmlspecialchars($row['lmr_no']) ?>"
+                                            data-status="<?= htmlspecialchars(strtolower(trim($row['status']))) ?>"
+                                            title="Print">
+                                            <i class="fas fa-print"></i>
+                                        </button>
+
+                                    </td>
+
                                 </tr>
                             <?php endwhile; ?>
                         <?php else: ?>
@@ -443,6 +490,283 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
 <!-- <div id="contextMenu" class="custom-menu">
     <a href="#" id="deleteRequest" class="text-danger"><i class="fas fa-trash"></i> Delete Request</a>
 </div> -->
+
+<!-- =========================================================
+     REQUEST DETAILS MODAL
+========================================================= -->
+<div class="modal fade modal-xl" id="requestDetailsModal" tabindex="-1"
+     aria-labelledby="requestDetailsModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" >
+    <div class="modal-content border-0 shadow-xl">
+
+            <div class="modal-header bg-gradient-primary  text-white">
+                <div>
+                    <!-- <h5 class="modal-title" id="requestDetailsModalLabel">
+                        LMR Request Details
+                    </h5> -->
+                    <h5 id="modalLmrNo"></h5>
+                </div>
+
+                <button type="button"
+                        class="btn-close btn-close-white"
+                        data-bs-dismiss="modal"
+                        aria-label="Close">
+                </button>
+            </div>
+
+            <div class="modal-body">
+
+                <!-- Hidden request ID -->
+                <input type="hidden" id="modalRequestId">
+
+                <!-- =================================================
+                     REQUEST INFORMATION
+                ================================================== -->
+                <div class="row g-3">
+
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold">LMR No.</label>
+                        <input type="text"
+                               id="modalLmr"
+                               class="form-control"
+                               readonly>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold">Company</label>
+                        <input type="text"
+                               id="modalCompany"
+                               class="form-control"
+                               readonly>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold">Department</label>
+                        <input type="text"
+                               id="modalDepartment"
+                               class="form-control"
+                               readonly>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">Item</label>
+                        <input type="text"
+                               id="modalItem"
+                               class="form-control"
+                               readonly>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">Quantity</label>
+                        <input type="text"
+                               id="modalQuantity"
+                               class="form-control"
+                               readonly>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">UoM</label>
+                        <input type="text"
+                               id="modalUom"
+                               class="form-control"
+                               readonly>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold">Requested By</label>
+                        <input type="text"
+                               id="modalRequestor"
+                               class="form-control"
+                               readonly>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold">Date Needed</label>
+                        <input type="text"
+                               id="modalDateNeeded"
+                               class="form-control"
+                               readonly>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold">Date Created</label>
+                        <input type="text"
+                               id="modalDateCreated"
+                               class="form-control"
+                               readonly>
+                    </div>
+
+                    <div class="col-12">
+                        <label class="form-label fw-bold">Description</label>
+                        <textarea id="modalDescription"
+                                  class="form-control"
+                                  rows="3"
+                                  readonly></textarea>
+                    </div>
+
+                    <div class="col-12">
+                        <label class="form-label fw-bold">Remarks</label>
+                        <textarea id="modalRemarks"
+                                  class="form-control"
+                                  rows="3"
+                                  readonly></textarea>
+                    </div>
+
+
+
+                    <!-- =================================================
+                         PURCHASING CONTROLS
+                    ================================================== -->
+                    <?php
+                    $isPurchasing =
+                        strcasecmp(trim($currentDepartment), 'Purchasing') === 0
+                        || (
+                            isset($_SESSION['user_type'])
+                            && strcasecmp(trim($_SESSION['user_type']), 'admin') === 0
+                        );
+                    ?>
+
+                    <?php if ($isPurchasing): ?>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">
+                                Assigned Purchaser
+                            </label>
+
+                            <div class="input-group">
+
+                                <select id="modalPurchaser"
+                                        class="form-select">
+
+                                    <option value="1">
+                                        Unassigned
+                                    </option>
+
+                                    <?php
+                                    $purchaserQuery = $conn->query("
+                                        SELECT user_id, fullname, company
+                                        FROM user_tb
+                                        WHERE department = 'Purchasing' AND is_active = 1
+                                        ORDER BY company ASC
+                                    ");
+
+                                    while ($purchaser = $purchaserQuery->fetch_assoc()):
+                                    ?>
+
+                                        <option value="<?= (int)$purchaser['user_id'] ?>">
+                                            <?= htmlspecialchars($purchaser['company']) ?>-
+                                            <?= htmlspecialchars($purchaser['fullname']) ?>
+                                        </option>
+
+                                    <?php endwhile; ?>
+
+                                </select>
+
+                                <!-- <button type="button"
+                                        id="assignToMeBtn"
+                                        class="btn btn-outline-primary">
+                                    Assign to Me
+                                </button> -->
+
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+
+                            <label class="form-label fw-bold">
+                                Status
+                            </label>
+
+                            <select id="modalStatus"
+                                    class="form-select">
+
+                                <option value="pending">
+                                    Pending
+                                </option>
+
+                                <option value="proceed request">
+                                    Proceed Request
+                                </option>
+
+                                <option value="checking request">
+                                    Checking Request
+                                </option>
+
+                                <option value="closed">
+                                    Closed
+                                </option>
+
+                            </select>
+
+                        </div>
+
+                    <?php else: ?>
+
+                        <!-- REQUESTOR VIEW -->
+
+                        <div class="col-md-6">
+
+                            <label class="form-label fw-bold">
+                                Assigned Purchaser
+                            </label>
+
+                            <input type="text"
+                                   id="modalPurchaserDisplay"
+                                   class="form-control"
+                                   readonly>
+
+                        </div>
+
+                        <div class="col-md-6">
+
+                            <label class="form-label fw-bold">
+                                Status
+                            </label>
+
+                            <input type="text"
+                                   id="modalStatusDisplay"
+                                   class="form-control"
+                                   readonly>
+
+                        </div>
+
+                    <?php endif; ?>
+
+                </div>
+
+                <!-- =================================================
+                     SAVE MESSAGE
+                ================================================== -->
+                <div id="modalSaveMessage"
+                     class="alert d-none mt-4 mb-0">
+                </div>
+
+            </div>
+
+            <div class="modal-footer">
+<!-- 
+                <button type="button"
+                        class="btn btn-secondary"
+                        data-bs-dismiss="modal">
+                    Close
+                </button> -->
+
+                <?php if ($isPurchasing): ?>
+
+                    <!-- <button type="button"
+                            id="saveRequestChanges"
+                            class="btn btn-primary"
+                            disabled>
+                        <i class="fas fa-save me-1"></i>
+                        Save Changes
+                    </button> -->
+
+                <?php endif; ?>
+
+            </div>
+
+        </div>
+    </div>
+</div>
+
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
@@ -546,7 +870,7 @@ $(document).ready(function () {
             .toString()
             .trim();
 
-        const rowDate = ($row.data('date') || '')
+        const rowDate = ($row.data('date-created') || '')
             .toString()
             .trim();
 
@@ -713,8 +1037,479 @@ $(document).ready(function () {
         );
     });
 
+    
+    // =====================================================
+    // USER / ROLE
+    // =====================================================
+
+    const isPurchasing = <?= $isPurchasing ? 'true' : 'false' ?>;
+    const currentUserId = <?= (int)$_SESSION['user_id'] ?>;
+
+
+    // =====================================================
+    // MODAL
+    // =====================================================
+
+    const modalElement = document.getElementById('requestDetailsModal');
+
+    const requestModal = new bootstrap.Modal(modalElement);
+
+
+    // =====================================================
+    // ORIGINAL VALUES
+    // Used to determine whether Save should be enabled
+    // =====================================================
+
+    let originalStatus = '';
+    let originalPurchaserId = '';
+
+
+    // =====================================================
+    // OPEN REQUEST MODAL
+    // =====================================================
+
+    $('#requestsTable tbody').on('click', 'tr', function (e) {
+
+        // Don't open modal when clicking action buttons/links
+        if (
+            $(e.target).closest('a').length ||
+            $(e.target).closest('button').length
+        ) {
+            return;
+        }
+
+        const row = $(this);
+
+        const requestId = row.data('request-id');
+
+        const lmrNo = row.data('lmr-no');
+        const company = row.data('company');
+        const department = row.data('department');
+        const item = row.data('item');
+        const description = row.data('description');
+        const quantity = row.data('quantity');
+        const uom = row.data('uom');
+
+        const dateNeeded = row.data('date-needed');
+        const dateCreated = row.data('date-created');
+
+        const remarks = row.data('remarks');
+
+        const status =
+            (row.data('status') || '')
+                .toString()
+                .toLowerCase()
+                .trim();
+
+        const purchaserId =
+            (row.data('purchaser-id') || '1')
+                .toString();
+
+        const purchaserName =
+            row.data('purchaser-name') || 'Unassigned';
+
+        const requestorName =
+            row.data('requestor-name') || 'Unknown';
+
+
+        // =================================================
+        // SET MODAL DATA
+        // =================================================
+
+        $('#modalRequestId').val(requestId);
+
+        $('#modalLmrNo').text('LMR No. ' + lmrNo);
+
+        $('#modalLmr').val(lmrNo);
+        $('#modalCompany').val(company);
+        $('#modalDepartment').val(department);
+        $('#modalItem').val(item);
+        $('#modalDescription').val(description);
+        $('#modalQuantity').val(quantity);
+        $('#modalUom').val(uom);
+
+        $('#modalDateNeeded').val(formatDate(dateNeeded));
+        $('#modalDateCreated').val(formatDate(dateCreated));
+
+        $('#modalRemarks').val(remarks || '-');
+
+        $('#modalRequestor').val(requestorName);
+
+
+        // =================================================
+        // PURCHASING
+        // =================================================
+
+        if (isPurchasing) {
+
+            originalStatus = status;
+            originalPurchaserId = purchaserId;
+
+            $('#modalStatus').val(status);
+            $('#modalPurchaser').val(purchaserId);
+
+            resetSaveButton();
+
+        } else {
+
+            // =================================================
+            // REQUESTOR
+            // =================================================
+
+            $('#modalStatusDisplay').val(
+                formatStatus(status)
+            );
+
+            $('#modalPurchaserDisplay').val(
+                purchaserName
+            );
+        }
+
+
+        // =================================================
+        // SHOW MODAL
+        // =================================================
+
+        requestModal.show();
+
+    });
+
+
+    // =====================================================
+    // FORMAT DATE
+    // =====================================================
+
+    function formatDate(value) {
+
+        if (!value) {
+            return '-';
+        }
+
+        const date = new Date(value);
+
+        if (isNaN(date.getTime())) {
+            return value;
+        }
+
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        const year = date.getFullYear();
+
+        return month + '-' + day + '-' + year;
+    }
+
+
+    // =====================================================
+    // FORMAT STATUS
+    // =====================================================
+
+    function formatStatus(status) {
+
+        if (!status) {
+            return '-';
+        }
+
+        return status
+            .replace(/\b\w/g, function (letter) {
+                return letter.toUpperCase();
+            });
+    }
+
+
+    // =====================================================
+    // CHECK FOR CHANGES
+    // =====================================================
+
+    function checkForChanges() {
+
+        const currentStatus =
+            ($('#modalStatus').val() || '')
+                .toString()
+                .toLowerCase()
+                .trim();
+
+        const currentPurchaser =
+            ($('#modalPurchaser').val() || '')
+                .toString()
+                .trim();
+
+
+        const hasChanges =
+            currentStatus !== originalStatus ||
+            currentPurchaser !== originalPurchaserId;
+
+
+        $('#saveRequestChanges').prop(
+            'disabled',
+            !hasChanges
+        );
+
+    }
+
+
+    // =====================================================
+    // STATUS CHANGE
+    // =====================================================
+
+    $('#modalStatus').on('change', function () {
+        checkForChanges();
+    });
+
+
+    // =====================================================
+    // PURCHASER CHANGE
+    // =====================================================
+
+    $('#modalPurchaser').on('change', function () {
+        checkForChanges();
+    });
+
+
+    // =====================================================
+    // ASSIGN TO ME
+    // =====================================================
+
+    $('#assignToMeBtn').on('click', function () {
+
+        $('#modalPurchaser').val(
+            String(currentUserId)
+        );
+
+        checkForChanges();
+
+    });
+
+
+    // =====================================================
+    // RESET SAVE BUTTON
+    // =====================================================
+
+    function resetSaveButton() {
+
+        $('#saveRequestChanges')
+            .prop('disabled', true)
+            .html(
+                '<i class="fas fa-save me-1"></i> Save Changes'
+            );
+
+        $('#modalSaveMessage')
+            .addClass('d-none')
+            .removeClass('alert-success alert-danger')
+            .text('');
+    }
+
+
+    // =====================================================
+    // SAVE CHANGES
+    // =====================================================
+
+    $('#saveRequestChanges').on('click', function () {
+
+        const button = $(this);
+
+        const requestId =
+            $('#modalRequestId').val();
+
+        const status =
+            $('#modalStatus').val();
+
+        const purchaserId =
+            $('#modalPurchaser').val();
+
+
+        if (!requestId) {
+            return;
+        }
+
+
+        // Prevent duplicate requests
+        button.prop('disabled', true);
+
+        button.html(
+            '<span class="spinner-border spinner-border-sm me-1"></span>' +
+            'Saving...'
+        );
+
+
+$.ajax({
+url: 'ticket/includes/assign_request.php',
+    type: 'POST',
+    dataType: 'json',
+
+    data: {
+        request_id: requestId,
+        status: status,
+        purchaser_id: purchaserId
+    },
+
+    success: function (response) {
+
+        if (response.success) {
+
+            originalStatus = status;
+            originalPurchaserId = purchaserId;
+
+            const row =
+                $('#requestsTable tbody tr[data-request-id="' +
+                requestId +
+                '"]');
+
+            row.attr('data-status', status);
+            row.attr('data-purchaser-id', purchaserId);
+
+            row.data('status', status);
+            row.data('purchaser-id', purchaserId);
+
+            const statusBadge =
+                row.find('td').eq(8).find('.badge');
+
+            statusBadge.removeClass(
+                'badge-proceed badge-checking badge-pending badge-closed badge-canceled'
+            );
+
+            let statusClass = 'badge-pending';
+
+            if (status === 'proceed request') {
+                statusClass = 'badge-proceed';
+            }
+            else if (status === 'checking request') {
+                statusClass = 'badge-checking';
+            }
+            else if (status === 'closed') {
+                statusClass = 'badge-closed';
+            }
+
+            statusBadge
+                .addClass(statusClass)
+                .text(formatStatus(status));
+
+            if (response.purchaser_name) {
+
+                row.attr(
+                    'data-purchaser-name',
+                    response.purchaser_name
+                );
+
+                row.data(
+                    'purchaser-name',
+                    response.purchaser_name
+                );
+
+                row.find('td').eq(7).text(
+                    response.purchaser_name
+                );
+            }
+
+            $('#modalSaveMessage')
+                .removeClass('d-none alert-danger')
+                .addClass('alert-success')
+                .text(
+                    response.message ||
+                    'Request updated successfully.'
+                );
+
+            button
+                .prop('disabled', true)
+                .html(
+                    '<i class="fas fa-check me-1"></i> Saved'
+                );
+
+            table.draw(false);
+
+            setTimeout(function () {
+                button.html(
+                    '<i class="fas fa-save me-1"></i> Save Changes'
+                );
+            }, 1500);
+
+        } else {
+
+            showSaveError(
+                response.message ||
+                'Unable to update request.'
+            );
+        }
+    },
+
+    error: function (xhr) {
+
+        console.error('HTTP Status:', xhr.status);
+        console.error('Response:', xhr.responseText);
+
+        showSaveError(
+            'Server error (' +
+            xhr.status +
+            '): ' +
+            xhr.responseText
+        );
+    }
 });
+
+    });
+
+
+    // =====================================================
+    // ERROR
+    // =====================================================
+
+    function showSaveError(message) {
+
+        $('#modalSaveMessage')
+            .removeClass('d-none alert-success')
+            .addClass('alert-danger')
+            .text(message);
+
+        $('#saveRequestChanges')
+            .prop('disabled', false)
+            .html(
+                '<i class="fas fa-save me-1"></i> Save Changes'
+            );
+
+    }
+
+
+    // =====================================================
+    // PRINT
+    // =====================================================
+
+    $('.btn-print').on('click', function (e) {
+
+        e.preventDefault();
+        e.stopPropagation();
+
+        const status =
+            ($(this).data('status') || '')
+                .toString()
+                .toLowerCase()
+                .trim();
+
+        const lmr =
+            $(this).data('lmr');
+
+
+        if (status !== 'proceed request') {
+
+            alert(
+                'Printing is only available when the request status is "Proceed Request".'
+            );
+
+            return;
+        }
+
+
+        window.open(
+            '?page=ticket/includes/print_request&lmr_no=' +
+            encodeURIComponent(lmr),
+            '_blank'
+        );
+
+    });
+
+});
+
+
 </script>
+
 
 
 <?php $conn->close(); ?>
