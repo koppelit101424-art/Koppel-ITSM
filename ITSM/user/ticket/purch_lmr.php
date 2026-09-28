@@ -1017,23 +1017,7 @@ $(document).ready(function () {
         );
     });
 
-});
-</script>
-
-
-
-<script>
-$(document).ready(function () {
-
-    const table = $('#requestsTable').DataTable({
-        pageLength: 10,
-        order: [[0, "desc"]],
-        columnDefs: [
-            { orderable: false, targets: [5, 9, 12] }
-        ]
-    });
-
-
+    
     // =====================================================
     // USER / ROLE
     // =====================================================
@@ -1580,6 +1564,10 @@ $(document).ready(function () {
     });
 
 });
+
+
 </script>
+
+
 
 <?php $conn->close(); ?>
