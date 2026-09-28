@@ -13,6 +13,9 @@
 
   // Fetch users for dropdown
   $users = $conn->query("SELECT user_id, fullname FROM user_tb ORDER BY fullname ASC");
+
+
+  $date_today = date('Y-m-d');
 ?>
 
   <!-- Select2 CSS -->
@@ -41,7 +44,7 @@
       </div>
     </div>
       <div class="row mb-3">
-      <div class="col-md-6">
+      <div class="col-md-4">
         <label class="form-label">Issue To</label>
         <select name="user_id" id="user_id" class="form-control" required>
           <option value="">Select User</option>
@@ -51,9 +54,14 @@
         </select>
       </div>
 
-      <div class="col-md-6">
+      <div class="col-md-4">
         <label class="form-label">Quantity</label>
         <input type="number" name="quantity" class="form-control" min="1" max="<?= $item['quantity'] ?>" required>
+      </div>
+
+        <div class="col-md-4">
+              <label class="form-label">Date Issued</label>
+              <input type="date" name="action_date" class="form-control" value="<?= $date_today ?>" required>
       </div>
     </div>
 

@@ -8,14 +8,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $user_id  = $_POST['user_id'];
     $quantity = $_POST['quantity'];
     $remarks  = $_POST['remarks'];
+    $action_date = "0000-00-00 00:00:00";
     $date_returned = "0000-00-00 00:00:00";
 
     try {
         // 1. Insert into transaction log (Executes ONCE)
-        $sql = "INSERT INTO transaction_tb (item_id, user_id, action, quantity, remarks, date_returned) 
-            VALUES (?, ?, 'issued', ?, ?, ?)";
+        $sql = "INSERT INTO transaction_tb (item_id, user_id, action, quantity, remarks, action_date, date_returned) 
+            VALUES (?, ?, 'issued', ?, ?, ?, ?)";
         $stmt = $conn->prepare($sql);
-        $stmt->bind_param("iiiss", $item_id, $user_id, $quantity, $remarks, $date_returned);
+        $stmt->bind_param("iiisss", $item_id, $user_id, $quantity, $remarks, $date_returned, $date_returned);
         $stmt->execute();
 
         // 2. Update stock (Executes ONCE)
