@@ -264,8 +264,9 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
                 <select id="statusSelectFilter" class="form-select">
                     <option value="">All Status</option>
                     <option value="pending">Pending</option>
-                    <option value="approved">Approved</option>
-                    <option value="rejected">Rejected</option>
+                    <option value="proceed request">Proceed Request</option>
+                    <option value="checking request">Checking Request</option>
+                    <option value="closed">Closed</option>
                 </select>
             </div>
 
@@ -343,8 +344,53 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
                         </tr>
                     </thead>
                     <tbody>
+                        <?php
+                            
+                            ?>
                         <?php if ($requests->num_rows > 0): ?>
-                            <?php $i = 1; while ($row = $requests->fetch_assoc()): ?>
+                            <?php $i = 1; while ($row = $requests->fetch_assoc()): 
+                                $purchaser_id = (int)$row['purchaser_id'];
+
+                            if ($purchaser_id == 1) {
+                                $purchaser_name = 'Unassigned';
+                            } else {
+                                $stmtPurchaser = $conn->prepare("
+                                    SELECT fullname
+                                    FROM user_tb
+                                    WHERE user_id = ?
+                                    LIMIT 1
+                                ");
+
+                                $stmtPurchaser->bind_param("i", $purchaser_id);
+                                $stmtPurchaser->execute();
+
+                                $purchaserResult = $stmtPurchaser->get_result();
+                                $purchaser = $purchaserResult->fetch_assoc();
+
+                                $purchaser_name = $purchaser['fullname'] ?? 'Unknown';
+
+                                $stmtPurchaser->close();
+                            }
+
+                            $createdById = (int)$row['created_by'];
+
+                            $stmtRequestor = $conn->prepare("
+                                SELECT fullname
+                                FROM user_tb
+                                WHERE user_id = ?
+                                LIMIT 1
+                            ");
+
+                            $stmtRequestor->bind_param("i", $createdById);
+                            $stmtRequestor->execute();
+
+                            $requestorResult = $stmtRequestor->get_result();
+                            $requestor = $requestorResult->fetch_assoc();
+
+                            $requestor_name = $requestor['fullname'] ?? 'Unknown';
+
+                            $stmtRequestor->close();
+                                ?>
  
                         <tr
                             data-request-id="<?= (int)$row['request_id'] ?>"
@@ -367,22 +413,6 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
 
                                     <td><?= $i++ ?></td>
                                     <td><?= htmlspecialchars($row['lmr_no']) ?></td>
-                                    <?php
-                                    $purchaser_id = $row['purchaser_id'];
-
-                                    if ($purchaser_id == 1) {
-                                        $purchaser_name = 'Unassigned';
-                                    } else {
-                                        $stmt = $conn->prepare("SELECT fullname FROM user_tb WHERE user_id = ?");
-                                        $stmt->bind_param("i", $purchaser_id);
-                                        $stmt->execute();
-
-                                        $result = $stmt->get_result();
-                                        $purchaser = $result->fetch_assoc();
-
-                                        $purchaser_name = $purchaser['fullname'] ?? 'Unknown';
-                                    }
-                                    ?>
                                     <td><?= htmlspecialchars($requestor_name) ?></td>
                                  
                                     <td><?= htmlspecialchars($row['department']) ?></td>
@@ -391,17 +421,6 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
                                     <td><?= $row['quantity'] ?></td>
                                     <td><?= htmlspecialchars($row['UoM']) ?></td>
                                     <td><?= htmlspecialchars($purchaser_name) ?></td>
-                                    <?php
-                                    $created_by = $row['created_by'];
-                                        $stmt = $conn->prepare("SELECT fullname FROM user_tb WHERE user_id = ?");
-                                        $stmt->bind_param("i", $created_by);
-                                        $stmt->execute();
-
-                                        $result = $stmt->get_result();
-                                        $created_by = $result->fetch_assoc();
-
-                                        $requestor_name = $created_by['fullname'] ?? 'Unknown';
-                                    ?>
                                     <td>
                                         <?php 
                                             $statusClass = '';
@@ -850,7 +869,7 @@ $(document).ready(function () {
             .toString()
             .trim();
 
-        const rowDate = ($row.data('date') || '')
+        const rowDate = ($row.data('date-created') || '')
             .toString()
             .trim();
 
@@ -1313,7 +1332,7 @@ $(document).ready(function () {
 
         $.ajax({
 
-            url: 'ticket/includes/update_purch_request.php',
+            url: 'ticket/includes/assign_request.php',
 
             type: 'POST',
 
@@ -1375,7 +1394,7 @@ $(document).ready(function () {
                     // -----------------------------------------
 
                     const statusBadge =
-                        row.find('td').eq(7).find('.badge');
+                        row.find('td').eq(8).find('.badge');
 
                     statusBadge
                         .removeClass(
@@ -1418,7 +1437,7 @@ $(document).ready(function () {
                         );
 
                         // Assigned purchaser column
-                        row.find('td').eq(6).text(
+                        row.find('td').eq(7).text(
                             response.purchaser_name
                         );
 
