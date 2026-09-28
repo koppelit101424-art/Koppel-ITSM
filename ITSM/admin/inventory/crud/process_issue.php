@@ -16,7 +16,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $sql = "INSERT INTO transaction_tb (item_id, user_id, action, quantity, remarks, action_date, date_returned) 
             VALUES (?, ?, 'issued', ?, ?, ?, ?)";
         $stmt = $conn->prepare($sql);
-        $stmt->bind_param("iiisss", $item_id, $user_id, $quantity, $remarks, $date_returned, $date_returned);
+        $stmt->bind_param("iiisss", $item_id, $user_id, $quantity, $remarks, $action_date, $date_returned);
         $stmt->execute();
 
         // 2. Update stock (Executes ONCE)
