@@ -178,6 +178,7 @@ if (strcasecmp(trim($request['status']), 'pending') !== 0) {
 
                     <input
                         type="text"
+                        name="lmr_no"
                         class="form-control"
                         value="<?= htmlspecialchars($request['lmr_no'] ?? '') ?>"
                         
