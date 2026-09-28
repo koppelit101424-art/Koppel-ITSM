@@ -57,7 +57,7 @@ $sql = "
     FROM purch_request_tb r
     LEFT JOIN user_tb u 
         ON r.created_by = u.user_id
-    ORDER BY r.date_created DESC
+    ORDER BY r.date_created ASC
 ";
 
 $stmt = $conn->prepare($sql);
@@ -88,7 +88,7 @@ $sql = "
     LEFT JOIN user_tb u 
         ON r.created_by = u.user_id
     WHERE r.created_by = ?
-    ORDER BY r.date_created DESC
+    ORDER BY r.date_created ASC
 ";
 
     $stmt = $conn->prepare($sql);
