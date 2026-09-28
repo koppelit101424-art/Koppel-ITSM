@@ -61,7 +61,7 @@ $date_today = date('Y-m-d H:i:s');
 
         <div class="col-md-4">
               <label class="form-label">Date Issued</label>
-              <input type="date" name="action_date" class="form-control" value="<?=now()->format('Y-m-d H:i:s') ?>" required>
+              <input type="date" name="action_date" class="form-control" value="<?= $date_today ?>" required>
       </div>
     </div>
 
