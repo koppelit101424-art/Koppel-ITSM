@@ -327,7 +327,7 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
                 <table id="requestsTable" class="table table-hover align-middle">
                     <thead>
                         <tr>
-                            <!-- <th>#</th> -->
+                            <th>#</th>
                             <th>LMR No.</th>
                             <th>User</th>
                             <th>Department</th>
@@ -411,7 +411,7 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
                             style="cursor:pointer;"
                         >
 
-                                    <!-- <td><?= $i++ ?></td> -->
+                                    <td><?= $i++ ?></td>
                                     <td><?= htmlspecialchars($row['lmr_no']) ?></td>
                                     <td><?= htmlspecialchars($requestor_name) ?></td>
                                  
@@ -830,7 +830,7 @@ $(document).ready(function () {
         pageLength: 10,
         order: [[0, "desc"]],
         columnDefs: [
-            { orderable: false, targets: [5, 9, 11] }
+            { orderable: false, targets: [5, 9, 10] }
         ]
     });
 
