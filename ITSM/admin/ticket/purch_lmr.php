@@ -104,12 +104,35 @@ $requests = $stmt->get_result();
 
 <style>
 .table-hover tbody tr:hover { background-color: #f1f1f1; }
-/* .badge-open { background-color: #0d6efd; color:#fff; } */
-.badge-proceed { background-color: #198754; color:#fff; }
-.badge-checking { background-color: #0d6efd; color:#fff; }
-.badge-canceled { background-color: #dc3545; color:#fff; }
-.badge-pending { background-color: #ffc107; color:#000; }
-.badge-closed { background-color: #6c757d; color:#fff; }
+.badge-checking {
+    background-color: #0d6efd;
+    color: #fff;
+}
+
+.badge-negotiation {
+    background-color: #6f42c1;
+    color: #fff;
+}
+
+.badge-draft {
+    background-color: #fd7e14;
+    color: #fff;
+}
+
+.badge-canceled {
+    background-color: #dc3545;
+    color: #fff;
+}
+
+.badge-pending {
+    background-color: #ffc107;
+    color: #000;
+}
+
+.badge-closed {
+    background-color: #6c757d;
+    color: #fff;
+}
 
 .status-filter.active { background-color: #1E3A8A; color: #fff; }
 .status-filter.active:hover { background-color: #1E3A8A; color: #fff; }
@@ -678,21 +701,15 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
                             <select id="modalStatus"
                                     class="form-select" disabled>
 
-                                <option value="pending">
-                                    Pending
-                                </option>
-
-                                <option value="proceed request">
-                                    Proceed Request
-                                </option>
-
-                                <option value="checking request">
-                                    Checking Request
-                                </option>
-
-                                <option value="closed">
-                                    Closed
-                                </option>
+                                <option value="pending">Pending</option>
+                                <option value="checking requirements">Checking Requirements</option>
+                                <option value="canvassing">Canvassing</option>
+                                <option value="negotiation">Negotiation</option>
+                                <option value="under discussion">Under Discussion</option>
+                                <option value="draft">Draft </option>
+                                <option value="final">Final </option>
+                                <option value="end">End </option>
+                                <option value="closed">Closed</option>
 
                             </select>
 
