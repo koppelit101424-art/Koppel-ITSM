@@ -144,7 +144,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $uom = trim($uoms[$i] ?? '');
         $date_needed = trim($dates_needed[$i] ?? '');
         $remarks = trim($remarks_list[$i] ?? '');
-        $status = trim($statuses[$i] ?? 'Pending');
+        $status = 'Pending';
+
 
         $itemHasError = false;
 
