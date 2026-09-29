@@ -53,6 +53,7 @@ try {
 
     $allowed_statuses = [
         'pending',
+        'checking requirements',
         'canvassing',
         'negotiation',
         'under discussion',
