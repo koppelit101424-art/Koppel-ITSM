@@ -233,7 +233,10 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
 
 ?>
 
-    <?php if (strcasecmp($currentDepartment, 'Purchasing') === 0): ?>
+    <?php if (strcasecmp($currentDepartment, 'Purchasing') === 0)      || (
+                            isset($_SESSION['user_type'])
+                            && strcasecmp(trim($_SESSION['user_type']), 'admin') === 0
+                        );: ?>
 
         <!-- ==========================================
              PURCHASING FILTERS
