@@ -1421,13 +1421,22 @@ url: 'ticket/includes/assign_request.php',
 
             let statusClass = 'badge-pending';
 
-            if (status === 'proceed request') {
-                statusClass = 'badge-proceed';
-            }
-            else if (status === 'checking request') {
+            if (status === 'checking requirements' ||
+                status === 'checking request' ||
+                status === 'canvassing') {
                 statusClass = 'badge-checking';
             }
-            else if (status === 'closed') {
+            else if (status === 'negotiation' ||
+                    status === 'under discussion') {
+                statusClass = 'badge-negotiation';
+            }
+            else if (status === 'draft') {
+                statusClass = 'badge-draft';
+            }
+            else if (status === 'final') {
+                statusClass = 'badge-proceed';
+            }
+            else if (status === 'end' || status === 'closed') {
                 statusClass = 'badge-closed';
             }
 
