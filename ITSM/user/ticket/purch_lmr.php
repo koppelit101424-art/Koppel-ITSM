@@ -515,7 +515,7 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
                                     <td><?= date('m-d-Y', strtotime($row['date_created'])) ?></td>
                                     <td><?= date('m-d-Y', strtotime( $row['date_needed'])) ?></td>
                                     <!-- <td><?= htmlspecialchars($row['remarks'] ?? '-') ?></td> -->
-                                    <!-- <td onclick="event.stopPropagation();">
+                                    <td onclick="event.stopPropagation();">
 
                                         <a href="?page=ticket/view_request&request_id=<?= $row['request_id'] ?>"
                                         class="btn btn-sm btn-primary"
@@ -539,16 +539,16 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
                                             </a>
                                         <?php endif; ?>
 
-                                        <button
+                                        <!-- <button
                                             type="button"
                                             class="btn btn-sm btn-success btn-print"
                                             data-lmr="<?= htmlspecialchars($row['lmr_no']) ?>"
                                             data-status="<?= htmlspecialchars(strtolower(trim($row['status']))) ?>"
                                             title="Print">
                                             <i class="fas fa-print"></i>
-                                        </button>
+                                        </button> -->
 
-                                    </td> -->
+                                    </td>
 
                                 </tr>
                             <?php endwhile; ?>
