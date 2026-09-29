@@ -687,7 +687,6 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
                                     Pending
                                 </option>
 
-                                <option value="pending">Pending</option>
                                 <option value="checking requirements">Checking Requirements</option>
                                 <option value="canvassing">Canvassing</option>
                                 <option value="negotiation">Negotiation</option>
@@ -1372,14 +1371,32 @@ url: 'ticket/includes/assign_request.php',
 
             let statusClass = 'badge-pending';
 
-            if (status === 'proceed request') {
-                statusClass = 'badge-proceed';
+            if (status === 'checking requirements') {
+                statusClass = 'badge-checking';
             }
             else if (status === 'checking request') {
                 statusClass = 'badge-checking';
             }
+            else if (status === 'canvassing') {
+                statusClass = 'badge-checking';
+            }
+            else if (status === 'negotiation') {
+                statusClass = 'badge-checking';
+            }
+            else if (status === 'under discussion') {
+                statusClass = 'badge-checking';
+            }
+            else if (status === 'draft') {
+                statusClass = 'badge-checking';
+            }
+            else if (status === 'final') {
+                statusClass = 'badge-checking';
+            }
+            else if (status === 'end') {
+                statusClass = 'badge-checking';
+            }
             else if (status === 'closed') {
-                statusClass = 'badge-closed';
+                statusClass = 'badge-checking';
             }
 
             statusBadge
@@ -1490,7 +1507,7 @@ url: 'ticket/includes/assign_request.php',
             $(this).data('lmr');
 
 
-        if (status !== 'proceed request') {
+        if (status !== 'final') {
 
             alert(
                 'Printing is only available when the request status is "Proceed Request".'
