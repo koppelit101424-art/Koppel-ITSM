@@ -470,7 +470,6 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
                                                     break;
 
                                                 case 'checking requirements':
-                                                case 'checking request':
                                                 case 'canvassing':
                                                     $statusClass = 'badge-checking';
                                                     break;
@@ -1696,7 +1695,6 @@ $(document).ready(function () {
             let statusClass = 'badge-pending';
 
             if (status === 'checking requirements' ||
-                status === 'checking request' ||
                 status === 'canvassing') {
                 statusClass = 'badge-checking';
             }
