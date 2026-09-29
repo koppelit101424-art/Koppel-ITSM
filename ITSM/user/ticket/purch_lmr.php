@@ -170,23 +170,44 @@ $requests = $stmt->get_result();
     background-color: #1E3A8A;
     color: white;
 }
+.unassigned-purchaser {
+    color: #dc3545;
+    font-weight: 600;
+}
+
 </style>
 
-    <div class="card ">
-        <div class="card-header d-flex justify-content-between align-items-center text-white">
-            <span>Purchasing LMR</span>
-            <a href="?page=ticket/includes/add_purch_request" class="btn btn-sm btn-primary">
-                <i class="fas fa-plus me-1"></i> Create LMR
-            </a>
+<?php
+$isPurchasing =
+    strcasecmp(trim($currentDepartment), 'Purchasing') === 0
+    || (
+        isset($_SESSION['user_type'])
+        && strcasecmp(trim($_SESSION['user_type']), 'admin') === 0
+    );
+?>
+
+<div class="card-header d-flex justify-content-between align-items-center text-white">
+    <span>Purchasing LMR</span>
+
+    <div class="d-flex gap-2">
+        <a href="?page=ticket/includes/add_purch_request"
+           class="btn btn-sm btn-primary">
+            <i class="fas fa-plus me-1"></i>
+            Create LMR
+        </a>
+
+        <?php if ($isPurchasing): ?>
             <button type="button"
                     class="btn btn-info btn-sm"
                     id="exportPurchasingCSV">
                 <i class="fas fa-file-csv me-1"></i>
                 Export CSV
             </button>
-        </div>
+        <?php endif; ?>
+    </div>
+</div>
 
-        <div class="card-body">
+
 
 <div class="card-body">
 <?php
@@ -459,7 +480,16 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
 
                                     <td><?= $row['quantity'] ?></td>
                                     <td><?= htmlspecialchars($row['UoM']) ?></td>
-                                    <td><?= htmlspecialchars($purchaser_name) ?></td>
+                                  <td>
+                                        <?php if ($purchaser_id == 1): ?>
+                                            <span class="unassigned-purchaser">
+                                                Unassigned
+                                            </span>
+                                        <?php else: ?>
+                                            <?= htmlspecialchars($purchaser_name) ?>
+                                        <?php endif; ?>
+                                    </td>
+
                                     <td>
                                         <?php 
                                             $status = strtolower(trim($row['status']));
