@@ -173,7 +173,7 @@ $requests = $stmt->get_result();
 </style>
 
     <div class="card ">
-        <div class="card-header d-flex justify-content-between text-white">
+        <div class="card-header d-flex justify-content-between align-items-center text-white">
             <span>Purchasing LMR</span>
             <!-- <a href="?page=ticket/includes/add_purch_request" class="btn btn-sm btn-primary">
                 <i class="fas fa-plus me-1"></i> Create LMR

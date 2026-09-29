@@ -173,7 +173,7 @@ $requests = $stmt->get_result();
 </style>
 
     <div class="card ">
-        <div class="card-header d-flex justify-content-between text-white">
+        <div class="card-header d-flex justify-content-between align-items-center text-white">
             <span>Purchasing LMR</span>
             <a href="?page=ticket/includes/add_purch_request" class="btn btn-sm btn-primary">
                 <i class="fas fa-plus me-1"></i> Create LMR
@@ -1111,7 +1111,262 @@ $(document).ready(function () {
         );
     });
 
-    
+  
+    // =====================================================
+// EXPORT PURCHASING REQUESTS TO CSV
+// Exports only the currently filtered/visible requests
+// =====================================================
+
+    function exportPurchasingCSV() {
+
+        const rows = [];
+
+        // CSV Headers
+        const headers = [
+            "LMR No.",
+            "Company",
+            "Requested By",
+            "Department",
+            "Item",
+            "Description",
+            "Quantity",
+            "UoM",
+            "Assigned To",
+            "Status",
+            "Date Created",
+            "Date Needed",
+            "Remarks"
+        ];
+
+        rows.push(headers);
+
+        // -------------------------------------------------
+        // Get rows currently displayed by DataTables
+        // -------------------------------------------------
+
+        table.rows({
+            search: 'applied',
+            order: 'applied'
+        }).every(function () {
+
+            const row = this.node();
+
+            if (!row) {
+                return;
+            }
+
+            const $row = $(row);
+
+            // -------------------------------------------------
+            // Get data from data-* attributes
+            // -------------------------------------------------
+
+            const lmrNo =
+                $row.attr('data-lmr-no') || '';
+
+            const company =
+                $row.attr('data-company') || '';
+
+            const requestor =
+                $row.attr('data-requestor-name') || '';
+
+            const department =
+                $row.attr('data-department') || '';
+
+            const item =
+                $row.attr('data-item') || '';
+
+            const description =
+                $row.attr('data-description') || '';
+
+            const quantity =
+                $row.attr('data-quantity') || '';
+
+            const uom =
+                $row.attr('data-uom') || '';
+
+            const purchaser =
+                $row.attr('data-purchaser-name') || 'Unassigned';
+
+            const status =
+                $row.attr('data-status') || '';
+
+            const dateCreated =
+                $row.attr('data-date-created') || '';
+
+            const dateNeeded =
+                $row.attr('data-date-needed') || '';
+
+            const remarks =
+                $row.attr('data-remarks') || '';
+
+            // -------------------------------------------------
+            // Format status
+            // -------------------------------------------------
+
+            const formattedStatus = status
+                ? status.replace(/\b\w/g, function (letter) {
+                    return letter.toUpperCase();
+                })
+                : '';
+
+            // -------------------------------------------------
+            // Format dates
+            // -------------------------------------------------
+
+            function formatCSVDate(value) {
+
+                if (!value) {
+                    return '';
+                }
+
+                const date = new Date(value);
+
+                if (isNaN(date.getTime())) {
+                    return value;
+                }
+
+                const month = String(
+                    date.getMonth() + 1
+                ).padStart(2, '0');
+
+                const day = String(
+                    date.getDate()
+                ).padStart(2, '0');
+
+                const year = date.getFullYear();
+
+                return month + '-' + day + '-' + year;
+            }
+
+            // -------------------------------------------------
+            // Add row
+            // -------------------------------------------------
+
+            rows.push([
+                lmrNo,
+                company,
+                requestor,
+                department,
+                item,
+                description,
+                quantity,
+                uom,
+                purchaser,
+                formattedStatus,
+                formatCSVDate(dateCreated),
+                formatCSVDate(dateNeeded),
+                remarks
+            ]);
+
+        });
+
+        // -------------------------------------------------
+        // Check if there are records
+        // -------------------------------------------------
+
+        if (rows.length === 1) {
+
+            alert(
+                'There are no purchasing requests to export.'
+            );
+
+            return;
+        }
+
+        // -------------------------------------------------
+        // Convert values to CSV-safe format
+        // -------------------------------------------------
+
+        function escapeCSV(value) {
+
+            if (value === null || value === undefined) {
+                return '""';
+            }
+
+            value = String(value);
+
+            // Escape double quotes
+            value = value.replace(/"/g, '""');
+
+            // Wrap every value in quotes
+            return '"' + value + '"';
+        }
+
+        const csvContent = rows
+            .map(function (row) {
+
+                return row
+                    .map(escapeCSV)
+                    .join(',');
+
+            })
+            .join('\r\n');
+
+        // -------------------------------------------------
+        // Add UTF-8 BOM
+        // Helps Excel display special characters correctly
+        // -------------------------------------------------
+
+        const BOM = '\uFEFF';
+
+        const blob = new Blob(
+            [BOM + csvContent],
+            {
+                type: 'text/csv;charset=utf-8;'
+            }
+        );
+
+        // -------------------------------------------------
+        // Create filename
+        // -------------------------------------------------
+
+        const today = new Date();
+
+        const year = today.getFullYear();
+
+        const month = String(
+            today.getMonth() + 1
+        ).padStart(2, '0');
+
+        const day = String(
+            today.getDate()
+        ).padStart(2, '0');
+
+        const filename =
+            'purchasing_requests_' +
+            year + '-' +
+            month + '-' +
+            day +
+            '.csv';
+
+        // -------------------------------------------------
+        // Download
+        // -------------------------------------------------
+
+        const link = document.createElement('a');
+
+        link.href = URL.createObjectURL(blob);
+        link.download = filename;
+
+        document.body.appendChild(link);
+
+        link.click();
+
+        document.body.removeChild(link);
+
+        URL.revokeObjectURL(link.href);
+    }
+
+
+    // =====================================================
+    // EXPORT BUTTON
+    // =====================================================
+
+    $('#exportPurchasingCSV').on('click', function () {
+        exportPurchasingCSV();
+    });
+
     // =====================================================
     // USER / ROLE
     // =====================================================
@@ -1405,8 +1660,8 @@ $(document).ready(function () {
         );
 
 
-$.ajax({
-url: 'ticket/includes/assign_request.php',
+    $.ajax({
+    url: 'ticket/includes/assign_request.php',
     type: 'POST',
     dataType: 'json',
 
@@ -1526,7 +1781,7 @@ url: 'ticket/includes/assign_request.php',
             xhr.responseText
         );
     }
-});
+    });
 
     });
 
@@ -1590,265 +1845,8 @@ url: 'ticket/includes/assign_request.php',
 
 });
 
-
 </script>
 
-<script>
-    // =====================================================
-// EXPORT PURCHASING REQUESTS TO CSV
-// Exports only the currently filtered/visible requests
-// =====================================================
 
-function exportPurchasingCSV() {
-
-    const rows = [];
-
-    // CSV Headers
-    const headers = [
-        "LMR No.",
-        "Company",
-        "Requested By",
-        "Department",
-        "Item",
-        "Description",
-        "Quantity",
-        "UoM",
-        "Assigned To",
-        "Status",
-        "Date Created",
-        "Date Needed",
-        "Remarks"
-    ];
-
-    rows.push(headers);
-
-    // -------------------------------------------------
-    // Get rows currently displayed by DataTables
-    // -------------------------------------------------
-
-    table.rows({
-        search: 'applied',
-        order: 'applied'
-    }).every(function () {
-
-        const row = this.node();
-
-        if (!row) {
-            return;
-        }
-
-        const $row = $(row);
-
-        // -------------------------------------------------
-        // Get data from data-* attributes
-        // -------------------------------------------------
-
-        const lmrNo =
-            $row.attr('data-lmr-no') || '';
-
-        const company =
-            $row.attr('data-company') || '';
-
-        const requestor =
-            $row.attr('data-requestor-name') || '';
-
-        const department =
-            $row.attr('data-department') || '';
-
-        const item =
-            $row.attr('data-item') || '';
-
-        const description =
-            $row.attr('data-description') || '';
-
-        const quantity =
-            $row.attr('data-quantity') || '';
-
-        const uom =
-            $row.attr('data-uom') || '';
-
-        const purchaser =
-            $row.attr('data-purchaser-name') || 'Unassigned';
-
-        const status =
-            $row.attr('data-status') || '';
-
-        const dateCreated =
-            $row.attr('data-date-created') || '';
-
-        const dateNeeded =
-            $row.attr('data-date-needed') || '';
-
-        const remarks =
-            $row.attr('data-remarks') || '';
-
-        // -------------------------------------------------
-        // Format status
-        // -------------------------------------------------
-
-        const formattedStatus = status
-            ? status.replace(/\b\w/g, function (letter) {
-                return letter.toUpperCase();
-            })
-            : '';
-
-        // -------------------------------------------------
-        // Format dates
-        // -------------------------------------------------
-
-        function formatCSVDate(value) {
-
-            if (!value) {
-                return '';
-            }
-
-            const date = new Date(value);
-
-            if (isNaN(date.getTime())) {
-                return value;
-            }
-
-            const month = String(
-                date.getMonth() + 1
-            ).padStart(2, '0');
-
-            const day = String(
-                date.getDate()
-            ).padStart(2, '0');
-
-            const year = date.getFullYear();
-
-            return month + '-' + day + '-' + year;
-        }
-
-        // -------------------------------------------------
-        // Add row
-        // -------------------------------------------------
-
-        rows.push([
-            lmrNo,
-            company,
-            requestor,
-            department,
-            item,
-            description,
-            quantity,
-            uom,
-            purchaser,
-            formattedStatus,
-            formatCSVDate(dateCreated),
-            formatCSVDate(dateNeeded),
-            remarks
-        ]);
-
-    });
-
-    // -------------------------------------------------
-    // Check if there are records
-    // -------------------------------------------------
-
-    if (rows.length === 1) {
-
-        alert(
-            'There are no purchasing requests to export.'
-        );
-
-        return;
-    }
-
-    // -------------------------------------------------
-    // Convert values to CSV-safe format
-    // -------------------------------------------------
-
-    function escapeCSV(value) {
-
-        if (value === null || value === undefined) {
-            return '""';
-        }
-
-        value = String(value);
-
-        // Escape double quotes
-        value = value.replace(/"/g, '""');
-
-        // Wrap every value in quotes
-        return '"' + value + '"';
-    }
-
-    const csvContent = rows
-        .map(function (row) {
-
-            return row
-                .map(escapeCSV)
-                .join(',');
-
-        })
-        .join('\r\n');
-
-    // -------------------------------------------------
-    // Add UTF-8 BOM
-    // Helps Excel display special characters correctly
-    // -------------------------------------------------
-
-    const BOM = '\uFEFF';
-
-    const blob = new Blob(
-        [BOM + csvContent],
-        {
-            type: 'text/csv;charset=utf-8;'
-        }
-    );
-
-    // -------------------------------------------------
-    // Create filename
-    // -------------------------------------------------
-
-    const today = new Date();
-
-    const year = today.getFullYear();
-
-    const month = String(
-        today.getMonth() + 1
-    ).padStart(2, '0');
-
-    const day = String(
-        today.getDate()
-    ).padStart(2, '0');
-
-    const filename =
-        'purchasing_requests_' +
-        year + '-' +
-        month + '-' +
-        day +
-        '.csv';
-
-    // -------------------------------------------------
-    // Download
-    // -------------------------------------------------
-
-    const link = document.createElement('a');
-
-    link.href = URL.createObjectURL(blob);
-    link.download = filename;
-
-    document.body.appendChild(link);
-
-    link.click();
-
-    document.body.removeChild(link);
-
-    URL.revokeObjectURL(link.href);
-}
-
-
-// =====================================================
-// EXPORT BUTTON
-// =====================================================
-
-$('#exportPurchasingCSV').on('click', function () {
-    exportPurchasingCSV();
-});
-
-</script>
 
 <?php $conn->close(); ?>
