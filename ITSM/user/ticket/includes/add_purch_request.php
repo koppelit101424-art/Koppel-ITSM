@@ -1,4 +1,11 @@
 <?php
+
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+
+mysqli_report(MYSQLI_REPORT_OFF);
+
 include 'includes/auth.php';
 include 'includes/db.php';
 
@@ -61,17 +68,21 @@ $errors = [];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
+    $errors = [];
+
     // ==========================================
     // SHARED FIELDS
     // ==========================================
 
     $lmr_no = trim($_POST['lmr_no'] ?? '');
-    $user_id = intval($_POST['user_id'] ?? 0);
-    $requestor = trim($_POST['requestor'] ?? '');
-    $department = trim($_POST['department'] ?? '');
-    $created_by = intval($_POST['created_by'] ?? 0);
 
-    // Default purchaser = Unassigned
+    // Get these from SESSION instead of trusting hidden fields
+    $user_id = (int)($_SESSION['user_id'] ?? 0);
+    $requestor = trim($user['fullname'] ?? '');
+    $department = trim($user['department'] ?? '');
+    $created_by = $user_id;
+
+    // Default purchaser
     $purchaser_id = 1;
 
 
@@ -79,12 +90,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // VALIDATE SHARED FIELDS
     // ==========================================
 
-    if (empty($lmr_no)) {
+    if ($lmr_no === '') {
         $errors[] = "LMR No is required.";
     }
 
     if ($user_id <= 0) {
-        $errors[] = "User is required.";
+        $errors[] = "Invalid user.";
+    }
+
+    if ($requestor === '') {
+        $errors[] = "Requestor is required.";
+    }
+
+    if ($department === '') {
+        $errors[] = "Department is required.";
     }
 
     if ($created_by <= 0) {
@@ -111,53 +130,43 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $validItems = [];
 
-    for ($i = 0; $i < count($items); $i++) {
+    foreach ($items as $i => $item) {
 
-        $item = trim($items[$i] ?? '');
+        $item = trim($item);
 
-        // Ignore completely empty item rows
+        // Ignore empty rows
         if ($item === '') {
             continue;
         }
 
         $desc = trim($descriptions[$i] ?? '');
-        $qty = floatval($quantities[$i] ?? 0);
+        $qty = (float)($quantities[$i] ?? 0);
         $uom = trim($uoms[$i] ?? '');
         $date_needed = trim($dates_needed[$i] ?? '');
         $remarks = trim($remarks_list[$i] ?? '');
         $status = trim($statuses[$i] ?? 'Pending');
 
-
-        // ------------------------------------------
-        // Validate this item
-        // ------------------------------------------
-
         $itemHasError = false;
 
         if ($desc === '') {
-            $errors[] = "Description required for item: $item";
+            $errors[] = "Description required for item: {$item}";
             $itemHasError = true;
         }
 
         if ($qty <= 0) {
-            $errors[] = "Quantity must be greater than 0 for item: $item";
+            $errors[] = "Quantity must be greater than 0 for item: {$item}";
             $itemHasError = true;
         }
 
         if ($uom === '') {
-            $errors[] = "UoM required for item: $item";
+            $errors[] = "UoM required for item: {$item}";
             $itemHasError = true;
         }
 
         if ($date_needed === '') {
-            $errors[] = "Date Needed required for item: $item";
+            $errors[] = "Date Needed required for item: {$item}";
             $itemHasError = true;
         }
-
-
-        // ------------------------------------------
-        // Only add valid item
-        // ------------------------------------------
 
         if (!$itemHasError) {
 
@@ -178,19 +187,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // REQUIRE AT LEAST ONE ITEM
     // ==========================================
 
-    if (empty($validItems)) {
+    if (count($validItems) === 0) {
         $errors[] = "At least one valid item is required.";
     }
 
 
     // ==========================================
-    // INSERT ONLY IF THERE ARE NO ERRORS
+    // INSERT
     // ==========================================
 
     if (empty($errors)) {
 
         $sql = "
-            INSERT INTO purch_request_tb (
+            INSERT INTO purch_request_tb
+            (
                 lmr_no,
                 user_id,
                 requestor,
@@ -207,7 +217,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 created_by,
                 purchaser_id
             )
-            VALUES (
+            VALUES
+            (
                 ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
                 NOW(),
                 NOW(),
@@ -215,45 +226,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             )
         ";
 
-
         $stmt = $conn->prepare($sql);
-
-
-        // ------------------------------------------
-        // Check prepare
-        // ------------------------------------------
 
         if (!$stmt) {
 
-            $errors[] =
-                "Database prepare failed: " .
-                $conn->error;
+            $errors[] = "Prepare failed: " . $conn->error;
 
         } else {
 
-            // --------------------------------------
-            // Insert EVERY item
-            // --------------------------------------
+            // Start transaction
+            $conn->begin_transaction();
+
+            $insertedCount = 0;
 
             foreach ($validItems as $itemData) {
-
-                /*
-                 * Types:
-                 *
-                 * s = lmr_no
-                 * i = user_id
-                 * s = requestor
-                 * s = department
-                 * s = item
-                 * s = description
-                 * d = quantity
-                 * s = UoM
-                 * s = date_needed
-                 * s = remarks
-                 * s = status
-                 * i = created_by
-                 * i = purchaser_id
-                 */
 
                 $stmt->bind_param(
                     "sissssdsssii",
@@ -272,50 +258,43 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $purchaser_id
                 );
 
-
                 if (!$stmt->execute()) {
 
                     $errors[] =
-                        "Failed to insert item '" .
-                        $itemData['item'] .
-                        "': " .
+                        "Failed to insert item '{$itemData['item']}': " .
                         $stmt->error;
+
+                    // Stop inserting if one item fails
+                    break;
                 }
+
+                $insertedCount++;
             }
 
+            // ==========================================
+            // COMMIT / ROLLBACK
+            // ==========================================
 
-            $stmt->close();
+            if (empty($errors)) {
+
+                $conn->commit();
+
+                $stmt->close();
+
+                // Redirect after ALL items were inserted
+                header("Location: ?page=ticket/purch_lmr");
+                exit;
+
+            } else {
+
+                $conn->rollback();
+
+                $stmt->close();
+            }
         }
     }
+}
 
-
-    // ==========================================
-    // SUCCESS
-    // ONLY REDIRECT AFTER ALL ITEMS INSERTED
-    // ==========================================
-
-    if (empty($errors)) {
-
-        echo '<script>
-            window.location.href = "?page=ticket/purch_lmr";
-        </script>';
-
-        exit;
-    }
-
-
-
-        /* =========================================
-        SEND EMAIL AFTER SUCCESSFUL SAVE
-    ========================================= */
-    // if (empty($errors)) {
-
-    //     include __DIR__ . '/request_email_notification.php';
-
-    //     $success = "Request submitted successfully under LMR No: " . htmlspecialchars($lmr_no);
-
-    // }
-    }
 
 ?>
 
