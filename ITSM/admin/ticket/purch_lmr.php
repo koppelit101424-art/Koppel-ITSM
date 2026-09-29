@@ -446,17 +446,52 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
                                     <td><?= htmlspecialchars($purchaser_name) ?></td>
                                     <td>
                                         <?php 
-                                            $statusClass = '';
-                                            switch (strtolower($row['status'])) {
-                                                // case 'open': $statusClass = 'badge-open'; break;
-                                                case 'proceed request': $statusClass = 'badge-proceed'; break;
-                                                case 'checking request': $statusClass = 'badge-checking'; break;
-                                                case 'pending': $statusClass = 'badge-pending'; break;
-                                                case 'closed': $statusClass = 'badge-closed'; break;
-                                                default: $statusClass = 'badge-pending'; break;
+                                            $status = strtolower(trim($row['status']));
+
+                                            switch ($status) {
+                                                case 'proceed request':
+                                                    $statusClass = 'badge-proceed';
+                                                    break;
+
+                                                case 'checking requirements':
+                                                case 'checking request':
+                                                case 'canvassing':
+                                                    $statusClass = 'badge-checking';
+                                                    break;
+
+                                                case 'negotiation':
+                                                case 'under discussion':
+                                                    $statusClass = 'badge-negotiation';
+                                                    break;
+
+                                                case 'draft':
+                                                    $statusClass = 'badge-draft';
+                                                    break;
+
+                                                case 'final':
+                                                    $statusClass = 'badge-proceed';
+                                                    break;
+
+                                                case 'pending':
+                                                    $statusClass = 'badge-pending';
+                                                    break;
+
+                                                case 'end':
+                                                case 'closed':
+                                                    $statusClass = 'badge-closed';
+                                                    break;
+
+                                                case 'canceled':
+                                                    $statusClass = 'badge-canceled';
+                                                    break;
+
+                                                default:
+                                                    $statusClass = 'badge-pending';
+                                                    break;
                                             }
                                         ?>
-                                        <span class="badge <?= $statusClass ?> text-white" style="width: 100%;">
+
+                                        <span class="badge <?= $statusClass ?>" style="width: 100%;">
                                             <?= ucfirst($row['status']) ?>
                                         </span>
                                     </td>
