@@ -126,27 +126,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     )
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW(), ?, ?)";
 
-    $stmt = $conn->prepare($sql);
-    if (!$stmt) die("Prepare failed: " . $conn->error);
-
-    foreach ($validItems as $itemData) {
-        $stmt->bind_param(
-            "ssssssdssssii",
-            $lmr_no,
-            $user_id,
-            $requestor,
-            $department,
-            $itemData['item'],
-            $itemData['desc'],
-            $itemData['qty'],
-            $itemData['uom'],
-            $itemData['date_needed'],
-            $itemData['remarks'],
-            $itemData['status'],
-            $created_by,
-            $purchaser_id
-        );
-
         $stmt = $conn->prepare($sql);
 
         if (!$stmt) {
@@ -197,13 +176,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             exit;
         }
 
-        //      if ($insertCount > 0) {
-        //     $success = "$insertCount item(s) added successfully under LMR No: " . htmlspecialchars($lmr_no);
-        // } else {
-        //     $error = "Failed to save items.";
-        // }
-    }
-    $stmt->close();
 
         /* =========================================
         SEND EMAIL AFTER SUCCESSFUL SAVE
