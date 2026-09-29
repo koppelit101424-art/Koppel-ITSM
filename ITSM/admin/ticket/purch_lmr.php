@@ -170,6 +170,10 @@ $requests = $stmt->get_result();
     background-color: #1E3A8A;
     color: white;
 }
+.unassigned-purchaser {
+    color: #dc3545;
+    font-weight: 600;
+}
 </style>
 
     <div class="card ">
@@ -456,7 +460,15 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
 
                                     <td><?= $row['quantity'] ?></td>
                                     <td><?= htmlspecialchars($row['UoM']) ?></td>
-                                    <td><?= htmlspecialchars($purchaser_name) ?></td>
+                                  <td>
+                                        <?php if ($purchaser_id == 1): ?>
+                                            <span class="unassigned-purchaser">
+                                                Unassigned
+                                            </span>
+                                        <?php else: ?>
+                                            <?= htmlspecialchars($purchaser_name) ?>
+                                        <?php endif; ?>
+                                    </td>
                                     <td>
                                         <?php 
                                             $status = strtolower(trim($row['status']));
