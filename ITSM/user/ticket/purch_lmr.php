@@ -178,8 +178,14 @@ $requests = $stmt->get_result();
             <a href="?page=ticket/includes/add_purch_request" class="btn btn-sm btn-primary">
                 <i class="fas fa-plus me-1"></i> Create LMR
             </a>
-            <button type="button" onclick="exportPurchasingCSV()" class="btn btn-dark btn-sm">
-                <i class="fas fa-qrcode me-1"></i>Export Requests
+              <button type="button" onclick="exportPurchasingCSV()" class="btn btn-info btn-sm">
+                <i class="fas fa-file-csv me-1"></i> Export CSV
+            </button>
+            <button type="button"
+                    class="btn btn-info btn-sm"
+                    id="exportPurchasingCSV">
+                <i class="fas fa-file-csv me-1"></i>
+                Export CSV
             </button>
         </div>
 
