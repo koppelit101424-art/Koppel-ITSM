@@ -243,7 +243,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             foreach ($validItems as $itemData) {
 
                 $stmt->bind_param(
-                    "sissssdsssiii",
+                    "sissssdssssii",
                     $lmr_no,
                     $user_id,
                     $requestor,
