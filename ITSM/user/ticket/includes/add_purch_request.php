@@ -254,7 +254,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $itemData['uom'],
                     $itemData['date_needed'],
                     $itemData['remarks'],
-                    $itemData['status'],
+                    $status,
                     $created_by,
                     $purchaser_id
                 );
