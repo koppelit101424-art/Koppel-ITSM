@@ -379,7 +379,7 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
                             <th>Date Created</th>
                             <th>Date Needed</th>
                             <!-- <th>Remarks</th> -->
-                            <!-- <th>Action</th> -->
+                            <th>Action</th>
                         </tr>
                     </thead>
                     <tbody>
