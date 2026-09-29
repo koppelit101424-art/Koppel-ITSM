@@ -327,7 +327,7 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
                 <table id="requestsTable" class="table table-hover align-middle">
                     <thead>
                         <tr>
-                            <th>#</th>
+                            <!-- <th>#</th> -->
                             <th>LMR No.</th>
                             <th>User</th>
                             <th>Department</th>
@@ -340,7 +340,7 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
                             <th>Date Created</th>
                             <th>Date Needed</th>
                             <!-- <th>Remarks</th> -->
-                            <th>Action</th>
+                            <!-- <th>Action</th> -->
                         </tr>
                     </thead>
                     <tbody>
@@ -411,7 +411,7 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
                             style="cursor:pointer;"
                         >
 
-                                    <td><?= $i++ ?></td>
+                                    <!-- <td><?= $i++ ?></td> -->
                                     <td><?= htmlspecialchars($row['lmr_no']) ?></td>
                                     <td><?= htmlspecialchars($requestor_name) ?></td>
                                  
@@ -441,7 +441,7 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
                                     <td><?= date('m-d-Y', strtotime($row['date_created'])) ?></td>
                                     <td><?= date('m-d-Y', strtotime( $row['date_needed'])) ?></td>
                                     <!-- <td><?= htmlspecialchars($row['remarks'] ?? '-') ?></td> -->
-                                    <td onclick="event.stopPropagation();">
+                                    <!-- <td onclick="event.stopPropagation();">
 
                                         <a href="?page=ticket/view_request&request_id=<?= $row['request_id'] ?>"
                                         class="btn btn-sm btn-primary"
@@ -474,7 +474,7 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
                                             <i class="fas fa-print"></i>
                                         </button>
 
-                                    </td>
+                                    </td> -->
 
                                 </tr>
                             <?php endwhile; ?>
