@@ -175,8 +175,11 @@ $requests = $stmt->get_result();
     <div class="card ">
         <div class="card-header d-flex justify-content-between align-items-center text-white">
             <span>Purchasing LMR</span>
-            <button type="button" onclick="exportPurchasingCSV()" class="btn btn-info btn-sm">
-                <i class="fas fa-file-csv me-1"></i> Export CSV
+            <button type="button"
+                    class="btn btn-info btn-sm"
+                    id="exportPurchasingCSV">
+                <i class="fas fa-file-csv me-1"></i>
+                Export CSV
             </button>
         </div>
 
