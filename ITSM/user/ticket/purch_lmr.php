@@ -264,8 +264,13 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
                 <select id="statusSelectFilter" class="form-select">
                     <option value="">All Status</option>
                     <option value="pending">Pending</option>
-                    <option value="proceed request">Proceed Request</option>
-                    <option value="checking request">Checking Request</option>
+                    <option value="checking requirements">Checking Requirements</option>
+                    <option value="canvassing">Canvassing</option>
+                    <option value="negotiation">Negotiation</option>
+                    <option value="under discussion">Under Discussion</option>
+                    <option value="draft">Draft </option>
+                    <option value="final">Final </option>
+                    <option value="end">End </option>
                     <option value="closed">Closed</option>
                 </select>
             </div>
@@ -682,17 +687,15 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
                                     Pending
                                 </option>
 
-                                <option value="proceed request">
-                                    Proceed Request
-                                </option>
-
-                                <option value="checking request">
-                                    Checking Request
-                                </option>
-
-                                <option value="closed">
-                                    Closed
-                                </option>
+                                <option value="pending">Pending</option>
+                                <option value="checking requirements">Checking Requirements</option>
+                                <option value="canvassing">Canvassing</option>
+                                <option value="negotiation">Negotiation</option>
+                                <option value="under discussion">Under Discussion</option>
+                                <option value="draft">Draft </option>
+                                <option value="final">Final </option>
+                                <option value="end">End </option>
+                                <option value="closed">Closed</option>
 
                             </select>
 
