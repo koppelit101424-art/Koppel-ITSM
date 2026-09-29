@@ -176,7 +176,7 @@ $requests = $stmt->get_result();
 }
 
 </style>
-
+<div class="card ">
 <?php
 $isPurchasing =
     strcasecmp(trim($currentDepartment), 'Purchasing') === 0
