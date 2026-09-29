@@ -104,6 +104,11 @@ $requests = $stmt->get_result();
 
 <style>
 .table-hover tbody tr:hover { background-color: #f1f1f1; }
+
+.badge-proceed {
+    background-color: #198754;
+    color: #fff;
+}
 .badge-checking {
     background-color: #0d6efd;
     color: #fff;
