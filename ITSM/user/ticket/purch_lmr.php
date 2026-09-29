@@ -104,12 +104,40 @@ $requests = $stmt->get_result();
 
 <style>
 .table-hover tbody tr:hover { background-color: #f1f1f1; }
-/* .badge-open { background-color: #0d6efd; color:#fff; } */
-.badge-proceed { background-color: #198754; color:#fff; }
-.badge-checking { background-color: #0d6efd; color:#fff; }
-.badge-canceled { background-color: #dc3545; color:#fff; }
-.badge-pending { background-color: #ffc107; color:#000; }
-.badge-closed { background-color: #6c757d; color:#fff; }
+.badge-proceed {
+    background-color: #198754;
+    color: #fff;
+}
+
+.badge-checking {
+    background-color: #0d6efd;
+    color: #fff;
+}
+
+.badge-negotiation {
+    background-color: #6f42c1;
+    color: #fff;
+}
+
+.badge-draft {
+    background-color: #fd7e14;
+    color: #fff;
+}
+
+.badge-canceled {
+    background-color: #dc3545;
+    color: #fff;
+}
+
+.badge-pending {
+    background-color: #ffc107;
+    color: #000;
+}
+
+.badge-closed {
+    background-color: #6c757d;
+    color: #fff;
+}
 
 .status-filter.active { background-color: #1E3A8A; color: #fff; }
 .status-filter.active:hover { background-color: #1E3A8A; color: #fff; }
@@ -428,17 +456,52 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
                                     <td><?= htmlspecialchars($purchaser_name) ?></td>
                                     <td>
                                         <?php 
-                                            $statusClass = '';
-                                            switch (strtolower($row['status'])) {
-                                                // case 'open': $statusClass = 'badge-open'; break;
-                                                case 'proceed request': $statusClass = 'badge-proceed'; break;
-                                                case 'checking request': $statusClass = 'badge-checking'; break;
-                                                case 'pending': $statusClass = 'badge-pending'; break;
-                                                case 'closed': $statusClass = 'badge-closed'; break;
-                                                default: $statusClass = 'badge-pending'; break;
+                                            $status = strtolower(trim($row['status']));
+
+                                            switch ($status) {
+                                                case 'proceed request':
+                                                    $statusClass = 'badge-proceed';
+                                                    break;
+
+                                                case 'checking requirements':
+                                                case 'checking request':
+                                                case 'canvassing':
+                                                    $statusClass = 'badge-checking';
+                                                    break;
+
+                                                case 'negotiation':
+                                                case 'under discussion':
+                                                    $statusClass = 'badge-negotiation';
+                                                    break;
+
+                                                case 'draft':
+                                                    $statusClass = 'badge-draft';
+                                                    break;
+
+                                                case 'final':
+                                                    $statusClass = 'badge-proceed';
+                                                    break;
+
+                                                case 'pending':
+                                                    $statusClass = 'badge-pending';
+                                                    break;
+
+                                                case 'end':
+                                                case 'closed':
+                                                    $statusClass = 'badge-closed';
+                                                    break;
+
+                                                case 'canceled':
+                                                    $statusClass = 'badge-canceled';
+                                                    break;
+
+                                                default:
+                                                    $statusClass = 'badge-pending';
+                                                    break;
                                             }
                                         ?>
-                                        <span class="badge <?= $statusClass ?> text-white" style="width: 100%;">
+
+                                        <span class="badge <?= $statusClass ?>" style="width: 100%;">
                                             <?= ucfirst($row['status']) ?>
                                         </span>
                                     </td>
@@ -1371,32 +1434,23 @@ url: 'ticket/includes/assign_request.php',
 
             let statusClass = 'badge-pending';
 
-            if (status === 'checking requirements') {
+            if (status === 'checking requirements' ||
+                status === 'checking request' ||
+                status === 'canvassing') {
                 statusClass = 'badge-checking';
             }
-            else if (status === 'checking request') {
-                statusClass = 'badge-checking';
-            }
-            else if (status === 'canvassing') {
-                statusClass = 'badge-checking';
-            }
-            else if (status === 'negotiation') {
-                statusClass = 'badge-checking';
-            }
-            else if (status === 'under discussion') {
-                statusClass = 'badge-checking';
+            else if (status === 'negotiation' ||
+                    status === 'under discussion') {
+                statusClass = 'badge-negotiation';
             }
             else if (status === 'draft') {
-                statusClass = 'badge-checking';
+                statusClass = 'badge-draft';
             }
             else if (status === 'final') {
-                statusClass = 'badge-checking';
+                statusClass = 'badge-proceed';
             }
-            else if (status === 'end') {
-                statusClass = 'badge-checking';
-            }
-            else if (status === 'closed') {
-                statusClass = 'badge-checking';
+            else if (status === 'end' || status === 'closed') {
+                statusClass = 'badge-closed';
             }
 
             statusBadge
