@@ -178,6 +178,9 @@ $requests = $stmt->get_result();
             <!-- <a href="?page=ticket/includes/add_purch_request" class="btn btn-sm btn-primary">
                 <i class="fas fa-plus me-1"></i> Create LMR
             </a> -->
+            <button type="button" onclick="exportPurchasingCSV()" class="btn btn-dark btn-sm">
+                <i class="fas fa-qrcode me-1"></i>Export Requests
+            </button>
         </div>
 
         <div class="card-body">
@@ -234,9 +237,9 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
 ?>
 
     <?php if (strcasecmp($currentDepartment, 'Purchasing') === 0)      || (
-                            isset($_SESSION['user_type'])
-                            && strcasecmp(trim($_SESSION['user_type']), 'admin') === 0
-                        );: ?>
+            isset($_SESSION['user_type'])
+            && strcasecmp(trim($_SESSION['user_type']), 'admin') === 0
+        ): ?>
 
         <!-- ==========================================
              PURCHASING FILTERS
@@ -834,32 +837,32 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
 <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
 
 <!-- <script>
-$(document).ready(function () {
-    const table = $('#requestsTable').DataTable({
-        pageLength: 10,
-        order: [[0, "desc"]],
-        columnDefs: [{ orderable: false, targets: [5, 9] }]
+    $(document).ready(function () {
+        const table = $('#requestsTable').DataTable({
+            pageLength: 10,
+            order: [[0, "desc"]],
+            columnDefs: [{ orderable: false, targets: [5, 9] }]
+        });
+
+        // Status filter
+        $.fn.dataTable.ext.search.push(function(settings, data, dataIndex) {
+            const selectedStatus = $('.status-filter.active').data('status');
+            const rowStatus = $(table.row(dataIndex).node()).data('status');
+            if (!selectedStatus) return true;
+            return rowStatus === selectedStatus;
+        });
+
+        $('.status-filter').on('click', function () {
+            $('.status-filter').removeClass('active');
+            $(this).addClass('active');
+            table.draw();
+        });
     });
 
-    // Status filter
-    $.fn.dataTable.ext.search.push(function(settings, data, dataIndex) {
-        const selectedStatus = $('.status-filter.active').data('status');
-        const rowStatus = $(table.row(dataIndex).node()).data('status');
-        if (!selectedStatus) return true;
-        return rowStatus === selectedStatus;
-    });
+    // Context menu
+    let currentRequestId = null;
 
-    $('.status-filter').on('click', function () {
-        $('.status-filter').removeClass('active');
-        $(this).addClass('active');
-        table.draw();
-    });
-});
-
-// Context menu
-let currentRequestId = null;
-
-$(function () {
+    $(function () {
 
     $('.btn-print').on('click', function (e) {
 
@@ -884,635 +887,635 @@ $(function () {
 });
 </script> -->
 <script>
-$(document).ready(function () {
+    $(document).ready(function () {
 
-    const table = $('#requestsTable').DataTable({
-        pageLength: 10,
-        order: [[0, "desc"]],
-        columnDefs: [
-            { orderable: false, targets: [5, 9, 11] }
-        ]
-    });
-
-
-    // =====================================================
-    // CUSTOM FILTER
-    // =====================================================
-
-    $.fn.dataTable.ext.search.push(function (settings, data, dataIndex) {
-
-        // Only apply to our table
-        if (settings.nTable.id !== 'requestsTable') {
-            return true;
-        }
-
-        const row = table.row(dataIndex).node();
-
-        if (!row) {
-            return true;
-        }
-
-        const $row = $(row);
-
-        // Row data
-        const rowStatus = ($row.data('status') || '').toString().toLowerCase().trim();
-
-        const rowCompany = ($row.data('company') || '')
-            .toString()
-            .toLowerCase()
-            .trim();
-        const rowDepartment = ($row.data('department') || '')
-            .toString()
-            .toLowerCase()
-            .trim();
-
-        const purchaserId = ($row.data('purchaser-id') || '')
-            .toString()
-            .trim();
-
-        const rowDate = ($row.data('date-created') || '')
-            .toString()
-            .trim();
+        const table = $('#requestsTable').DataTable({
+            pageLength: 10,
+            order: [[0, "desc"]],
+            columnDefs: [
+                { orderable: false, targets: [5, 9, 11] }
+            ]
+        });
 
 
-        // =================================================
-        // PURCHASING FILTERS
-        // =================================================
+        // =====================================================
+        // CUSTOM FILTER
+        // =====================================================
 
-        const requestView = $('#requestViewFilter').val();
-        const department = $('#departmentFilter').val();
-        const company = $('#companyFilter').val();
+        $.fn.dataTable.ext.search.push(function (settings, data, dataIndex) {
 
-        const status = $('#statusSelectFilter').val();
-        const dateFrom = $('#dateFrom').val();
-        const dateTo = $('#dateTo').val();
-
-
-        // -----------------------------------------------
-        // Assigned to Me
-        // -----------------------------------------------
-
-        if (requestView === 'assigned') {
-
-            // PHP session user ID
-            const currentUserId = '<?= (int)$_SESSION['user_id'] ?>';
-
-            if (purchaserId !== currentUserId) {
-                return false;
-            }
-        }
-
-            if (company && rowCompany !== company) {
-                return false;
+            // Only apply to our table
+            if (settings.nTable.id !== 'requestsTable') {
+                return true;
             }
 
+            const row = table.row(dataIndex).node();
 
-        // -----------------------------------------------
-        // Department
-        // -----------------------------------------------
+            if (!row) {
+                return true;
+            }
 
-        if (department && rowDepartment !== department) {
-            return false;
-        }
+            const $row = $(row);
 
+            // Row data
+            const rowStatus = ($row.data('status') || '').toString().toLowerCase().trim();
 
-        // -----------------------------------------------
-        // Status
-        // -----------------------------------------------
+            const rowCompany = ($row.data('company') || '')
+                .toString()
+                .toLowerCase()
+                .trim();
+            const rowDepartment = ($row.data('department') || '')
+                .toString()
+                .toLowerCase()
+                .trim();
 
-        if (status && rowStatus !== status) {
-            return false;
-        }
+            const purchaserId = ($row.data('purchaser-id') || '')
+                .toString()
+                .trim();
 
-
-        // -----------------------------------------------
-        // Date From
-        // -----------------------------------------------
-
-        if (dateFrom && rowDate < dateFrom) {
-            return false;
-        }
-
-
-        // -----------------------------------------------
-        // Date To
-        // -----------------------------------------------
-
-        if (dateTo && rowDate > dateTo) {
-            return false;
-        }
+            const rowDate = ($row.data('date-created') || '')
+                .toString()
+                .trim();
 
 
-        return true;
-    });
+            // =================================================
+            // PURCHASING FILTERS
+            // =================================================
+
+            const requestView = $('#requestViewFilter').val();
+            const department = $('#departmentFilter').val();
+            const company = $('#companyFilter').val();
+
+            const status = $('#statusSelectFilter').val();
+            const dateFrom = $('#dateFrom').val();
+            const dateTo = $('#dateTo').val();
 
 
-    // =====================================================
-    // PURCHASING FILTERS - ON CHANGE
-    // =====================================================
+            // -----------------------------------------------
+            // Assigned to Me
+            // -----------------------------------------------
 
-    $('#companyFilter, #requestViewFilter, #departmentFilter, #statusSelectFilter, #dateFrom, #dateTo')
-        .on('change', function () {
+            if (requestView === 'assigned') {
+
+                // PHP session user ID
+                const currentUserId = '<?= (int)$_SESSION['user_id'] ?>';
+
+                if (purchaserId !== currentUserId) {
+                    return false;
+                }
+            }
+
+                if (company && rowCompany !== company) {
+                    return false;
+                }
+
+
+            // -----------------------------------------------
+            // Department
+            // -----------------------------------------------
+
+            if (department && rowDepartment !== department) {
+                return false;
+            }
+
+
+            // -----------------------------------------------
+            // Status
+            // -----------------------------------------------
+
+            if (status && rowStatus !== status) {
+                return false;
+            }
+
+
+            // -----------------------------------------------
+            // Date From
+            // -----------------------------------------------
+
+            if (dateFrom && rowDate < dateFrom) {
+                return false;
+            }
+
+
+            // -----------------------------------------------
+            // Date To
+            // -----------------------------------------------
+
+            if (dateTo && rowDate > dateTo) {
+                return false;
+            }
+
+
+            return true;
+        });
+
+
+        // =====================================================
+        // PURCHASING FILTERS - ON CHANGE
+        // =====================================================
+
+        $('#companyFilter, #requestViewFilter, #departmentFilter, #statusSelectFilter, #dateFrom, #dateTo')
+            .on('change', function () {
+                table.draw();
+            });
+
+
+
+        // =====================================================
+        // NON-PURCHASING STATUS FILTER
+        // =====================================================
+
+        $('.status-filter').on('click', function () {
+
+            $('.status-filter').removeClass('active');
+            $(this).addClass('active');
+
             table.draw();
         });
 
 
+        // =====================================================
+        // NON-PURCHASING STATUS FILTER
+        // =====================================================
 
-    // =====================================================
-    // NON-PURCHASING STATUS FILTER
-    // =====================================================
+        $.fn.dataTable.ext.search.push(function (settings, data, dataIndex) {
 
-    $('.status-filter').on('click', function () {
+            if (settings.nTable.id !== 'requestsTable') {
+                return true;
+            }
 
-        $('.status-filter').removeClass('active');
-        $(this).addClass('active');
+            // If Purchasing filters exist, don't use button filter
+            if ($('#statusSelectFilter').length) {
+                return true;
+            }
 
-        table.draw();
-    });
-
-
-    // =====================================================
-    // NON-PURCHASING STATUS FILTER
-    // =====================================================
-
-    $.fn.dataTable.ext.search.push(function (settings, data, dataIndex) {
-
-        if (settings.nTable.id !== 'requestsTable') {
-            return true;
-        }
-
-        // If Purchasing filters exist, don't use button filter
-        if ($('#statusSelectFilter').length) {
-            return true;
-        }
-
-        const selectedStatus = $('.status-filter.active').data('status');
+            const selectedStatus = $('.status-filter.active').data('status');
 
 
 
-        if (!selectedStatus) {
-            return true;
-        }
+            if (!selectedStatus) {
+                return true;
+            }
 
-        const row = table.row(dataIndex).node();
+            const row = table.row(dataIndex).node();
 
-        if (!row) {
-            return true;
-        }
+            if (!row) {
+                return true;
+            }
 
-        const rowStatus = ($(row).data('status') || '')
-            .toString()
-            .toLowerCase()
-            .trim();
-
-        return rowStatus === selectedStatus;
-    });
-
-
-    // =====================================================
-    // PRINT
-    // =====================================================
-
-    $('.btn-print').on('click', function (e) {
-
-        e.preventDefault();
-        e.stopPropagation();
-
-        const status = ($(this).data('status') || '')
-            .toString()
-            .toLowerCase()
-            .trim();
-
-        const lmr = $(this).data('lmr');
-
-        if (status !== 'proceed request') {
-            alert('Printing is only available when the request status is "Proceed Request".');
-            return;
-        }
-
-        window.open(
-            '?page=ticket/includes/print_request&lmr_no=' +
-            encodeURIComponent(lmr),
-            '_blank'
-        );
-    });
-
-    
-    // =====================================================
-    // USER / ROLE
-    // =====================================================
-
-    const isPurchasing = <?= $isPurchasing ? 'true' : 'false' ?>;
-    const currentUserId = <?= (int)$_SESSION['user_id'] ?>;
-
-
-    // =====================================================
-    // MODAL
-    // =====================================================
-
-    const modalElement = document.getElementById('requestDetailsModal');
-
-    const requestModal = new bootstrap.Modal(modalElement);
-
-
-    // =====================================================
-    // ORIGINAL VALUES
-    // Used to determine whether Save should be enabled
-    // =====================================================
-
-    let originalStatus = '';
-    let originalPurchaserId = '';
-
-
-    // =====================================================
-    // OPEN REQUEST MODAL
-    // =====================================================
-
-    $('#requestsTable tbody').on('click', 'tr', function (e) {
-
-        // Don't open modal when clicking action buttons/links
-        if (
-            $(e.target).closest('a').length ||
-            $(e.target).closest('button').length
-        ) {
-            return;
-        }
-
-        const row = $(this);
-
-        const requestId = row.data('request-id');
-
-        const lmrNo = row.data('lmr-no');
-        const company = row.data('company');
-        const department = row.data('department');
-        const item = row.data('item');
-        const description = row.data('description');
-        const quantity = row.data('quantity');
-        const uom = row.data('uom');
-
-        const dateNeeded = row.data('date-needed');
-        const dateCreated = row.data('date-created');
-
-        const remarks = row.data('remarks');
-
-        const status =
-            (row.data('status') || '')
+            const rowStatus = ($(row).data('status') || '')
                 .toString()
                 .toLowerCase()
                 .trim();
 
-        const purchaserId =
-            (row.data('purchaser-id') || '1')
-                .toString();
-
-        const purchaserName =
-            row.data('purchaser-name') || 'Unassigned';
-
-        const requestorName =
-            row.data('requestor-name') || 'Unknown';
+            return rowStatus === selectedStatus;
+        });
 
 
-        // =================================================
-        // SET MODAL DATA
-        // =================================================
+        // =====================================================
+        // PRINT
+        // =====================================================
 
-        $('#modalRequestId').val(requestId);
+        $('.btn-print').on('click', function (e) {
 
-        $('#modalLmrNo').text('LMR No. ' + lmrNo);
+            e.preventDefault();
+            e.stopPropagation();
 
-        $('#modalLmr').val(lmrNo);
-        $('#modalCompany').val(company);
-        $('#modalDepartment').val(department);
-        $('#modalItem').val(item);
-        $('#modalDescription').val(description);
-        $('#modalQuantity').val(quantity);
-        $('#modalUom').val(uom);
-
-        $('#modalDateNeeded').val(formatDate(dateNeeded));
-        $('#modalDateCreated').val(formatDate(dateCreated));
-
-        $('#modalRemarks').val(remarks || '-');
-
-        $('#modalRequestor').val(requestorName);
-
-
-        // =================================================
-        // PURCHASING
-        // =================================================
-
-        if (isPurchasing) {
-
-            originalStatus = status;
-            originalPurchaserId = purchaserId;
-
-            $('#modalStatus').val(status);
-            $('#modalPurchaser').val(purchaserId);
-
-            resetSaveButton();
-
-        } else {
-
-            // =================================================
-            // REQUESTOR
-            // =================================================
-
-            $('#modalStatusDisplay').val(
-                formatStatus(status)
-            );
-
-            $('#modalPurchaserDisplay').val(
-                purchaserName
-            );
-        }
-
-
-        // =================================================
-        // SHOW MODAL
-        // =================================================
-
-        requestModal.show();
-
-    });
-
-
-    // =====================================================
-    // FORMAT DATE
-    // =====================================================
-
-    function formatDate(value) {
-
-        if (!value) {
-            return '-';
-        }
-
-        const date = new Date(value);
-
-        if (isNaN(date.getTime())) {
-            return value;
-        }
-
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-        const year = date.getFullYear();
-
-        return month + '-' + day + '-' + year;
-    }
-
-
-    // =====================================================
-    // FORMAT STATUS
-    // =====================================================
-
-    function formatStatus(status) {
-
-        if (!status) {
-            return '-';
-        }
-
-        return status
-            .replace(/\b\w/g, function (letter) {
-                return letter.toUpperCase();
-            });
-    }
-
-
-    // =====================================================
-    // CHECK FOR CHANGES
-    // =====================================================
-
-    function checkForChanges() {
-
-        const currentStatus =
-            ($('#modalStatus').val() || '')
+            const status = ($(this).data('status') || '')
                 .toString()
                 .toLowerCase()
                 .trim();
 
-        const currentPurchaser =
-            ($('#modalPurchaser').val() || '')
-                .toString()
-                .trim();
+            const lmr = $(this).data('lmr');
 
+            if (status !== 'proceed request') {
+                alert('Printing is only available when the request status is "Proceed Request".');
+                return;
+            }
 
-        const hasChanges =
-            currentStatus !== originalStatus ||
-            currentPurchaser !== originalPurchaserId;
-
-
-        $('#saveRequestChanges').prop(
-            'disabled',
-            !hasChanges
-        );
-
-    }
-
-
-    // =====================================================
-    // STATUS CHANGE
-    // =====================================================
-
-    $('#modalStatus').on('change', function () {
-        checkForChanges();
-    });
-
-
-    // =====================================================
-    // PURCHASER CHANGE
-    // =====================================================
-
-    $('#modalPurchaser').on('change', function () {
-        checkForChanges();
-    });
-
-
-    // =====================================================
-    // ASSIGN TO ME
-    // =====================================================
-
-    $('#assignToMeBtn').on('click', function () {
-
-        $('#modalPurchaser').val(
-            String(currentUserId)
-        );
-
-        checkForChanges();
-
-    });
-
-
-    // =====================================================
-    // RESET SAVE BUTTON
-    // =====================================================
-
-    function resetSaveButton() {
-
-        $('#saveRequestChanges')
-            .prop('disabled', true)
-            .html(
-                '<i class="fas fa-save me-1"></i> Save Changes'
+            window.open(
+                '?page=ticket/includes/print_request&lmr_no=' +
+                encodeURIComponent(lmr),
+                '_blank'
             );
+        });
 
-        $('#modalSaveMessage')
-            .addClass('d-none')
-            .removeClass('alert-success alert-danger')
-            .text('');
-    }
+        
+        // =====================================================
+        // USER / ROLE
+        // =====================================================
 
-
-    // =====================================================
-    // SAVE CHANGES
-    // =====================================================
-
-    $('#saveRequestChanges').on('click', function () {
-
-        const button = $(this);
-
-        const requestId =
-            $('#modalRequestId').val();
-
-        const status =
-            $('#modalStatus').val();
-
-        const purchaserId =
-            $('#modalPurchaser').val();
+        const isPurchasing = <?= $isPurchasing ? 'true' : 'false' ?>;
+        const currentUserId = <?= (int)$_SESSION['user_id'] ?>;
 
 
-        if (!requestId) {
-            return;
+        // =====================================================
+        // MODAL
+        // =====================================================
+
+        const modalElement = document.getElementById('requestDetailsModal');
+
+        const requestModal = new bootstrap.Modal(modalElement);
+
+
+        // =====================================================
+        // ORIGINAL VALUES
+        // Used to determine whether Save should be enabled
+        // =====================================================
+
+        let originalStatus = '';
+        let originalPurchaserId = '';
+
+
+        // =====================================================
+        // OPEN REQUEST MODAL
+        // =====================================================
+
+        $('#requestsTable tbody').on('click', 'tr', function (e) {
+
+            // Don't open modal when clicking action buttons/links
+            if (
+                $(e.target).closest('a').length ||
+                $(e.target).closest('button').length
+            ) {
+                return;
+            }
+
+            const row = $(this);
+
+            const requestId = row.data('request-id');
+
+            const lmrNo = row.data('lmr-no');
+            const company = row.data('company');
+            const department = row.data('department');
+            const item = row.data('item');
+            const description = row.data('description');
+            const quantity = row.data('quantity');
+            const uom = row.data('uom');
+
+            const dateNeeded = row.data('date-needed');
+            const dateCreated = row.data('date-created');
+
+            const remarks = row.data('remarks');
+
+            const status =
+                (row.data('status') || '')
+                    .toString()
+                    .toLowerCase()
+                    .trim();
+
+            const purchaserId =
+                (row.data('purchaser-id') || '1')
+                    .toString();
+
+            const purchaserName =
+                row.data('purchaser-name') || 'Unassigned';
+
+            const requestorName =
+                row.data('requestor-name') || 'Unknown';
+
+
+            // =================================================
+            // SET MODAL DATA
+            // =================================================
+
+            $('#modalRequestId').val(requestId);
+
+            $('#modalLmrNo').text('LMR No. ' + lmrNo);
+
+            $('#modalLmr').val(lmrNo);
+            $('#modalCompany').val(company);
+            $('#modalDepartment').val(department);
+            $('#modalItem').val(item);
+            $('#modalDescription').val(description);
+            $('#modalQuantity').val(quantity);
+            $('#modalUom').val(uom);
+
+            $('#modalDateNeeded').val(formatDate(dateNeeded));
+            $('#modalDateCreated').val(formatDate(dateCreated));
+
+            $('#modalRemarks').val(remarks || '-');
+
+            $('#modalRequestor').val(requestorName);
+
+
+            // =================================================
+            // PURCHASING
+            // =================================================
+
+            if (isPurchasing) {
+
+                originalStatus = status;
+                originalPurchaserId = purchaserId;
+
+                $('#modalStatus').val(status);
+                $('#modalPurchaser').val(purchaserId);
+
+                resetSaveButton();
+
+            } else {
+
+                // =================================================
+                // REQUESTOR
+                // =================================================
+
+                $('#modalStatusDisplay').val(
+                    formatStatus(status)
+                );
+
+                $('#modalPurchaserDisplay').val(
+                    purchaserName
+                );
+            }
+
+
+            // =================================================
+            // SHOW MODAL
+            // =================================================
+
+            requestModal.show();
+
+        });
+
+
+        // =====================================================
+        // FORMAT DATE
+        // =====================================================
+
+        function formatDate(value) {
+
+            if (!value) {
+                return '-';
+            }
+
+            const date = new Date(value);
+
+            if (isNaN(date.getTime())) {
+                return value;
+            }
+
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const year = date.getFullYear();
+
+            return month + '-' + day + '-' + year;
         }
 
 
-        // Prevent duplicate requests
-        button.prop('disabled', true);
+        // =====================================================
+        // FORMAT STATUS
+        // =====================================================
 
-        button.html(
-            '<span class="spinner-border spinner-border-sm me-1"></span>' +
-            'Saving...'
-        );
+        function formatStatus(status) {
+
+            if (!status) {
+                return '-';
+            }
+
+            return status
+                .replace(/\b\w/g, function (letter) {
+                    return letter.toUpperCase();
+                });
+        }
 
 
-$.ajax({
-url: 'ticket/includes/assign_request.php',
-    type: 'POST',
-    dataType: 'json',
+        // =====================================================
+        // CHECK FOR CHANGES
+        // =====================================================
 
-    data: {
-        request_id: requestId,
-        status: status,
-        purchaser_id: purchaserId
-    },
+        function checkForChanges() {
 
-    success: function (response) {
+            const currentStatus =
+                ($('#modalStatus').val() || '')
+                    .toString()
+                    .toLowerCase()
+                    .trim();
 
-        if (response.success) {
+            const currentPurchaser =
+                ($('#modalPurchaser').val() || '')
+                    .toString()
+                    .trim();
 
-            originalStatus = status;
-            originalPurchaserId = purchaserId;
 
-            const row =
-                $('#requestsTable tbody tr[data-request-id="' +
-                requestId +
-                '"]');
+            const hasChanges =
+                currentStatus !== originalStatus ||
+                currentPurchaser !== originalPurchaserId;
 
-            row.attr('data-status', status);
-            row.attr('data-purchaser-id', purchaserId);
 
-            row.data('status', status);
-            row.data('purchaser-id', purchaserId);
-
-            const statusBadge =
-                row.find('td').eq(8).find('.badge');
-
-            statusBadge.removeClass(
-                'badge-proceed badge-checking badge-pending badge-closed badge-canceled'
+            $('#saveRequestChanges').prop(
+                'disabled',
+                !hasChanges
             );
 
-            let statusClass = 'badge-pending';
+        }
 
-            if (status === 'checking requirements' ||
-                status === 'checking request' ||
-                status === 'canvassing') {
-                statusClass = 'badge-checking';
-            }
-            else if (status === 'negotiation' ||
-                    status === 'under discussion') {
-                statusClass = 'badge-negotiation';
-            }
-            else if (status === 'draft') {
-                statusClass = 'badge-draft';
-            }
-            else if (status === 'final') {
-                statusClass = 'badge-proceed';
-            }
-            else if (status === 'end' || status === 'closed') {
-                statusClass = 'badge-closed';
-            }
 
-            statusBadge
-                .addClass(statusClass)
-                .text(formatStatus(status));
+        // =====================================================
+        // STATUS CHANGE
+        // =====================================================
 
-            if (response.purchaser_name) {
+        $('#modalStatus').on('change', function () {
+            checkForChanges();
+        });
 
-                row.attr(
-                    'data-purchaser-name',
-                    response.purchaser_name
-                );
 
-                row.data(
-                    'purchaser-name',
-                    response.purchaser_name
-                );
+        // =====================================================
+        // PURCHASER CHANGE
+        // =====================================================
 
-                row.find('td').eq(7).text(
-                    response.purchaser_name
-                );
-            }
+        $('#modalPurchaser').on('change', function () {
+            checkForChanges();
+        });
 
-            $('#modalSaveMessage')
-                .removeClass('d-none alert-danger')
-                .addClass('alert-success')
-                .text(
-                    response.message ||
-                    'Request updated successfully.'
-                );
 
-            button
+        // =====================================================
+        // ASSIGN TO ME
+        // =====================================================
+
+        $('#assignToMeBtn').on('click', function () {
+
+            $('#modalPurchaser').val(
+                String(currentUserId)
+            );
+
+            checkForChanges();
+
+        });
+
+
+        // =====================================================
+        // RESET SAVE BUTTON
+        // =====================================================
+
+        function resetSaveButton() {
+
+            $('#saveRequestChanges')
                 .prop('disabled', true)
                 .html(
-                    '<i class="fas fa-check me-1"></i> Saved'
-                );
-
-            table.draw(false);
-
-            setTimeout(function () {
-                button.html(
                     '<i class="fas fa-save me-1"></i> Save Changes'
                 );
-            }, 1500);
 
-        } else {
+            $('#modalSaveMessage')
+                .addClass('d-none')
+                .removeClass('alert-success alert-danger')
+                .text('');
+        }
+
+
+        // =====================================================
+        // SAVE CHANGES
+        // =====================================================
+
+        $('#saveRequestChanges').on('click', function () {
+
+            const button = $(this);
+
+            const requestId =
+                $('#modalRequestId').val();
+
+            const status =
+                $('#modalStatus').val();
+
+            const purchaserId =
+                $('#modalPurchaser').val();
+
+
+            if (!requestId) {
+                return;
+            }
+
+
+            // Prevent duplicate requests
+            button.prop('disabled', true);
+
+            button.html(
+                '<span class="spinner-border spinner-border-sm me-1"></span>' +
+                'Saving...'
+            );
+
+
+    $.ajax({
+    url: 'ticket/includes/assign_request.php',
+        type: 'POST',
+        dataType: 'json',
+
+        data: {
+            request_id: requestId,
+            status: status,
+            purchaser_id: purchaserId
+        },
+
+        success: function (response) {
+
+            if (response.success) {
+
+                originalStatus = status;
+                originalPurchaserId = purchaserId;
+
+                const row =
+                    $('#requestsTable tbody tr[data-request-id="' +
+                    requestId +
+                    '"]');
+
+                row.attr('data-status', status);
+                row.attr('data-purchaser-id', purchaserId);
+
+                row.data('status', status);
+                row.data('purchaser-id', purchaserId);
+
+                const statusBadge =
+                    row.find('td').eq(8).find('.badge');
+
+                statusBadge.removeClass(
+                    'badge-proceed badge-checking badge-pending badge-closed badge-canceled'
+                );
+
+                let statusClass = 'badge-pending';
+
+                if (status === 'checking requirements' ||
+                    status === 'checking request' ||
+                    status === 'canvassing') {
+                    statusClass = 'badge-checking';
+                }
+                else if (status === 'negotiation' ||
+                        status === 'under discussion') {
+                    statusClass = 'badge-negotiation';
+                }
+                else if (status === 'draft') {
+                    statusClass = 'badge-draft';
+                }
+                else if (status === 'final') {
+                    statusClass = 'badge-proceed';
+                }
+                else if (status === 'end' || status === 'closed') {
+                    statusClass = 'badge-closed';
+                }
+
+                statusBadge
+                    .addClass(statusClass)
+                    .text(formatStatus(status));
+
+                if (response.purchaser_name) {
+
+                    row.attr(
+                        'data-purchaser-name',
+                        response.purchaser_name
+                    );
+
+                    row.data(
+                        'purchaser-name',
+                        response.purchaser_name
+                    );
+
+                    row.find('td').eq(7).text(
+                        response.purchaser_name
+                    );
+                }
+
+                $('#modalSaveMessage')
+                    .removeClass('d-none alert-danger')
+                    .addClass('alert-success')
+                    .text(
+                        response.message ||
+                        'Request updated successfully.'
+                    );
+
+                button
+                    .prop('disabled', true)
+                    .html(
+                        '<i class="fas fa-check me-1"></i> Saved'
+                    );
+
+                table.draw(false);
+
+                setTimeout(function () {
+                    button.html(
+                        '<i class="fas fa-save me-1"></i> Save Changes'
+                    );
+                }, 1500);
+
+            } else {
+
+                showSaveError(
+                    response.message ||
+                    'Unable to update request.'
+                );
+            }
+        },
+
+        error: function (xhr) {
+
+            console.error('HTTP Status:', xhr.status);
+            console.error('Response:', xhr.responseText);
 
             showSaveError(
-                response.message ||
-                'Unable to update request.'
+                'Server error (' +
+                xhr.status +
+                '): ' +
+                xhr.responseText
             );
         }
-    },
-
-    error: function (xhr) {
-
-        console.error('HTTP Status:', xhr.status);
-        console.error('Response:', xhr.responseText);
-
-        showSaveError(
-            'Server error (' +
-            xhr.status +
-            '): ' +
-            xhr.responseText
-        );
-    }
-});
+    });
 
     });
 
@@ -1575,10 +1578,264 @@ url: 'ticket/includes/assign_request.php',
     });
 
 });
-
-
 </script>
 
+<script>
+    // =====================================================
+// EXPORT PURCHASING REQUESTS TO CSV
+// Exports only the currently filtered/visible requests
+// =====================================================
 
+function exportPurchasingCSV() {
+
+    const rows = [];
+
+    // CSV Headers
+    const headers = [
+        "LMR No.",
+        "Company",
+        "Requested By",
+        "Department",
+        "Item",
+        "Description",
+        "Quantity",
+        "UoM",
+        "Assigned To",
+        "Status",
+        "Date Created",
+        "Date Needed",
+        "Remarks"
+    ];
+
+    rows.push(headers);
+
+    // -------------------------------------------------
+    // Get rows currently displayed by DataTables
+    // -------------------------------------------------
+
+    table.rows({
+        search: 'applied',
+        order: 'applied'
+    }).every(function () {
+
+        const row = this.node();
+
+        if (!row) {
+            return;
+        }
+
+        const $row = $(row);
+
+        // -------------------------------------------------
+        // Get data from data-* attributes
+        // -------------------------------------------------
+
+        const lmrNo =
+            $row.attr('data-lmr-no') || '';
+
+        const company =
+            $row.attr('data-company') || '';
+
+        const requestor =
+            $row.attr('data-requestor-name') || '';
+
+        const department =
+            $row.attr('data-department') || '';
+
+        const item =
+            $row.attr('data-item') || '';
+
+        const description =
+            $row.attr('data-description') || '';
+
+        const quantity =
+            $row.attr('data-quantity') || '';
+
+        const uom =
+            $row.attr('data-uom') || '';
+
+        const purchaser =
+            $row.attr('data-purchaser-name') || 'Unassigned';
+
+        const status =
+            $row.attr('data-status') || '';
+
+        const dateCreated =
+            $row.attr('data-date-created') || '';
+
+        const dateNeeded =
+            $row.attr('data-date-needed') || '';
+
+        const remarks =
+            $row.attr('data-remarks') || '';
+
+        // -------------------------------------------------
+        // Format status
+        // -------------------------------------------------
+
+        const formattedStatus = status
+            ? status.replace(/\b\w/g, function (letter) {
+                return letter.toUpperCase();
+            })
+            : '';
+
+        // -------------------------------------------------
+        // Format dates
+        // -------------------------------------------------
+
+        function formatCSVDate(value) {
+
+            if (!value) {
+                return '';
+            }
+
+            const date = new Date(value);
+
+            if (isNaN(date.getTime())) {
+                return value;
+            }
+
+            const month = String(
+                date.getMonth() + 1
+            ).padStart(2, '0');
+
+            const day = String(
+                date.getDate()
+            ).padStart(2, '0');
+
+            const year = date.getFullYear();
+
+            return month + '-' + day + '-' + year;
+        }
+
+        // -------------------------------------------------
+        // Add row
+        // -------------------------------------------------
+
+        rows.push([
+            lmrNo,
+            company,
+            requestor,
+            department,
+            item,
+            description,
+            quantity,
+            uom,
+            purchaser,
+            formattedStatus,
+            formatCSVDate(dateCreated),
+            formatCSVDate(dateNeeded),
+            remarks
+        ]);
+
+    });
+
+    // -------------------------------------------------
+    // Check if there are records
+    // -------------------------------------------------
+
+    if (rows.length === 1) {
+
+        alert(
+            'There are no purchasing requests to export.'
+        );
+
+        return;
+    }
+
+    // -------------------------------------------------
+    // Convert values to CSV-safe format
+    // -------------------------------------------------
+
+    function escapeCSV(value) {
+
+        if (value === null || value === undefined) {
+            return '""';
+        }
+
+        value = String(value);
+
+        // Escape double quotes
+        value = value.replace(/"/g, '""');
+
+        // Wrap every value in quotes
+        return '"' + value + '"';
+    }
+
+    const csvContent = rows
+        .map(function (row) {
+
+            return row
+                .map(escapeCSV)
+                .join(',');
+
+        })
+        .join('\r\n');
+
+    // -------------------------------------------------
+    // Add UTF-8 BOM
+    // Helps Excel display special characters correctly
+    // -------------------------------------------------
+
+    const BOM = '\uFEFF';
+
+    const blob = new Blob(
+        [BOM + csvContent],
+        {
+            type: 'text/csv;charset=utf-8;'
+        }
+    );
+
+    // -------------------------------------------------
+    // Create filename
+    // -------------------------------------------------
+
+    const today = new Date();
+
+    const year = today.getFullYear();
+
+    const month = String(
+        today.getMonth() + 1
+    ).padStart(2, '0');
+
+    const day = String(
+        today.getDate()
+    ).padStart(2, '0');
+
+    const filename =
+        'purchasing_requests_' +
+        year + '-' +
+        month + '-' +
+        day +
+        '.csv';
+
+    // -------------------------------------------------
+    // Download
+    // -------------------------------------------------
+
+    const link = document.createElement('a');
+
+    link.href = URL.createObjectURL(blob);
+    link.download = filename;
+
+    document.body.appendChild(link);
+
+    link.click();
+
+    document.body.removeChild(link);
+
+    URL.revokeObjectURL(link.href);
+}
+
+
+// =====================================================
+// EXPORT BUTTON
+// =====================================================
+
+$('#exportPurchasingCSV').on('click', function () {
+    exportPurchasingCSV();
+});
+
+</script>
 
 <?php $conn->close(); ?>
