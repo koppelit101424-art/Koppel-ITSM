@@ -59,22 +59,43 @@ $success = $error = '';
 $errors = [];
 // $ticket_id = $_GET['ticket_id'] ?? null;
 
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
-    // Shared fields (same for all items)
+    // ==========================================
+    // SHARED FIELDS
+    // ==========================================
+
     $lmr_no = trim($_POST['lmr_no'] ?? '');
     $user_id = intval($_POST['user_id'] ?? 0);
     $requestor = trim($_POST['requestor'] ?? '');
     $department = trim($_POST['department'] ?? '');
     $created_by = intval($_POST['created_by'] ?? 0);
-    $purchaser_id = 1;
-    // $ticket_id = intval($_POST['ticket_id'] ?? 0);
-    // Validate shared fields
-    if (empty($lmr_no)) $errors[] = "LMR No is required";
-    if ($user_id <= 0) $errors[] = "User is required";
-    if ($created_by <= 0) $errors[] = "Invalid request creator";
 
-    // Process each item row
+    // Default purchaser = Unassigned
+    $purchaser_id = 1;
+
+
+    // ==========================================
+    // VALIDATE SHARED FIELDS
+    // ==========================================
+
+    if (empty($lmr_no)) {
+        $errors[] = "LMR No is required.";
+    }
+
+    if ($user_id <= 0) {
+        $errors[] = "User is required.";
+    }
+
+    if ($created_by <= 0) {
+        $errors[] = "Invalid request creator.";
+    }
+
+
+    // ==========================================
+    // GET ITEM ARRAYS
+    // ==========================================
+
     $items = $_POST['item'] ?? [];
     $descriptions = $_POST['description'] ?? [];
     $quantities = $_POST['quantity'] ?? [];
@@ -83,10 +104,21 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $remarks_list = $_POST['remarks'] ?? [];
     $statuses = $_POST['status'] ?? [];
 
+
+    // ==========================================
+    // VALIDATE ITEMS
+    // ==========================================
+
     $validItems = [];
+
     for ($i = 0; $i < count($items); $i++) {
+
         $item = trim($items[$i] ?? '');
-        if (empty($item)) continue;
+
+        // Ignore completely empty item rows
+        if ($item === '') {
+            continue;
+        }
 
         $desc = trim($descriptions[$i] ?? '');
         $qty = floatval($quantities[$i] ?? 0);
@@ -95,86 +127,182 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $remarks = trim($remarks_list[$i] ?? '');
         $status = trim($statuses[$i] ?? 'Pending');
 
-        if (empty($desc)) $errors[] = "Description required for item: $item";
-        if ($qty <= 0) $errors[] = "Quantity must be > 0 for item: $item";
-        if (empty($uom)) $errors[] = "UoM required for item: $item";
-        if (empty($date_needed)) $errors[] = "Date Needed required for item: $item";
 
-        $validItems[] = compact('item', 'desc', 'qty', 'uom', 'date_needed', 'remarks', 'status');
+        // ------------------------------------------
+        // Validate this item
+        // ------------------------------------------
+
+        $itemHasError = false;
+
+        if ($desc === '') {
+            $errors[] = "Description required for item: $item";
+            $itemHasError = true;
+        }
+
+        if ($qty <= 0) {
+            $errors[] = "Quantity must be greater than 0 for item: $item";
+            $itemHasError = true;
+        }
+
+        if ($uom === '') {
+            $errors[] = "UoM required for item: $item";
+            $itemHasError = true;
+        }
+
+        if ($date_needed === '') {
+            $errors[] = "Date Needed required for item: $item";
+            $itemHasError = true;
+        }
+
+
+        // ------------------------------------------
+        // Only add valid item
+        // ------------------------------------------
+
+        if (!$itemHasError) {
+
+            $validItems[] = [
+                'item' => $item,
+                'desc' => $desc,
+                'qty' => $qty,
+                'uom' => $uom,
+                'date_needed' => $date_needed,
+                'remarks' => $remarks,
+                'status' => $status
+            ];
+        }
     }
+
+
+    // ==========================================
+    // REQUIRE AT LEAST ONE ITEM
+    // ==========================================
 
     if (empty($validItems)) {
         $errors[] = "At least one valid item is required.";
-        }
+    }
 
-    $sql = "INSERT INTO `purch_request_tb`(
-        `lmr_no`,
-        `user_id`,
-        `requestor`,
-        `department`,
-        `item`,
-        `description`,
-        `quantity`,
-        `UoM`,
-        `date_needed`,
-        `remarks`,
-        `status`,
-        `date_created`,
-        `date_updated`,
-        `created_by`,
-        `purchaser_id`
-    )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW(), ?, ?)";
+
+    // ==========================================
+    // INSERT ONLY IF THERE ARE NO ERRORS
+    // ==========================================
+
+    if (empty($errors)) {
+
+        $sql = "
+            INSERT INTO purch_request_tb (
+                lmr_no,
+                user_id,
+                requestor,
+                department,
+                item,
+                description,
+                quantity,
+                UoM,
+                date_needed,
+                remarks,
+                status,
+                date_created,
+                date_updated,
+                created_by,
+                purchaser_id
+            )
+            VALUES (
+                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+                NOW(),
+                NOW(),
+                ?, ?
+            )
+        ";
+
 
         $stmt = $conn->prepare($sql);
 
+
+        // ------------------------------------------
+        // Check prepare
+        // ------------------------------------------
+
         if (!$stmt) {
-            die("Prepare failed: " . $conn->error);
-        }
 
-        foreach ($validItems as $itemData) {
+            $errors[] =
+                "Database prepare failed: " .
+                $conn->error;
 
-            $stmt->bind_param(
-                "sissssdsssii",
-                $lmr_no,
-                $user_id,
-                $requestor,
-                $department,
-                $itemData['item'],
-                $itemData['desc'],
-                $itemData['qty'],
-                $itemData['uom'],
-                $itemData['date_needed'],
-                $itemData['remarks'],
-                $itemData['status'],
-                $created_by,
-                $purchaser_id
-            );
+        } else {
 
-            if (!$stmt->execute()) {
-                $errors[] =
-                    "Failed to insert item " .
-                    $itemData['item'] .
-                    ": " .
-                    $stmt->error;
+            // --------------------------------------
+            // Insert EVERY item
+            // --------------------------------------
+
+            foreach ($validItems as $itemData) {
+
+                /*
+                 * Types:
+                 *
+                 * s = lmr_no
+                 * i = user_id
+                 * s = requestor
+                 * s = department
+                 * s = item
+                 * s = description
+                 * d = quantity
+                 * s = UoM
+                 * s = date_needed
+                 * s = remarks
+                 * s = status
+                 * i = created_by
+                 * i = purchaser_id
+                 */
+
+                $stmt->bind_param(
+                    "sissssdsssii",
+                    $lmr_no,
+                    $user_id,
+                    $requestor,
+                    $department,
+                    $itemData['item'],
+                    $itemData['desc'],
+                    $itemData['qty'],
+                    $itemData['uom'],
+                    $itemData['date_needed'],
+                    $itemData['remarks'],
+                    $itemData['status'],
+                    $created_by,
+                    $purchaser_id
+                );
+
+
+                if (!$stmt->execute()) {
+
+                    $errors[] =
+                        "Failed to insert item '" .
+                        $itemData['item'] .
+                        "': " .
+                        $stmt->error;
+                }
             }
+
+
+            $stmt->close();
         }
+    }
 
-        $stmt->close();
 
+    // ==========================================
+    // SUCCESS
+    // ONLY REDIRECT AFTER ALL ITEMS INSERTED
+    // ==========================================
 
-        // ==========================================
-        // REDIRECT ONLY AFTER ALL ITEMS ARE INSERTED
-        // ==========================================
+    if (empty($errors)) {
 
-        if (empty($errors)) {
+        echo '<script>
+            window.location.href = "?page=ticket/purch_lmr";
+        </script>';
 
-            echo '<script>
-                window.location.href = "?page=ticket/purch_lmr";
-            </script>';
+        exit;
+    }
 
-            exit;
-        }
 
 
         /* =========================================
