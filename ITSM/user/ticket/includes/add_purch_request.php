@@ -456,7 +456,6 @@ function addItemRow() {
             </button>
 
         </div>
-     <input type="hidden" name="status[]" value="Pending">
  
     </div>`;
     container.appendChild(row);
