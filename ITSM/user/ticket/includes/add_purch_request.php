@@ -147,18 +147,56 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $purchaser_id
         );
 
-        if (!$stmt->execute()) {
-            $errors[] = "Failed to insert item " . $itemData['item'] . ": " . $stmt->error;
+        $stmt = $conn->prepare($sql);
+
+        if (!$stmt) {
+            die("Prepare failed: " . $conn->error);
         }
+
+        foreach ($validItems as $itemData) {
+
+            $stmt->bind_param(
+                "sissssdsssii",
+                $lmr_no,
+                $user_id,
+                $requestor,
+                $department,
+                $itemData['item'],
+                $itemData['desc'],
+                $itemData['qty'],
+                $itemData['uom'],
+                $itemData['date_needed'],
+                $itemData['remarks'],
+                $itemData['status'],
+                $created_by,
+                $purchaser_id
+            );
+
+            if (!$stmt->execute()) {
+                $errors[] =
+                    "Failed to insert item " .
+                    $itemData['item'] .
+                    ": " .
+                    $stmt->error;
+            }
+        }
+
+        $stmt->close();
+
+
+        // ==========================================
+        // REDIRECT ONLY AFTER ALL ITEMS ARE INSERTED
+        // ==========================================
+
         if (empty($errors)) {
 
             echo '<script>
-
                 window.location.href = "?page=ticket/purch_lmr";
             </script>';
 
             exit;
         }
+
         //      if ($insertCount > 0) {
         //     $success = "$insertCount item(s) added successfully under LMR No: " . htmlspecialchars($lmr_no);
         // } else {
