@@ -1928,6 +1928,11 @@ $.fn.dataTable.ext.search.push(function (settings, data, dataIndex) {
                 .html(
                     '<i class="fas fa-check me-1"></i> Saved'
                 );
+                
+           // Reload the page so the table gets fresh DB data
+            setTimeout(function () {
+                window.location.reload();
+            }, 500);
 
             table.draw(false);
 
