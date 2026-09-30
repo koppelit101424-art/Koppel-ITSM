@@ -342,10 +342,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <div class="col-md-4">
 <label class="form-label">LMR No *</label>
 <input type="text" class="form-control" name="lmr_no"
-<?= 
-// htmlspecialchars($_POST['lmr_no'] ?? $newLMR) 
-?>
-    value="" placeholder="e.g. (MKTG-2609-00001)">
+placeholder="e.g. (MKTG-2609-00001)">
 </div>
 
 <div class="col-md-4">
