@@ -1868,7 +1868,7 @@ $.fn.dataTable.ext.search.push(function (settings, data, dataIndex) {
             row.data('purchaser-id', purchaserId);
 
             const statusBadge =
-                row.find('td').eq(8).find('.badge');
+                row.find('td').eq(10).find('.badge');
 
             statusBadge.removeClass(
                 'badge-proceed badge-checking badge-pending badge-closed badge-canceled'
@@ -1910,7 +1910,7 @@ $.fn.dataTable.ext.search.push(function (settings, data, dataIndex) {
                     response.purchaser_name
                 );
 
-                row.find('td').eq(7).text(
+                row.find('td').eq(8).text(
                     response.purchaser_name
                 );
             }
@@ -1928,11 +1928,11 @@ $.fn.dataTable.ext.search.push(function (settings, data, dataIndex) {
                 .html(
                     '<i class="fas fa-check me-1"></i> Saved'
                 );
-                
+
            // Reload the page so the table gets fresh DB data
-            setTimeout(function () {
-                window.location.reload();
-            }, 500);
+            // setTimeout(function () {
+            //     window.location.reload();
+            // }, 500);
 
             table.draw(false);
 
