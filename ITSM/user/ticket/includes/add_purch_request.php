@@ -81,7 +81,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $requestor = trim($user['fullname'] ?? '');
     $department = trim($user['department'] ?? '');
     $created_by = $user_id;
-
     // Default purchaser
     $purchaser_id = 1;
 
@@ -145,7 +144,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $date_needed = trim($dates_needed[$i] ?? '');
         $remarks = trim($remarks_list[$i] ?? '');
         $status = 'Pending';
-
+        $po_no = '';
+        $priority = 'Medium';
 
         $itemHasError = false;
 
@@ -178,7 +178,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'uom' => $uom,
                 'date_needed' => $date_needed,
                 'remarks' => $remarks,
-                'status' => $status
+                'status' => $status,
+                'po_no' => $po_no,
+                'priority' => $priority
             ];
         }
     }
@@ -216,14 +218,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 date_created,
                 date_updated,
                 created_by,
-                purchaser_id
+                purchaser_id,
+                po_no,
+                priority
             )
             VALUES
             (
                 ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
                 NOW(),
                 NOW(),
-                ?, ?
+                ?, ?, ?, ?
             )
         ";
 
@@ -243,7 +247,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             foreach ($validItems as $itemData) {
 
                 $stmt->bind_param(
-                    "sissssdssssii",
+                    "sissssdssssiiss",
                     $lmr_no,
                     $user_id,
                     $requestor,
@@ -256,7 +260,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $itemData['remarks'],
                     $status,
                     $created_by,
-                    $purchaser_id
+                    $purchaser_id,
+                    $po_no,
+                    $priority
                 );
 
                 if (!$stmt->execute()) {
@@ -276,17 +282,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // COMMIT / ROLLBACK
             // ==========================================
 
-            if (empty($errors)) {
+                if (empty($errors)) {
 
-                $conn->commit();
+                    $conn->commit();
 
-                $stmt->close();
+                    $stmt->close();
 
-                // Redirect after ALL items were inserted
-                header("Location: ?page=ticket/purch_lmr");
-                exit;
-
-            } else {
+                    echo "<script>
+                        window.location.href = '?page=ticket/purch_lmr';
+                    </script>";
+                    exit;
+                }
+                else {
 
                 $conn->rollback();
 
@@ -341,7 +348,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <div class="row mb-4">
 <div class="col-md-4">
 <label class="form-label">LMR No *</label>
-<input type="text" class="form-control" name="lmr_no"
+<input type="text" class="form-control" name="lmr_no" 
+  
 placeholder="e.g. (MKTG-2609-00001)">
 </div>
 
@@ -447,7 +455,7 @@ function addItemRow() {
     <div class="row mt-2">
         <div class="col-md-10">
             <label class="form-label">Remarks</label>
-            <textarea class="form-control" name="remarks[]" rows="10" placeholder=""></textarea>
+            <textarea class="form-control" name="remarks[]" rows="5" placeholder=""></textarea>
 
         </div>
           <div class="col-md-2"><br><br>

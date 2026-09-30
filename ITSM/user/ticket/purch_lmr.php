@@ -53,6 +53,8 @@ $sql = "
         r.remarks,
         r.date_created,
         r.status,
+        r.priority,
+        r.po_no,
         r.created_by,
         r.purchaser_id
     FROM purch_request_tb r
@@ -84,6 +86,8 @@ $sql = "
         r.remarks,
         r.date_created,
         r.status,
+        r.priority,
+        r.po_no,
         r.created_by,
         r.purchaser_id
     FROM purch_request_tb r
@@ -313,8 +317,18 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
 
             </div>
 
+            <!-- Urgency -->
+            <div class="col-md-1">
+                <label class="form-label">Urgency</label>
+                <select id="statusUrgencyFilter" class="form-select">
+                    <option value="">All </option>
+                    <option value="Urgent">Urgent</option>
+                    <option value="High">High</option>
+                    <option value="Medium">Medium </option>
+                </select>
+            </div>
             <!-- Status -->
-            <div class="col-md-2">
+            <div class="col-md-1">
                 <label class="form-label">Status</label>
                 <select id="statusSelectFilter" class="form-select">
                     <option value="">All Status</option>
@@ -350,31 +364,46 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
              NON-PURCHASING USERS
         =========================================== -->
 
-        <div class="d-flex flex-wrap gap-2 mb-3">
+    
+        <div class="row g-3 align-items-end">
+             <!-- Urgency -->
+            <div class="col-md-2">
+                <label class="form-label">Urgency</label>
+                <select id="statusUrgencyFilter" class="form-select">
+                    <option value="">All </option>
+                    <option value="Urgent">Urgent</option>
+                    <option value="High">High</option>
+                    <option value="Medium">Medium </option>
+                </select>
+            </div>
+            <!-- Status -->
+            <div class="col-md-2">
+                <label class="form-label">Status</label>
+                <select id="statusSelectFilter" class="form-select">
+                    <option value="">All Status</option>
+                    <option value="pending">Pending</option>
+                    <option value="checking requirements">Checking Requirements</option>
+                    <option value="canvassing">Canvassing</option>
+                    <option value="negotiation">Negotiation</option>
+                    <option value="under discussion">Under Discussion</option>
+                    <option value="draft">Draft </option>
+                    <option value="final">Final </option>
+                    <option value="end">End </option>
+                    <option value="closed">Closed</option>
+                </select>
+            </div>
 
-            <button
-                class="btn btn-outline-blue btn-sm status-filter active"
-                data-status="">
-                All
-            </button>
+            <!-- Date From -->
+            <div class="col-md-2">
+                <label class="form-label">Date From</label>
+                <input type="date" id="dateFrom" class="form-control">
+            </div>
 
-            <button
-                class="btn btn-outline-blue btn-sm status-filter"
-                data-status="pending">
-                Pending
-            </button>
-
-            <button
-                class="btn btn-outline-blue btn-sm status-filter"
-                data-status="approved">
-                Approved
-            </button>
-
-            <button
-                class="btn btn-outline-blue btn-sm status-filter"
-                data-status="rejected">
-                Rejected
-            </button>
+            <!-- Date To -->
+            <div class="col-md-2">
+                <label class="form-label">Date To</label>
+                <input type="date" id="dateTo" class="form-control">
+            </div>
 
         </div>
 
@@ -387,15 +416,16 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
                 <table id="requestsTable" class="table table-hover align-middle">
                     <thead>
                         <tr>
-                            <th>#</th>
+                            <th>ID</th>
                             <th>LMR No.</th>
+                            <th>PO No.</th>
                             <th>User</th>
                             <th>Department</th>
                             <th>Item</th>
                             <th>Qty</th>
                             <th>UoM</th>
                             <th>Assigned to</th>
-                            <!-- <th>Requested by</th> -->
+                            <th>Urgency</th>
                             <th>Status</th>
                             <th>Date Created</th>
                             <th>Date Needed</th>
@@ -456,6 +486,8 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
                             data-request-id="<?= (int)$row['request_id'] ?>"
                             data-lmr-no="<?= htmlspecialchars($row['lmr_no'], ENT_QUOTES) ?>"
                             data-status="<?= htmlspecialchars(strtolower(trim($row['status'])), ENT_QUOTES) ?>"
+                            data-priority="<?= htmlspecialchars($row['priority'] ?? '', ENT_QUOTES) ?>"
+                            data-po="<?= htmlspecialchars($row['po_no'] ?? '', ENT_QUOTES) ?>"
                             data-company="<?= htmlspecialchars($row['company'], ENT_QUOTES) ?>"
                             data-department="<?= htmlspecialchars($row['department'], ENT_QUOTES) ?>"
                             data-item="<?= htmlspecialchars($row['item'], ENT_QUOTES) ?>"
@@ -471,8 +503,9 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
                             style="cursor:pointer;"
                         >
 
-                                    <td><?= $i++ ?></td>
+                                    <td><?= htmlspecialchars($row['request_id']) ?></td>
                                     <td><?= htmlspecialchars($row['lmr_no']) ?></td>
+                                    <td><?= htmlspecialchars($row['po_no']) ?></td>
                                     <td><?= htmlspecialchars($requestor_name) ?></td>
                                  
                                     <td><?= htmlspecialchars($row['department']) ?></td>
@@ -489,7 +522,7 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
                                             <?= htmlspecialchars($purchaser_name) ?>
                                         <?php endif; ?>
                                     </td>
-
+                                    <td><?= htmlspecialchars($row['priority']) ?></td>
                                     <td>
                                         <?php 
                                             $status = strtolower(trim($row['status']));
@@ -627,14 +660,20 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
                 ================================================== -->
                 <div class="row g-3">
 
-                    <div class="col-md-4">
+                    <!-- <div class="col-md-4">
                         <label class="form-label fw-bold">LMR No.</label>
                         <input type="text"
                                id="modalLmr"
                                class="form-control"
                                readonly>
+                    </div> -->
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold">Requested By</label>
+                        <input type="text"
+                               id="modalRequestor"
+                               class="form-control"
+                               readonly>
                     </div>
-
                     <div class="col-md-4">
                         <label class="form-label fw-bold">Company</label>
                         <input type="text"
@@ -651,7 +690,7 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
                                readonly>
                     </div>
 
-                    <div class="col-md-6">
+                    <div class="col-md-4">
                         <label class="form-label fw-bold">Item</label>
                         <input type="text"
                                id="modalItem"
@@ -659,7 +698,7 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
                                readonly>
                     </div>
 
-                    <div class="col-md-3">
+                    <div class="col-md-2">
                         <label class="form-label fw-bold">Quantity</label>
                         <input type="text"
                                id="modalQuantity"
@@ -667,21 +706,15 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
                                readonly>
                     </div>
 
-                    <div class="col-md-3">
+                    <div class="col-md-2">
                         <label class="form-label fw-bold">UoM</label>
                         <input type="text"
                                id="modalUom"
                                class="form-control"
                                readonly>
                     </div>
-                    <div class="col-md-4">
-                        <label class="form-label fw-bold">Requested By</label>
-                        <input type="text"
-                               id="modalRequestor"
-                               class="form-control"
-                               readonly>
-                    </div>
-                    <div class="col-md-4">
+
+                    <div class="col-md-2">
                         <label class="form-label fw-bold">Date Needed</label>
                         <input type="text"
                                id="modalDateNeeded"
@@ -689,7 +722,7 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
                                readonly>
                     </div>
 
-                    <div class="col-md-4">
+                    <div class="col-md-2">
                         <label class="form-label fw-bold">Date Created</label>
                         <input type="text"
                                id="modalDateCreated"
@@ -697,19 +730,19 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
                                readonly>
                     </div>
 
-                    <div class="col-12">
+                    <div class="col-6">
                         <label class="form-label fw-bold">Description</label>
                         <textarea id="modalDescription"
                                   class="form-control"
-                                  rows="3"
+                                  rows="6"
                                   readonly></textarea>
                     </div>
 
-                    <div class="col-12">
+                    <div class="col-6">
                         <label class="form-label fw-bold">Remarks</label>
                         <textarea id="modalRemarks"
                                   class="form-control"
-                                  rows="3"
+                                  rows="6"
                                   readonly></textarea>
                     </div>
 
@@ -729,7 +762,7 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
 
                     <?php if ($isPurchasing): ?>
 
-                        <div class="col-md-6">
+                        <div class="col-md-5">
                             <label class="form-label fw-bold">
                                 Assigned Purchaser
                             </label>
@@ -771,8 +804,21 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
 
                             </div>
                         </div>
+                        <div class="col-md-2">
 
-                        <div class="col-md-6">
+                            <label class="form-label fw-bold">
+                                Urgency
+                            </label>
+
+                            <select id="modalPriority"
+                                    class="form-select">
+                                <option value="urgent">Urgent</option>
+                                <option value="high">High</option>
+                                <option value="medium">Medium</option>
+
+                            </select>
+                        </div>
+                        <div class="col-md-3">
 
                             <label class="form-label fw-bold">
                                 Status
@@ -781,10 +827,7 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
                             <select id="modalStatus"
                                     class="form-select">
 
-                                <option value="pending">
-                                    Pending
-                                </option>
-
+                                <option value="pending"> Pending</option>
                                 <option value="checking requirements">Checking Requirements</option>
                                 <option value="canvassing">Canvassing</option>
                                 <option value="negotiation">Negotiation</option>
@@ -795,8 +838,20 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
                                 <option value="closed">Closed</option>
 
                             </select>
-
                         </div>
+
+                        <div class="col-md-2">
+                            <label class="form-label fw-bold">PO Number</label>
+                            <input type="text"
+                                id="modalPO"
+                                class="form-control"
+                                readonly>
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label fw-bold">Attachments</label>
+       
+                        </div>
+
 
                     <?php else: ?>
 
@@ -814,8 +869,17 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
                                    readonly>
 
                         </div>
+                        <div class="col-md-3">
 
-                        <div class="col-md-6">
+                            <label class="form-label fw-bold">
+                                Urgency
+                            </label>
+                            <input type="text"
+                                   id="modalPriorityDisplay"
+                                   class="form-control"
+                                   readonly>
+                        </div>
+                        <div class="col-md-3">
 
                             <label class="form-label fw-bold">
                                 Status
@@ -827,6 +891,13 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
                                    readonly>
 
                         </div>
+                        <!-- <div class="col-md-2">
+                            <label class="form-label fw-bold">PO Number</label>
+                            <input type="text"
+                                id="modalPO"
+                                class="form-control"
+                                readonly>
+                        </div> -->
 
                     <?php endif; ?>
 
@@ -927,11 +998,21 @@ $(function () {
 $(document).ready(function () {
 
     const table = $('#requestsTable').DataTable({
-        pageLength: 10,
+        pageLength: 20,
+
+        lengthMenu: [
+            [10, 20, 50, 100, 500, 1000, 5000, 10000],
+            [10, 20, 50, 100, 500, 1000, 5000, 10000]
+        ],
+
         order: [[0, "desc"]],
-        columnDefs: [
-            { orderable: false, targets: [5, 9, 10] }
-        ]
+
+      columnDefs: [
+        {
+            orderable: false,
+            targets: [12]
+        }
+    ]
     });
 
 
@@ -939,119 +1020,186 @@ $(document).ready(function () {
     // CUSTOM FILTER
     // =====================================================
 
-    $.fn.dataTable.ext.search.push(function (settings, data, dataIndex) {
+$.fn.dataTable.ext.search.push(function (settings, data, dataIndex) {
 
-        // Only apply to our table
-        if (settings.nTable.id !== 'requestsTable') {
-            return true;
-        }
-
-        const row = table.row(dataIndex).node();
-
-        if (!row) {
-            return true;
-        }
-
-        const $row = $(row);
-
-        // Row data
-        const rowStatus = ($row.data('status') || '').toString().toLowerCase().trim();
-
-        const rowCompany = ($row.data('company') || '')
-            .toString()
-            .toLowerCase()
-            .trim();
-        const rowDepartment = ($row.data('department') || '')
-            .toString()
-            .toLowerCase()
-            .trim();
-
-        const purchaserId = ($row.data('purchaser-id') || '')
-            .toString()
-            .trim();
-
-        const rowDate = ($row.data('date-created') || '')
-            .toString()
-            .trim();
-
-
-        // =================================================
-        // PURCHASING FILTERS
-        // =================================================
-
-        const requestView = $('#requestViewFilter').val();
-        const department = $('#departmentFilter').val();
-        const company = $('#companyFilter').val();
-
-        const status = $('#statusSelectFilter').val();
-        const dateFrom = $('#dateFrom').val();
-        const dateTo = $('#dateTo').val();
-
-
-        // -----------------------------------------------
-        // Assigned to Me
-        // -----------------------------------------------
-
-        if (requestView === 'assigned') {
-
-            // PHP session user ID
-            const currentUserId = '<?= (int)$_SESSION['user_id'] ?>';
-
-            if (purchaserId !== currentUserId) {
-                return false;
-            }
-        }
-
-            if (company && rowCompany !== company) {
-                return false;
-            }
-
-
-        // -----------------------------------------------
-        // Department
-        // -----------------------------------------------
-
-        if (department && rowDepartment !== department) {
-            return false;
-        }
-
-
-        // -----------------------------------------------
-        // Status
-        // -----------------------------------------------
-
-        if (status && rowStatus !== status) {
-            return false;
-        }
-
-
-        // -----------------------------------------------
-        // Date From
-        // -----------------------------------------------
-
-        if (dateFrom && rowDate < dateFrom) {
-            return false;
-        }
-
-
-        // -----------------------------------------------
-        // Date To
-        // -----------------------------------------------
-
-        if (dateTo && rowDate > dateTo) {
-            return false;
-        }
-
-
+    // Only apply this filter to requestsTable
+    if (settings.nTable.id !== 'requestsTable') {
         return true;
-    });
+    }
+
+    const row = table.row(dataIndex).node();
+
+    if (!row) {
+        return true;
+    }
+
+    const $row = $(row);
+
+    // =====================================================
+    // GET ROW DATA
+    // Use attr() so AJAX-updated values are always current
+    // =====================================================
+
+    const rowStatus = (
+        $row.attr('data-status') || ''
+    ).toString().toLowerCase().trim();
+
+    const rowCompany = (
+        $row.attr('data-company') || ''
+    ).toString().toLowerCase().trim();
+
+    const rowDepartment = (
+        $row.attr('data-department') || ''
+    ).toString().toLowerCase().trim();
+
+    const rowPriority = (
+        $row.attr('data-priority') || ''
+    ).toString().toLowerCase().trim();
+
+    const purchaserId = (
+        $row.attr('data-purchaser-id') || ''
+    ).toString().trim();
+
+    const rowDateCreated = (
+        $row.attr('data-date-created') || ''
+    ).toString().trim();
+
+
+    // =====================================================
+    // GET FILTER VALUES
+    // =====================================================
+
+    const requestView =
+        $('#requestViewFilter').val() || '';
+
+    const department =
+        ($('#departmentFilter').val() || '')
+        .toString()
+        .toLowerCase()
+        .trim();
+
+    const company =
+        ($('#companyFilter').val() || '')
+        .toString()
+        .toLowerCase()
+        .trim();
+
+    const status =
+        ($('#statusSelectFilter').val() || '')
+        .toString()
+        .toLowerCase()
+        .trim();
+
+    const urgency =
+        ($('#statusUrgencyFilter').val() || '')
+        .toString()
+        .toLowerCase()
+        .trim();
+
+    const dateFrom =
+        $('#dateFrom').val() || '';
+
+    const dateTo =
+        $('#dateTo').val() || '';
+
+
+    // =====================================================
+    // ASSIGNED TO ME
+    // =====================================================
+
+    if (requestView === 'assigned') {
+
+        const currentUserId =
+            '<?= (int)$_SESSION['user_id'] ?>';
+
+        if (purchaserId !== currentUserId) {
+            return false;
+        }
+    }
+
+
+    // =====================================================
+    // COMPANY
+    // =====================================================
+
+    if (company && rowCompany !== company) {
+        return false;
+    }
+
+
+    // =====================================================
+    // DEPARTMENT
+    // =====================================================
+
+    if (department && rowDepartment !== department) {
+        return false;
+    }
+
+
+    // =====================================================
+    // URGENCY
+    // =====================================================
+
+    if (urgency && rowPriority !== urgency) {
+        return false;
+    }
+
+
+    // =====================================================
+    // STATUS
+    // =====================================================
+
+    if (status && rowStatus !== status) {
+        return false;
+    }
+
+
+    // =====================================================
+    // DATE CREATED
+    // =====================================================
+
+    // Convert:
+    // 2026-09-30 14:25:00
+    //
+    // into:
+    // 2026-09-30
+
+    const rowDate =
+        rowDateCreated.substring(0, 10);
+
+
+    // =====================================================
+    // DATE FROM
+    // =====================================================
+
+    if (dateFrom && rowDate < dateFrom) {
+        return false;
+    }
+
+
+    // =====================================================
+    // DATE TO
+    // =====================================================
+
+    if (dateTo && rowDate > dateTo) {
+        return false;
+    }
+
+
+    // =====================================================
+    // PASSED ALL FILTERS
+    // =====================================================
+
+    return true;
+});
+
 
 
     // =====================================================
     // PURCHASING FILTERS - ON CHANGE
     // =====================================================
 
-    $('#companyFilter, #requestViewFilter, #departmentFilter, #statusSelectFilter, #dateFrom, #dateTo')
+    $('#companyFilter, #requestViewFilter, #departmentFilter, #statusUrgencyFilter, #statusSelectFilter, #dateFrom, #dateTo')
         .on('change', function () {
             table.draw();
         });
@@ -1447,7 +1595,8 @@ $(document).ready(function () {
 
         const dateNeeded = row.data('date-needed');
         const dateCreated = row.data('date-created');
-
+        const po = row.data('po');
+        const priority = row.data('priority');
         const remarks = row.data('remarks');
 
         const status =
@@ -1502,7 +1651,8 @@ $(document).ready(function () {
 
             $('#modalStatus').val(status);
             $('#modalPurchaser').val(purchaserId);
-
+            $('#modalPO').val(po);
+            $('#modalPriority').val(priority);
             resetSaveButton();
 
         } else {
@@ -1514,7 +1664,9 @@ $(document).ready(function () {
             $('#modalStatusDisplay').val(
                 formatStatus(status)
             );
-
+            $('#modalPriorityDisplay').val(
+                formatStatus(priority)
+            );
             $('#modalPurchaserDisplay').val(
                 purchaserName
             );
