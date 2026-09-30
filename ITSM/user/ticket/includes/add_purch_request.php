@@ -27,14 +27,14 @@ $newLMR = 'PURCH-000001';
 
 // Determine LMR prefix based on department
 $departmentPrefixes = [
-    'Production' => 'PRD',
+    'Production' => 'PR0D',
     'Sales'      => 'SLS',
-    'Marketing'  => 'MKG',
-    'Service'    => 'SVC',
+    'Marketing'  => 'MKTG',
+    'Service'    => 'SRVC',
     'VRF'    => 'VRF',
     'Human Resource'    => 'HR',
-    'PDED 0EM '    => '0EM',
-    'PDED DESIGN'    => 'PDED-DES'
+    'PDED 0EM'    => '0EM',
+    'PDED DESIGN'    => 'PDED'
 ];
 
 // Get department from logged-in user
@@ -342,7 +342,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <div class="col-md-4">
 <label class="form-label">LMR No *</label>
 <input type="text" class="form-control" name="lmr_no"
-    value="<?= htmlspecialchars($_POST['lmr_no'] ?? $newLMR) ?>">
+<?= 
+// htmlspecialchars($_POST['lmr_no'] ?? $newLMR) 
+?>
+    value="" placeholder="e.g. (MKTG-2609-00001)">
 </div>
 
 <div class="col-md-4">
