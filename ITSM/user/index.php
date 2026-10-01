@@ -66,8 +66,11 @@ if(isset($_GET['ajax'])){
             include "ticket/includes/submit_rating.php";
             exit;
         case "ticket/includes/assign_request":
-        include "ticket/includes/assign_request.php";
-        exit;
+            include "ticket/includes/assign_request.php";
+            exit;
+        case "ticket/includes/bulk_update_requests":
+            include "ticket/includes/bulk_update_requests.php";
+            exit;
     }
 }
 ?>

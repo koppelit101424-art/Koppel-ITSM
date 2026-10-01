@@ -1,4 +1,5 @@
 <?php
+
 include 'includes/auth.php';
 include 'includes/db.php';
 
@@ -231,12 +232,23 @@ $isPurchasing =
         </a>
 
         <?php if ($isPurchasing): ?>
+
+            <button type="button"
+                    class="btn btn-warning btn-sm"
+                    id="bulkUpdateBtn"
+                    disabled>
+                <i class="fas fa-edit me-1"></i>
+                Bulk Update
+                <span id="selectedCount" class="badge bg-dark ms-1">0</span>
+            </button>
+
             <button type="button"
                     class="btn btn-info btn-sm"
                     id="exportPurchasingCSV">
                 <i class="fas fa-file-csv me-1"></i>
                 Export CSV
             </button>
+
         <?php endif; ?>
     </div>
 </div>
@@ -446,6 +458,9 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
                 <table id="requestsTable" class="table table-hover align-middle">
                     <thead>
                         <tr>
+                            <th>
+                                <input type="checkbox" id="selectAllRequests">
+                            </th>
                             <th>ID</th>
                             <th>LMR No.</th>
                             <th>PO No.</th>
@@ -532,132 +547,138 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
                             data-requestor-name="<?= htmlspecialchars($requestor_name, ENT_QUOTES) ?>"
                             style="cursor:pointer;"
                         >
+                        <td onclick="event.stopPropagation();">
+                            <input 
+                                type="checkbox"
+                                class="request-checkbox"
+                                value="<?= (int)$row['request_id'] ?>"
+                            >
+                        </td>
+                            <td><?= htmlspecialchars($row['request_id']) ?></td>
+                            <td><?= htmlspecialchars($row['lmr_no']) ?></td>
+                            <td><?= htmlspecialchars($row['po_no']) ?></td>
+                            <td><?= htmlspecialchars($requestor_name) ?></td>
+                            
+                            <td><?= htmlspecialchars($row['department']) ?></td>
+                            <td><?= htmlspecialchars($row['item']) ?></td>
 
-                                    <td><?= htmlspecialchars($row['request_id']) ?></td>
-                                    <td><?= htmlspecialchars($row['lmr_no']) ?></td>
-                                    <td><?= htmlspecialchars($row['po_no']) ?></td>
-                                    <td><?= htmlspecialchars($requestor_name) ?></td>
-                                 
-                                    <td><?= htmlspecialchars($row['department']) ?></td>
-                                    <td><?= htmlspecialchars($row['item']) ?></td>
+                            <td><?= $row['quantity'] ?></td>
+                            <td><?= htmlspecialchars($row['UoM']) ?></td>
+                            <td>
+                                <?php if ($purchaser_id == 1): ?>
+                                    <span class="unassigned-purchaser">
+                                        Unassigned
+                                    </span>
+                                <?php else: ?>
+                                    <?= htmlspecialchars($purchaser_name) ?>
+                                <?php endif; ?>
+                            </td>
+                            <td class="priority-cell">
+                                <?php
+                                    $priority = strtolower(trim($row['priority'] ?? ''));
 
-                                    <td><?= $row['quantity'] ?></td>
-                                    <td><?= htmlspecialchars($row['UoM']) ?></td>
-                                  <td>
-                                        <?php if ($purchaser_id == 1): ?>
-                                            <span class="unassigned-purchaser">
-                                                Unassigned
-                                            </span>
-                                        <?php else: ?>
-                                            <?= htmlspecialchars($purchaser_name) ?>
-                                        <?php endif; ?>
-                                    </td>
-                                    <td class="priority-cell">
-                                        <?php
-                                            $priority = strtolower(trim($row['priority'] ?? ''));
+                                    $priorityClass = match ($priority) {
+                                        'urgent' => 'priority-urgent',
+                                        'high'   => 'priority-high',
+                                        'medium' => 'priority-medium',
+                                        default  => 'priority-default'
+                                    };
 
-                                            $priorityClass = match ($priority) {
-                                                'urgent' => 'priority-urgent',
-                                                'high'   => 'priority-high',
-                                                'medium' => 'priority-medium',
-                                                default  => 'priority-default'
-                                            };
+                                    echo '<span class="priority-badge ' . $priorityClass . '">' .
+                                        htmlspecialchars(ucfirst($priority)) .
+                                        '</span>';
+                                ?>
+                            </td>
+                            <td>
+                                <?php 
+                                    $status = strtolower(trim($row['status']));
 
-                                            echo '<span class="priority-badge ' . $priorityClass . '">' .
-                                                htmlspecialchars(ucfirst($priority)) .
-                                                '</span>';
-                                        ?>
-                                    </td>
-                                    <td>
-                                        <?php 
-                                            $status = strtolower(trim($row['status']));
+                                    switch ($status) {
+                                        case 'proceed request':
+                                            $statusClass = 'badge-proceed';
+                                            break;
 
-                                            switch ($status) {
-                                                case 'proceed request':
-                                                    $statusClass = 'badge-proceed';
-                                                    break;
+                                        case 'checking requirements':
+                                        case 'canvassing':
+                                            $statusClass = 'badge-checking';
+                                            break;
 
-                                                case 'checking requirements':
-                                                case 'canvassing':
-                                                    $statusClass = 'badge-checking';
-                                                    break;
+                                        case 'negotiation':
+                                        case 'under discussion':
+                                            $statusClass = 'badge-negotiation';
+                                            break;
 
-                                                case 'negotiation':
-                                                case 'under discussion':
-                                                    $statusClass = 'badge-negotiation';
-                                                    break;
+                                        case 'draft':
+                                            $statusClass = 'badge-draft';
+                                            break;
 
-                                                case 'draft':
-                                                    $statusClass = 'badge-draft';
-                                                    break;
+                                        case 'final':
+                                            $statusClass = 'badge-proceed';
+                                            break;
 
-                                                case 'final':
-                                                    $statusClass = 'badge-proceed';
-                                                    break;
+                                        case 'pending':
+                                            $statusClass = 'badge-pending';
+                                            break;
 
-                                                case 'pending':
-                                                    $statusClass = 'badge-pending';
-                                                    break;
+                                        case 'end':
+                                        case 'closed':
+                                            $statusClass = 'badge-closed';
+                                            break;
 
-                                                case 'end':
-                                                case 'closed':
-                                                    $statusClass = 'badge-closed';
-                                                    break;
+                                        case 'canceled':
+                                            $statusClass = 'badge-canceled';
+                                            break;
 
-                                                case 'canceled':
-                                                    $statusClass = 'badge-canceled';
-                                                    break;
+                                        default:
+                                            $statusClass = 'badge-pending';
+                                            break;
+                                    }
+                                ?>
 
-                                                default:
-                                                    $statusClass = 'badge-pending';
-                                                    break;
-                                            }
-                                        ?>
+                                <span class="badge <?= $statusClass ?>" style="width: 100%;">
+                                    <?= ucfirst($row['status']) ?>
+                                </span>
+                            </td>
+                            
+                            <td><?= date('m-d-Y', strtotime($row['date_created'])) ?></td>
+                            <td><?= date('m-d-Y', strtotime( $row['date_needed'])) ?></td>
+                            <!-- <td><?= htmlspecialchars($row['remarks'] ?? '-') ?></td> -->
+                            <td onclick="event.stopPropagation();">
 
-                                        <span class="badge <?= $statusClass ?>" style="width: 100%;">
-                                            <?= ucfirst($row['status']) ?>
-                                        </span>
-                                    </td>
-                                    
-                                    <td><?= date('m-d-Y', strtotime($row['date_created'])) ?></td>
-                                    <td><?= date('m-d-Y', strtotime( $row['date_needed'])) ?></td>
-                                    <!-- <td><?= htmlspecialchars($row['remarks'] ?? '-') ?></td> -->
-                                    <td onclick="event.stopPropagation();">
+                                <a href="?page=ticket/view_request&request_id=<?= $row['request_id'] ?>"
+                                class="btn btn-sm btn-primary"
+                                title="View">
+                                    <i class="fas fa-eye"></i>
+                                </a>
 
-                                        <a href="?page=ticket/view_request&request_id=<?= $row['request_id'] ?>"
-                                        class="btn btn-sm btn-primary"
-                                        title="View">
-                                            <i class="fas fa-eye"></i>
-                                        </a>
+                                <?php
+                                $isLocalUser =
+                                    (int)$row['created_by'] === (int)$_SESSION['user_id'];
 
-                                        <?php
-                                        $isLocalUser =
-                                            (int)$row['created_by'] === (int)$_SESSION['user_id'];
+                                $isPending =
+                                    strcasecmp(trim($row['status']), 'pending') === 0;
+                                ?>
 
-                                        $isPending =
-                                            strcasecmp(trim($row['status']), 'pending') === 0;
-                                        ?>
+                                <?php if ($isLocalUser && $isPending): ?>
+                                    <a href="?page=ticket/includes/edit_request&request_id=<?= (int)$row['request_id'] ?>"
+                                    class="btn btn-sm btn-warning"
+                                    title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                <?php endif; ?>
 
-                                        <?php if ($isLocalUser && $isPending): ?>
-                                            <a href="?page=ticket/includes/edit_request&request_id=<?= (int)$row['request_id'] ?>"
-                                            class="btn btn-sm btn-warning"
-                                            title="Edit">
-                                                <i class="fas fa-edit"></i>
-                                            </a>
-                                        <?php endif; ?>
+                                <!-- <button
+                                    type="button"
+                                    class="btn btn-sm btn-success btn-print"
+                                    data-lmr="<?= htmlspecialchars($row['lmr_no']) ?>"
+                                    data-status="<?= htmlspecialchars(strtolower(trim($row['status']))) ?>"
+                                    title="Print">
+                                    <i class="fas fa-print"></i>
+                                </button> -->
 
-                                        <!-- <button
-                                            type="button"
-                                            class="btn btn-sm btn-success btn-print"
-                                            data-lmr="<?= htmlspecialchars($row['lmr_no']) ?>"
-                                            data-status="<?= htmlspecialchars(strtolower(trim($row['status']))) ?>"
-                                            title="Print">
-                                            <i class="fas fa-print"></i>
-                                        </button> -->
+                            </td>
 
-                                    </td>
-
-                                </tr>
+                        </tr>
                             <?php endwhile; ?>
                         <?php else: ?>
                         
@@ -890,7 +911,7 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
                                 <input type="text"
                                     id="modalPO"
                                     class="form-control"
-                                    readonly>
+                                    >
                             </div>
                             <div class="col-md-12">
                                 <label class="form-label fw-bold">Attachments</label>
@@ -983,34 +1004,341 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
         </div>
     </div>
 
+    <!-- =========================================================
+        BULK UPDATE MODAL
+        ========================================================= -->
+        <div class="modal fade" id="bulkUpdateModal" tabindex="-1"
+            aria-labelledby="bulkUpdateModalLabel" aria-hidden="true">
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
-<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+
+            <div class="modal-content">
+
+                <div class="modal-header bg-primary text-white">
+
+                    <div>
+                        <h5 class="modal-title" id="bulkUpdateModalLabel">
+                            Bulk Update Requests
+                        </h5>
+
+                        <small>
+                            Selected:
+                            <strong id="bulkSelectedCount">0</strong>
+                            requests
+                        </small>
+                    </div>
+
+                    <button type="button"
+                            class="btn-close btn-close-white"
+                            data-bs-dismiss="modal">
+                    </button>
+
+                </div>
+
+                <div class="modal-body">
+
+                    <div class="alert alert-info">
+                        Only fields you select below will be updated.
+                        Leave a field unchanged if you do not want to modify it.
+                    </div>
+
+                    <div class="row g-3">
+
+                        <!-- STATUS -->
+                        <div class="col-md-6">
+
+                            <label class="form-label fw-bold">
+                                Status
+                            </label>
+
+                            <select id="bulkStatus"
+                                    class="form-select">
+
+                                <option value="">
+                                    -- No Change --
+                                </option>
+
+                                <option value="pending">
+                                    Pending
+                                </option>
+
+                                <option value="checking requirements">
+                                    Checking Requirements
+                                </option>
+
+                                <option value="canvassing">
+                                    Canvassing
+                                </option>
+
+                                <option value="negotiation">
+                                    Negotiation
+                                </option>
+
+                                <option value="under discussion">
+                                    Under Discussion
+                                </option>
+
+                                <option value="draft">
+                                    Draft
+                                </option>
+
+                                <option value="final">
+                                    Final
+                                </option>
+
+                                <option value="end">
+                                    End
+                                </option>
+
+                                <option value="closed">
+                                    Closed
+                                </option>
+
+                            </select>
+
+                        </div>
+
+
+                        <!-- PRIORITY -->
+                        <div class="col-md-6">
+
+                            <label class="form-label fw-bold">
+                                Priority
+                            </label>
+
+                            <select id="bulkPriority"
+                                    class="form-select">
+
+                                <option value="">
+                                    -- No Change --
+                                </option>
+
+                                <option value="urgent">
+                                    Urgent
+                                </option>
+
+                                <option value="high">
+                                    High
+                                </option>
+
+                                <option value="medium">
+                                    Medium
+                                </option>
+
+                            </select>
+
+                        </div>
+
+
+                        <!-- PURCHASER -->
+                        <div class="col-md-6">
+
+                            <label class="form-label fw-bold">
+                                Assigned Purchaser
+                            </label>
+
+                            <select id="bulkPurchaser"
+                                    class="form-select">
+
+                                <option value="">
+                                    -- No Change --
+                                </option>
+
+                                <option value="1">
+                                    Unassigned
+                                </option>
+
+                                <?php
+                                $bulkPurchaserQuery = $conn->query("
+                                    SELECT user_id, fullname, company
+                                    FROM user_tb
+                                    WHERE department = 'Purchasing'
+                                    AND is_active = 1
+                                    ORDER BY company ASC, fullname ASC
+                                ");
+
+                                while ($bulkPurchaser = $bulkPurchaserQuery->fetch_assoc()):
+                                ?>
+
+                                    <option value="<?= (int)$bulkPurchaser['user_id'] ?>">
+                                        <?= htmlspecialchars($bulkPurchaser['company']) ?> -
+                                        <?= htmlspecialchars($bulkPurchaser['fullname']) ?>
+                                    </option>
+
+                                <?php endwhile; ?>
+
+                            </select>
+
+                        </div>
+
+
+                        <!-- PO NUMBER -->
+                        <div class="col-md-6">
+
+                            <label class="form-label fw-bold">
+                                PO Number
+                            </label>
+
+                            <input type="text"
+                                id="bulkPO"
+                                class="form-control"
+                                placeholder="Leave blank for no change">
+
+                        </div>
+
+                    </div>
+
+
+                    <div id="bulkUpdateMessage"
+                        class="alert d-none mt-4 mb-0">
+                    </div>
+
+                </div>
+
+
+                <div class="modal-footer">
+
+                    <button type="button"
+                            class="btn btn-secondary"
+                            data-bs-dismiss="modal">
+                        Cancel
+                    </button>
+
+                    <button type="button"
+                            class="btn btn-primary"
+                            id="confirmBulkUpdate">
+
+                        <i class="fas fa-save me-1"></i>
+                        Update Selected
+
+                    </button>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script> -->
 
 
 <script>
-    $(document).ready(function () {
+$(document).ready(function () {
 
-        const table = $('#requestsTable').DataTable({
-            pageLength: 20,
+    const table = $('#requestsTable').DataTable({
+        pageLength: 20,
 
-            lengthMenu: [
-                [10, 20, 50, 100, 500, 1000, 5000, 10000],
-                [10, 20, 50, 100, 500, 1000, 5000, 10000]
-            ],
+        lengthMenu: [
+            [10, 20, 50, 100, 500, 1000, 5000, 10000],
+            [10, 20, 50, 100, 500, 1000, 5000, 10000]
+        ],
 
-            order: [[0, "desc"]],
+        order: [[1, "desc"]],
 
         columnDefs: [
             {
                 orderable: false,
-                targets: [12]
+                targets: [0, 14]
             }
         ]
     });
 
+    // =====================================================
+    // BULK SELECTION
+    // =====================================================
+
+    function updateSelectedCount() {
+
+        const selectedCount =
+            $('#requestsTable tbody .request-checkbox:checked').length;
+
+        $('#selectedCount').text(selectedCount);
+        $('#bulkSelectedCount').text(selectedCount);
+
+        $('#bulkUpdateBtn').prop(
+            'disabled',
+            selectedCount === 0
+        );
+    }
+
+
+    // =====================================================
+    // INDIVIDUAL CHECKBOX
+    // =====================================================
+
+    $('#requestsTable tbody').on(
+        'click',
+        '.request-checkbox',
+        function (e) {
+
+            e.stopPropagation();
+
+            updateSelectedCount();
+
+            updateSelectAllState();
+        }
+    );
+
+
+    // =====================================================
+    // SELECT ALL CURRENTLY DISPLAYED/FILTERED ROWS
+    // =====================================================
+
+    $('#selectAllRequests').on('change', function () {
+
+        const checked = $(this).prop('checked');
+
+        // Only select rows currently visible after filters/search
+        table.rows({
+            search: 'applied'
+        }).nodes().to$()
+        .find('.request-checkbox')
+        .prop('checked', checked);
+
+        updateSelectedCount();
+    });
+
+
+    // =====================================================
+    // UPDATE SELECT ALL STATE
+    // =====================================================
+
+    function updateSelectAllState() {
+
+        const visibleCheckboxes =
+            table.rows({
+                search: 'applied'
+            }).nodes().to$()
+            .find('.request-checkbox');
+
+        const checkedCount =
+            visibleCheckboxes.filter(':checked').length;
+
+        if (visibleCheckboxes.length === 0) {
+
+            $('#selectAllRequests')
+                .prop('checked', false)
+                .prop('indeterminate', false);
+
+            return;
+        }
+
+        $('#selectAllRequests').prop(
+            'checked',
+            checkedCount === visibleCheckboxes.length
+        );
+
+        $('#selectAllRequests').prop(
+            'indeterminate',
+            checkedCount > 0 &&
+            checkedCount < visibleCheckboxes.length
+        );
+    }                                
 
     // =====================================================
     // CUSTOM FILTER
@@ -1018,177 +1346,176 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
 
     $.fn.dataTable.ext.search.push(function (settings, data, dataIndex) {
 
-    // Only apply this filter to requestsTable
-    if (settings.nTable.id !== 'requestsTable') {
-        return true;
-    }
+        // Only apply this filter to requestsTable
+        if (settings.nTable.id !== 'requestsTable') {
+            return true;
+        }
 
-    const row = table.row(dataIndex).node();
+        const row = table.row(dataIndex).node();
 
-    if (!row) {
-        return true;
-    }
+        if (!row) {
+            return true;
+        }
 
-    const $row = $(row);
+        const $row = $(row);
 
-    // =====================================================
-    // GET ROW DATA
-    // Use attr() so AJAX-updated values are always current
-    // =====================================================
+        // =====================================================
+        // GET ROW DATA
+        // Use attr() so AJAX-updated values are always current
+        // =====================================================
 
-    const rowStatus = (
-        $row.attr('data-status') || ''
-    ).toString().toLowerCase().trim();
+        const rowStatus = (
+            $row.attr('data-status') || ''
+        ).toString().toLowerCase().trim();
 
-    const rowCompany = (
-        $row.attr('data-company') || ''
-    ).toString().toLowerCase().trim();
+        const rowCompany = (
+            $row.attr('data-company') || ''
+        ).toString().toLowerCase().trim();
 
-    const rowDepartment = (
-        $row.attr('data-department') || ''
-    ).toString().toLowerCase().trim();
+        const rowDepartment = (
+            $row.attr('data-department') || ''
+        ).toString().toLowerCase().trim();
 
-    const rowPriority = (
-        $row.attr('data-priority') || ''
-    ).toString().toLowerCase().trim();
+        const rowPriority = (
+            $row.attr('data-priority') || ''
+        ).toString().toLowerCase().trim();
 
-    const purchaserId = (
-        $row.attr('data-purchaser-id') || ''
-    ).toString().trim();
+        const purchaserId = (
+            $row.attr('data-purchaser-id') || ''
+        ).toString().trim();
 
-    const rowDateCreated = (
-        $row.attr('data-date-created') || ''
-    ).toString().trim();
+        const rowDateCreated = (
+            $row.attr('data-date-created') || ''
+        ).toString().trim();
 
 
     // =====================================================
     // GET FILTER VALUES
     // =====================================================
 
-    const requestView =
-        $('#requestViewFilter').val() || '';
+        const requestView =
+            $('#requestViewFilter').val() || '';
 
-    const department =
-        ($('#departmentFilter').val() || '')
-        .toString()
-        .toLowerCase()
-        .trim();
+        const department =
+            ($('#departmentFilter').val() || '')
+            .toString()
+            .toLowerCase()
+            .trim();
 
-    const company =
-        ($('#companyFilter').val() || '')
-        .toString()
-        .toLowerCase()
-        .trim();
+        const company =
+            ($('#companyFilter').val() || '')
+            .toString()
+            .toLowerCase()
+            .trim();
 
-    const status =
-        ($('#statusSelectFilter').val() || '')
-        .toString()
-        .toLowerCase()
-        .trim();
+        const status =
+            ($('#statusSelectFilter').val() || '')
+            .toString()
+            .toLowerCase()
+            .trim();
 
-    const urgency =
-        ($('#statusUrgencyFilter').val() || '')
-        .toString()
-        .toLowerCase()
-        .trim();
+        const urgency =
+            ($('#statusUrgencyFilter').val() || '')
+            .toString()
+            .toLowerCase()
+            .trim();
 
-    const dateFrom =
-        $('#dateFrom').val() || '';
+        const dateFrom =
+            $('#dateFrom').val() || '';
 
-    const dateTo =
-        $('#dateTo').val() || '';
+        const dateTo =
+            $('#dateTo').val() || '';
 
 
-    // =====================================================
-    // ASSIGNED TO ME
-    // =====================================================
+        // =====================================================
+        // ASSIGNED TO ME
+        // =====================================================
 
-    if (requestView === 'assigned') {
+        if (requestView === 'assigned') {
 
-        const currentUserId =
-            '<?= (int)$_SESSION['user_id'] ?>';
+            const currentUserId =
+                '<?= (int)$_SESSION['user_id'] ?>';
 
-        if (purchaserId !== currentUserId) {
+            if (purchaserId !== currentUserId) {
+                return false;
+            }
+        }
+
+
+        // =====================================================
+        // COMPANY
+        // =====================================================
+
+        if (company && rowCompany !== company) {
             return false;
         }
-    }
 
 
-    // =====================================================
-    // COMPANY
-    // =====================================================
+        // =====================================================
+        // DEPARTMENT
+        // =====================================================
 
-    if (company && rowCompany !== company) {
-        return false;
-    }
-
-
-    // =====================================================
-    // DEPARTMENT
-    // =====================================================
-
-    if (department && rowDepartment !== department) {
-        return false;
-    }
+        if (department && rowDepartment !== department) {
+            return false;
+        }
 
 
-    // =====================================================
-    // URGENCY
-    // =====================================================
+        // =====================================================
+        // URGENCY
+        // =====================================================
 
-    if (urgency && rowPriority !== urgency) {
-        return false;
-    }
-
-
-    // =====================================================
-    // STATUS
-    // =====================================================
-
-    if (status && rowStatus !== status) {
-        return false;
-    }
+        if (urgency && rowPriority !== urgency) {
+            return false;
+        }
 
 
-    // =====================================================
-    // DATE CREATED
-    // =====================================================
+        // =====================================================
+        // STATUS
+        // =====================================================
 
-    // Convert:
-    // 2026-09-30 14:25:00
-    //
-    // into:
-    // 2026-09-30
-
-    const rowDate =
-        rowDateCreated.substring(0, 10);
+        if (status && rowStatus !== status) {
+            return false;
+        }
 
 
-    // =====================================================
-    // DATE FROM
-    // =====================================================
+        // =====================================================
+        // DATE CREATED
+        // =====================================================
 
-    if (dateFrom && rowDate < dateFrom) {
-        return false;
-    }
+        // Convert:
+        // 2026-09-30 14:25:00
+        //
+        // into:
+        // 2026-09-30
 
-
-    // =====================================================
-    // DATE TO
-    // =====================================================
-
-    if (dateTo && rowDate > dateTo) {
-        return false;
-    }
+        const rowDate =
+            rowDateCreated.substring(0, 10);
 
 
-    // =====================================================
-    // PASSED ALL FILTERS
-    // =====================================================
+        // =====================================================
+        // DATE FROM
+        // =====================================================
 
-    return true;
+        if (dateFrom && rowDate < dateFrom) {
+            return false;
+        }
+
+
+        // =====================================================
+        // DATE TO
+        // =====================================================
+
+        if (dateTo && rowDate > dateTo) {
+            return false;
+        }
+
+
+        // =====================================================
+        // PASSED ALL FILTERS
+        // =====================================================
+
+        return true;
     });
-
 
 
     // =====================================================
@@ -1199,8 +1526,6 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
         .on('change', function () {
             table.draw();
         });
-
-
 
     // =====================================================
     // NON-PURCHASING STATUS FILTER
@@ -1252,40 +1577,47 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
         return rowStatus === selectedStatus;
     });
 
-
     // =====================================================
-    // PRINT
+    // OPEN BULK UPDATE MODAL
     // =====================================================
 
-    $('.btn-print').on('click', function (e) {
+    $('#bulkUpdateBtn').on('click', function () {
 
-        e.preventDefault();
-        e.stopPropagation();
+        const selectedCount =
+            $('#requestsTable tbody .request-checkbox:checked').length;
 
-        const status = ($(this).data('status') || '')
-            .toString()
-            .toLowerCase()
-            .trim();
+        if (selectedCount === 0) {
 
-        const lmr = $(this).data('lmr');
+            alert('Please select at least one request.');
 
-        if (status !== 'proceed request') {
-            alert('Printing is only available when the request status is "Proceed Request".');
             return;
         }
 
-        window.open(
-            '?page=ticket/includes/print_request&lmr_no=' +
-            encodeURIComponent(lmr),
-            '_blank'
-        );
+        $('#bulkSelectedCount').text(selectedCount);
+
+        $('#bulkUpdateMessage')
+            .addClass('d-none')
+            .removeClass('alert-success alert-danger')
+            .text('');
+
+        $('#bulkStatus').val('');
+        $('#bulkPriority').val('');
+        $('#bulkPurchaser').val('');
+        $('#bulkPO').val('');
+
+        const bulkModal =
+            new bootstrap.Modal(
+                document.getElementById('bulkUpdateModal')
+            );
+
+        bulkModal.show();
     });
 
-  
+
     // =====================================================
-// EXPORT PURCHASING REQUESTS TO CSV
-// Exports only the currently filtered/visible requests
-// =====================================================
+    // EXPORT PURCHASING REQUESTS TO CSV
+    // Exports only the currently filtered/visible requests
+    // =====================================================
 
     function exportPurchasingCSV() {
 
@@ -1739,22 +2071,22 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
                 .trim();
 
 
-    const currentPriority =
-        ($('#modalPriority').val() || '')
-            .toString()
-            .toLowerCase()
-            .trim();
+        const currentPriority =
+            ($('#modalPriority').val() || '')
+                .toString()
+                .toLowerCase()
+                .trim();
 
-    const hasChanges =
-        currentStatus !== originalStatus ||
-        currentPurchaser !== originalPurchaserId ||
-        currentPriority !== originalPriority;
+        const hasChanges =
+            currentStatus !== originalStatus ||
+            currentPurchaser !== originalPurchaserId ||
+            currentPriority !== originalPriority;
 
 
-        $('#saveRequestChanges').prop(
-            'disabled',
-            !hasChanges
-        );
+            $('#saveRequestChanges').prop(
+                'disabled',
+                !hasChanges
+            );
 
     }
 
@@ -1765,51 +2097,51 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
 
     $('#modalStatus').on('change', function () {
         checkForChanges();
-    });
+        });
 
 
-    // =====================================================
-    // PURCHASER CHANGE
-    // =====================================================
+        // =====================================================
+        // PURCHASER CHANGE
+        // =====================================================
 
-    $('#modalPurchaser').on('change', function () {
-        checkForChanges();
-    });
+        $('#modalPurchaser').on('change', function () {
+            checkForChanges();
+        });
 
-    $('#modalPriority').on('change', function () {
-        checkForChanges();
-    });
-    // =====================================================
-    // ASSIGN TO ME
-    // =====================================================
+        $('#modalPriority').on('change', function () {
+            checkForChanges();
+        });
+        // =====================================================
+        // ASSIGN TO ME
+        // =====================================================
 
-    $('#assignToMeBtn').on('click', function () {
+        $('#assignToMeBtn').on('click', function () {
 
-        $('#modalPurchaser').val(
-            String(currentUserId)
-        );
-
-        checkForChanges();
-
-    });
-
-
-    // =====================================================
-    // RESET SAVE BUTTON
-    // =====================================================
-
-    function resetSaveButton() {
-
-        $('#saveRequestChanges')
-            .prop('disabled', true)
-            .html(
-                '<i class="fas fa-save me-1"></i> Save Changes'
+            $('#modalPurchaser').val(
+                String(currentUserId)
             );
 
-        $('#modalSaveMessage')
-            .addClass('d-none')
-            .removeClass('alert-success alert-danger')
-            .text('');
+            checkForChanges();
+
+        });
+
+
+        // =====================================================
+        // RESET SAVE BUTTON
+        // =====================================================
+
+        function resetSaveButton() {
+
+            $('#saveRequestChanges')
+                .prop('disabled', true)
+                .html(
+                    '<i class="fas fa-save me-1"></i> Save Changes'
+                );
+
+            $('#modalSaveMessage')
+                .addClass('d-none')
+                .removeClass('alert-success alert-danger')
+                .text('');
     }
 
 
@@ -1819,201 +2151,237 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
 
     $('#saveRequestChanges').on('click', function () {
 
-        const button = $(this);
+            const button = $(this);
 
-        const requestId =
-            $('#modalRequestId').val();
+            const requestId =
+                $('#modalRequestId').val();
 
-        const status =
-            $('#modalStatus').val();
+            const status =
+                $('#modalStatus').val();
 
-        const purchaserId =
-            $('#modalPurchaser').val();
+            const purchaserId =
+                $('#modalPurchaser').val();
 
-        const priority =
-            $('#modalPriority').val();
-
-
-        if (!requestId) {
-            return;
-        }
+            const priority =
+                $('#modalPriority').val();
 
 
-        // Prevent duplicate requests
-        button.prop('disabled', true);
-
-        button.html(
-            '<span class="spinner-border spinner-border-sm me-1"></span>' +
-            'Saving...'
-        );
+            if (!requestId) {
+                return;
+            }
 
 
-    $.ajax({
-    url: 'ticket/includes/assign_request.php',
-    type: 'POST',
-    dataType: 'json',
+            // Prevent duplicate requests
+            button.prop('disabled', true);
 
-        data: {
-            request_id: requestId,
-            status: status,
-            purchaser_id: purchaserId,
-            priority: priority
-        },
-
-    success: function (response) {
-
-        if (response.success) {
-
-            originalStatus = status;
-            originalPurchaserId = purchaserId;
-            originalPriority = priority;
-
-            const row =
-                $('#requestsTable tbody tr[data-request-id="' +
-                requestId +
-                '"]');
-
-            row.attr('data-status', status);
-            row.attr('data-purchaser-id', purchaserId);
-
-            row.data('status', status);
-            row.data('purchaser-id', purchaserId);
-
-            row.attr('data-priority', priority);
-            row.data('priority', priority);
-
-            const priorityClass = {
-                urgent: 'priority-urgent',
-                high: 'priority-high',
-                medium: 'priority-medium'
-            };
-
-            row.find('td').eq(9).html(
-                `<span class="priority-badge ${priorityClass[priority] || 'priority-default'}">
-                    ${priority.charAt(0).toUpperCase() + priority.slice(1)}
-                </span>`
-            );
-            
-            const statusBadge =
-                row.find('td').eq(10).find('.badge');
-
-            statusBadge.removeClass(
-                'badge-proceed badge-checking badge-pending badge-closed badge-canceled'
+            button.html(
+                '<span class="spinner-border spinner-border-sm me-1"></span>' +
+                'Saving...'
             );
 
-            let statusClass = 'badge-pending';
+            $.ajax({
+                url: 'ticket/includes/assign_request.php',
+                type: 'POST',
+                dataType: 'json',
 
-            if (status === 'checking requirements' ||
-                status === 'canvassing') {
-                statusClass = 'badge-checking';
-            }
-            else if (status === 'negotiation' ||
-                    status === 'under discussion') {
-                statusClass = 'badge-negotiation';
-            }
-            else if (status === 'draft') {
-                statusClass = 'badge-draft';
-            }
-            else if (status === 'final') {
-                statusClass = 'badge-proceed';
-            }
-            else if (status === 'end' || status === 'closed') {
-                statusClass = 'badge-closed';
-            }
+                    data: {
+                        request_id: requestId,
+                        status: status,
+                        purchaser_id: purchaserId,
+                        priority: priority
+                    },
 
-            statusBadge
-                .addClass(statusClass)
-                .text(formatStatus(status));
+                success: function (response) {
 
-            if (response.purchaser_name) {
+                    if (response.success) {
 
-                row.attr(
-                    'data-purchaser-name',
-                    response.purchaser_name
-                );
+                        originalStatus = status;
+                        originalPurchaserId = purchaserId;
+                        originalPriority = priority;
 
-                row.data(
-                    'purchaser-name',
-                    response.purchaser_name
-                );
+                        const row =
+                            $('#requestsTable tbody tr[data-request-id="' +
+                            requestId +
+                            '"]');
 
-                row.find('td').eq(8).text(
-                    response.purchaser_name
-                );
-            }
+                        row.attr('data-status', status);
+                        row.attr('data-purchaser-id', purchaserId);
 
-            $('#modalSaveMessage')
-                .removeClass('d-none alert-danger')
-                .addClass('alert-success')
-                .text(
-                    response.message ||
-                    'Request updated successfully.'
-                );
+                        row.data('status', status);
+                        row.data('purchaser-id', purchaserId);
 
-            button
-                .prop('disabled', true)
-                .html(
-                    '<i class="fas fa-check me-1"></i> Saved'
-                );
+                        row.attr('data-priority', priority);
+                        row.data('priority', priority);
 
-           // Reload the page so the table gets fresh DB data
-            // setTimeout(function () {
-            //     window.location.reload();
-            // }, 500);
+                        const priorityClass = {
+                            urgent: 'priority-urgent',
+                            high: 'priority-high',
+                            medium: 'priority-medium'
+                        };
 
-            table.draw(false);
+                        row.find('td').eq(10).html(
+                            `<span class="priority-badge ${priorityClass[priority] || 'priority-default'}">
+                                ${priority.charAt(0).toUpperCase() + priority.slice(1)}
+                            </span>`
+                        );
+                        
+                        const statusBadge =
+                            row.find('td').eq(11).find('.badge');
 
-            setTimeout(function () {
-                button.html(
-                    '<i class="fas fa-save me-1"></i> Save Changes'
-                );
-            }, 1500);
+                        statusBadge.removeClass(
+                            'badge-proceed badge-checking badge-pending badge-closed badge-canceled'
+                        );
 
-        } else {
+                        let statusClass = 'badge-pending';
 
-            showSaveError(
-                response.message ||
-                'Unable to update request.'
-            );
-        }
-    },
+                        if (status === 'checking requirements' ||
+                            status === 'canvassing') {
+                            statusClass = 'badge-checking';
+                        }
+                        else if (status === 'negotiation' ||
+                                status === 'under discussion') {
+                            statusClass = 'badge-negotiation';
+                        }
+                        else if (status === 'draft') {
+                            statusClass = 'badge-draft';
+                        }
+                        else if (status === 'final') {
+                            statusClass = 'badge-proceed';
+                        }
+                        else if (status === 'end' || status === 'closed') {
+                            statusClass = 'badge-closed';
+                        }
 
-    error: function (xhr) {
+                        statusBadge
+                            .addClass(statusClass)
+                            .text(formatStatus(status));
 
-        console.error('HTTP Status:', xhr.status);
-        console.error('Response:', xhr.responseText);
+                        if (response.purchaser_name) {
 
-        showSaveError(
-            'Server error (' +
-            xhr.status +
-            '): ' +
-            xhr.responseText
-        );
-    }
+                            row.attr(
+                                'data-purchaser-name',
+                                response.purchaser_name
+                            );
+
+                            row.data(
+                                'purchaser-name',
+                                response.purchaser_name
+                            );
+
+                            row.find('td').eq(9).text(
+                                response.purchaser_name
+                            );
+                        }
+
+                        $('#modalSaveMessage')
+                            .removeClass('d-none alert-danger')
+                            .addClass('alert-success')
+                            .text(
+                                response.message ||
+                                'Request updated successfully.'
+                            );
+
+                        button
+                            .prop('disabled', true)
+                            .html(
+                                '<i class="fas fa-check me-1"></i> Saved'
+                            );
+
+                    // Reload the page so the table gets fresh DB data
+                        // setTimeout(function () {
+                        //     window.location.reload();
+                        // }, 500);
+
+                        table.draw(false);
+
+                        setTimeout(function () {
+                            button.html(
+                                '<i class="fas fa-save me-1"></i> Save Changes'
+                            );
+                            }, 1500);
+
+                        } else {
+
+                            showSaveError(
+                                response.message ||
+                                'Unable to update request.'
+                            );
+                        }
+                    },
+
+                    error: function (xhr) {
+
+                        console.error('HTTP Status:', xhr.status);
+                        console.error('Response:', xhr.responseText);
+
+                        showSaveError(
+                            'Server error (' +
+                            xhr.status +
+                            '): ' +
+                            xhr.responseText
+                        );
+                    }
+                    });
+
+                    });
+
+
+                        // =====================================================
+                        // ERROR
+                        // =====================================================
+
+                    function showSaveError(message) {
+
+                        $('#modalSaveMessage')
+                            .removeClass('d-none alert-success')
+                            .addClass('alert-danger')
+                            .text(message);
+
+                        $('#saveRequestChanges')
+                            .prop('disabled', false)
+                            .html(
+                                '<i class="fas fa-save me-1"></i> Save Changes'
+                            );
+
+                    }
+
+
+                    // =====================================================
+                    // PRINT
+                    // =====================================================
+
+                    $('.btn-print').on('click', function (e) {
+
+                        e.preventDefault();
+                        e.stopPropagation();
+
+                        const status =
+                            ($(this).data('status') || '')
+                                .toString()
+                                .toLowerCase()
+                                .trim();
+
+                        const lmr =
+                            $(this).data('lmr');
+
+
+                        if (status !== 'final') {
+
+                            alert(
+                                'Printing is only available when the request status is "Proceed Request".'
+                            );
+
+                            return;
+                        }
+
+
+                        window.open(
+                            '?page=ticket/includes/print_request&lmr_no=' +
+                            encodeURIComponent(lmr),
+                            '_blank'
+                        );
+
     });
-
-    });
-
-
-    // =====================================================
-    // ERROR
-    // =====================================================
-
-    function showSaveError(message) {
-
-        $('#modalSaveMessage')
-            .removeClass('d-none alert-success')
-            .addClass('alert-danger')
-            .text(message);
-
-        $('#saveRequestChanges')
-            .prop('disabled', false)
-            .html(
-                '<i class="fas fa-save me-1"></i> Save Changes'
-            );
-
-    }
-
 
     // =====================================================
     // PRINT
@@ -2024,35 +2392,383 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
         e.preventDefault();
         e.stopPropagation();
 
-        const status =
-            ($(this).data('status') || '')
-                .toString()
-                .toLowerCase()
-                .trim();
+        const status = ($(this).data('status') || '')
+            .toString()
+            .toLowerCase()
+            .trim();
 
-        const lmr =
-            $(this).data('lmr');
+        const lmr = $(this).data('lmr');
 
-
-        if (status !== 'final') {
-
-            alert(
-                'Printing is only available when the request status is "Proceed Request".'
-            );
-
+        if (status !== 'proceed request') {
+            alert('Printing is only available when the request status is "Proceed Request".');
             return;
         }
-
 
         window.open(
             '?page=ticket/includes/print_request&lmr_no=' +
             encodeURIComponent(lmr),
             '_blank'
         );
+    });
+    
+    // =====================================================
+    // CONFIRM BULK UPDATE
+    // =====================================================
+
+    $('#confirmBulkUpdate').on('click', function () {
+
+        const button = $(this);
+
+        const selectedIds = [];
+
+        $('#requestsTable tbody .request-checkbox:checked').each(function () {
+
+            selectedIds.push(
+                parseInt($(this).val(), 10)
+            );
+
+        });
+
+        if (selectedIds.length === 0) {
+
+            alert('Please select at least one request.');
+
+            return;
+        }
+
+        const status = $('#bulkStatus').val() || '';
+        const priority = $('#bulkPriority').val() || '';
+        const purchaserId = $('#bulkPurchaser').val() || '';
+        const poNumber = $('#bulkPO').val().trim();
+
+        if (
+            status === '' &&
+            priority === '' &&
+            purchaserId === '' &&
+            poNumber === ''
+        ) {
+
+            alert(
+                'Please select or enter at least one field to update.'
+            );
+
+            return;
+        }
+
+        if (!confirm(
+            'Are you sure you want to update ' +
+            selectedIds.length +
+            ' selected request(s)?'
+        )) {
+
+            return;
+        }
+
+        console.log('========== BULK UPDATE ==========');
+        console.log('Selected IDs:', selectedIds);
+        console.log('Status:', status);
+        console.log('Priority:', priority);
+        console.log('Purchaser:', purchaserId);
+        console.log('PO:', poNumber);
+
+        button.prop('disabled', true);
+
+        button.html(
+            '<span class="spinner-border spinner-border-sm me-1"></span>' +
+            'Updating...'
+        );
+
+        $.ajax({
+
+            url: '?ajax=ticket/includes/bulk_update_requests',
+
+            type: 'POST',
+
+            dataType: 'json',
+
+            data: {
+                request_ids: selectedIds,
+                status: status,
+                priority: priority,
+                purchaser_id: purchaserId,
+                po_no: poNumber
+            },
+
+            success: function (response) {
+
+                console.log('Bulk response:', response);
+
+                if (response.success) {
+
+                    $('#bulkUpdateMessage')
+                        .removeClass('d-none alert-danger')
+                        .addClass('alert-success')
+                        .text(
+                            response.message ||
+                            'Requests updated successfully.'
+                        );
+
+                    selectedIds.forEach(function (requestId) {
+
+                        const row = $(
+                            '#requestsTable tbody tr[data-request-id="' +
+                            requestId +
+                            '"]'
+                        );
+
+                        if (!row.length) {
+                            return;
+                        }
+
+
+                        // =====================================
+                        // STATUS
+                        // =====================================
+
+                        if (status !== '') {
+
+                            row.attr('data-status', status);
+                            row.data('status', status);
+
+                            const statusBadge =
+                                row.find('td').eq(11).find('.badge');
+
+                            statusBadge.removeClass(
+                                'badge-proceed ' +
+                                'badge-checking ' +
+                                'badge-negotiation ' +
+                                'badge-draft ' +
+                                'badge-pending ' +
+                                'badge-closed ' +
+                                'badge-canceled'
+                            );
+
+                            let statusClass = 'badge-pending';
+
+                            if (
+                                status === 'checking requirements' ||
+                                status === 'canvassing'
+                            ) {
+
+                                statusClass = 'badge-checking';
+
+                            } else if (
+                                status === 'negotiation' ||
+                                status === 'under discussion'
+                            ) {
+
+                                statusClass = 'badge-negotiation';
+
+                            } else if (status === 'draft') {
+
+                                statusClass = 'badge-draft';
+
+                            } else if (status === 'final') {
+
+                                statusClass = 'badge-proceed';
+
+                            } else if (
+                                status === 'end' ||
+                                status === 'closed'
+                            ) {
+
+                                statusClass = 'badge-closed';
+                            }
+
+                            statusBadge
+                                .addClass(statusClass)
+                                .text(formatStatus(status));
+                        }
+
+
+                        // =====================================
+                        // PRIORITY
+                        // =====================================
+
+                        if (priority !== '') {
+
+                            row.attr(
+                                'data-priority',
+                                priority
+                            );
+
+                            row.data(
+                                'priority',
+                                priority
+                            );
+
+                            const priorityClass = {
+
+                                urgent: 'priority-urgent',
+                                high: 'priority-high',
+                                medium: 'priority-medium'
+
+                            };
+
+                            row.find('td').eq(10).html(
+
+                                `<span class="priority-badge ${
+                                    priorityClass[priority] ||
+                                    'priority-default'
+                                }">
+                                    ${
+                                        priority.charAt(0).toUpperCase() +
+                                        priority.slice(1)
+                                    }
+                                </span>`
+
+                            );
+                        }
+
+
+                        // =====================================
+                        // PURCHASER
+                        // =====================================
+
+                        if (purchaserId !== '') {
+
+                            row.attr(
+                                'data-purchaser-id',
+                                purchaserId
+                            );
+
+                            row.data(
+                                'purchaser-id',
+                                purchaserId
+                            );
+
+                            let purchaserName = 'Unassigned';
+
+                            if (purchaserId !== '1') {
+
+                                purchaserName =
+                                    $('#bulkPurchaser option:selected')
+                                    .text()
+                                    .trim();
+                            }
+
+                            row.attr(
+                                'data-purchaser-name',
+                                purchaserName
+                            );
+
+                            row.data(
+                                'purchaser-name',
+                                purchaserName
+                            );
+
+                            row.find('td').eq(9).text(
+                                purchaserName
+                            );
+                        }
+
+
+                        // =====================================
+                        // PO NUMBER
+                        // =====================================
+
+                        if (poNumber !== '') {
+
+                            row.attr(
+                                'data-po',
+                                poNumber
+                            );
+
+                            row.data(
+                                'po',
+                                poNumber
+                            );
+
+                            row.find('td').eq(3).text(
+                                poNumber
+                            );
+                        }
+
+
+                        // =====================================
+                        // UNCHECK
+                        // =====================================
+
+                        row.find('.request-checkbox')
+                            .prop('checked', false);
+
+                    });
+
+
+                    $('#selectAllRequests')
+                        .prop('checked', false)
+                        .prop('indeterminate', false);
+
+                    updateSelectedCount();
+
+                    table.draw(false);
+
+
+                    setTimeout(function () {
+
+                        const modalElement =
+                            document.getElementById(
+                                'bulkUpdateModal'
+                            );
+
+                        const modal =
+                            bootstrap.Modal.getInstance(
+                                modalElement
+                            );
+
+                        if (modal) {
+                            modal.hide();
+                        }
+
+                    }, 1000);
+
+
+                } else {
+
+                    $('#bulkUpdateMessage')
+                        .removeClass('d-none alert-success')
+                        .addClass('alert-danger')
+                        .text(
+                            response.message ||
+                            'Unable to update requests.'
+                        );
+                }
+            },
+
+            error: function (xhr, status, error) {
+
+                console.error('========== BULK ERROR ==========');
+                console.error('HTTP Status:', xhr.status);
+                console.error('AJAX Status:', status);
+                console.error('Error:', error);
+                console.error('Response:', xhr.responseText);
+
+                $('#bulkUpdateMessage')
+                    .removeClass('d-none alert-success')
+                    .addClass('alert-danger')
+                    .text(
+                        'Server error (' +
+                        xhr.status +
+                        '). Check browser console.'
+                    );
+            },
+
+            complete: function () {
+
+                button.prop('disabled', false);
+
+                button.html(
+                    '<i class="fas fa-save me-1"></i>' +
+                    ' Update Selected'
+                );
+            }
+
+        });
 
     });
 
-});
+});                              
+  
 
 </script>
 
