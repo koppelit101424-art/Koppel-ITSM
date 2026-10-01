@@ -311,7 +311,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 if (!empty($_FILES['attachments']['name'][0])) {
 
-                    $uploadDir = __DIR__ . "/../../../uploads/purchasing/";
+                    $uploadDir = __DIR__ . "/../../uploads/purchasing/";
                     $dbDir = "uploads/purchasing/";
 
                     /*

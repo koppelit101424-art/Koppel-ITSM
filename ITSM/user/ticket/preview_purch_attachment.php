@@ -1,20 +1,34 @@
 <?php
 
-include 'includes/auth.php';
-include 'includes/db.php';
+/*
+|--------------------------------------------------------------------------
+| Standalone Attachment Preview
+|--------------------------------------------------------------------------
+| File location:
+| ITSM/user/ticket/preview_purch_attachment.php
+|
+| Attachment location:
+| ITSM/user/uploads/purchasing/
+|--------------------------------------------------------------------------
+*/
+
+require_once __DIR__ . '/../../includes/db.php';
+
+// ---------------------------------------------------------
+// GET ATTACHMENT ID
+// ---------------------------------------------------------
 
 $attachment_id = (int)($_GET['attachment_id'] ?? 0);
 
 if ($attachment_id <= 0) {
-    die('Invalid attachment.');
+    http_response_code(400);
+    exit('Invalid attachment ID.');
 }
 
 
-/*
-|--------------------------------------------------------------------------
-| GET ATTACHMENT
-|--------------------------------------------------------------------------
-*/
+// ---------------------------------------------------------
+// GET ATTACHMENT FROM DATABASE
+// ---------------------------------------------------------
 
 $stmt = $conn->prepare("
     SELECT
@@ -27,6 +41,11 @@ $stmt = $conn->prepare("
     LIMIT 1
 ");
 
+if (!$stmt) {
+    http_response_code(500);
+    exit('Database error.');
+}
+
 $stmt->bind_param("i", $attachment_id);
 $stmt->execute();
 
@@ -36,59 +55,79 @@ $attachment = $result->fetch_assoc();
 $stmt->close();
 
 if (!$attachment) {
-    die('Attachment not found.');
+    http_response_code(404);
+    exit('Attachment not found.');
 }
 
 
-/*
-|--------------------------------------------------------------------------
-| FILE INFORMATION
-|--------------------------------------------------------------------------
-*/
+// ---------------------------------------------------------
+// FILE INFORMATION
+// ---------------------------------------------------------
 
 $fileName = basename($attachment['file_name']);
 
-$filePath = $attachment['file_path'];
-
-
 /*
 |--------------------------------------------------------------------------
-| PREVENT DIRECTORY TRAVERSAL
+| Database file_path example:
+|
+| uploads/purchasing/lmr_abc123.png
+|
+| Current script:
+|
+| ITSM/user/ticket/preview_purch_attachment.php
+|
+| ../
+|   ↓
+| ITSM/user/
+|
+| Result:
+|
+| ITSM/user/uploads/purchasing/lmr_abc123.png
 |--------------------------------------------------------------------------
 */
 
-$filePath = str_replace('\\', '/', $filePath);
+$filePath = __DIR__ . '/../' . $attachment['file_path'];
 
-if (strpos($filePath, '..') !== false) {
-    die('Invalid file path.');
+
+// ---------------------------------------------------------
+// SECURITY CHECK
+// ---------------------------------------------------------
+
+$realFilePath = realpath($filePath);
+
+$uploadBasePath = realpath(
+    __DIR__ . '/../uploads/purchasing'
+);
+
+if (
+    $realFilePath === false ||
+    $uploadBasePath === false ||
+    strpos(
+        $realFilePath,
+        $uploadBasePath . DIRECTORY_SEPARATOR
+    ) !== 0
+) {
+    http_response_code(404);
+    exit('File not found.');
 }
 
 
-/*
-|--------------------------------------------------------------------------
-| SERVER FILE PATH
-|--------------------------------------------------------------------------
-*/
+// ---------------------------------------------------------
+// CHECK FILE
+// ---------------------------------------------------------
 
-$fullPath = __DIR__ . '/../../' . $filePath;
-
-
-/*
-|--------------------------------------------------------------------------
-| CHECK FILE
-|--------------------------------------------------------------------------
-*/
-
-if (!file_exists($fullPath) || !is_file($fullPath)) {
-    die('The attachment file could not be found on the server.');
+if (
+    !is_file($realFilePath) ||
+    !is_readable($realFilePath)
+) {
+    http_response_code(404);
+    exit('File not found.');
 }
 
 
-/*
-|--------------------------------------------------------------------------
-| MIME TYPE
-|--------------------------------------------------------------------------
-*/
+// ---------------------------------------------------------
+// MIME TYPE
+// ---------------------------------------------------------
 
 $extension = strtolower(
     pathinfo($fileName, PATHINFO_EXTENSION)
@@ -104,58 +143,53 @@ $mimeTypes = [
 
     'doc'  => 'application/msword',
 
-    'docx' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    'docx' =>
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+
 ];
 
-$mimeType = $mimeTypes[$extension]
+$contentType =
+    $mimeTypes[$extension]
     ?? 'application/octet-stream';
 
 
-/*
-|--------------------------------------------------------------------------
-| DOWNLOAD DOC/DOCX
-|
-| Browser cannot reliably preview old DOC / DOCX directly.
-| Images and PDF are displayed inline.
-|--------------------------------------------------------------------------
-*/
+// ---------------------------------------------------------
+// CLEAR OUTPUT BUFFERS
+// ---------------------------------------------------------
 
-if ($extension === 'doc' || $extension === 'docx') {
-
-    header('Content-Type: ' . $mimeType);
-
-    header(
-        'Content-Disposition: attachment; filename="' .
-        str_replace('"', '', $fileName) .
-        '"'
-    );
-
-    header('Content-Length: ' . filesize($fullPath));
-
-    readfile($fullPath);
-
-    exit;
+while (ob_get_level() > 0) {
+    ob_end_clean();
 }
 
 
-/*
-|--------------------------------------------------------------------------
-| DISPLAY IMAGE / PDF INLINE
-|--------------------------------------------------------------------------
-*/
+// ---------------------------------------------------------
+// SEND HEADERS
+// ---------------------------------------------------------
 
-header('Content-Type: ' . $mimeType);
+header('Content-Type: ' . $contentType);
 
 header(
     'Content-Disposition: inline; filename="' .
-    str_replace('"', '', $fileName) .
+    addslashes($fileName) .
     '"'
 );
 
-header('Content-Length: ' . filesize($fullPath));
+header(
+    'Content-Length: ' .
+    filesize($realFilePath)
+);
 
-header('X-Content-Type-Options: nosniff');
+header(
+    'Cache-Control: private, max-age=0, must-revalidate'
+);
 
-readfile($fullPath);
+header('Pragma: public');
+
+
+// ---------------------------------------------------------
+// OUTPUT FILE
+// ---------------------------------------------------------
+
+readfile($realFilePath);
 
 exit;

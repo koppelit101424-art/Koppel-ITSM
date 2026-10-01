@@ -819,12 +819,12 @@ if (!empty($requestIds)) {
                                     ?>
 
                                     <div class="col-md-6 mb-2">
-
-                                        <a
-                                            href="?page=ticket/preview_purch_attachment&attachment_id=<?= (int)$attachment['attachment_id'] ?>"
-                                            class="text-decoration-none"
-                                        >
-
+                                            <a
+                                                href="ticket/preview_purch_attachment.php?attachment_id=<?= (int)$attachment['attachment_id'] ?>"
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                class="text-decoration-none"
+                                            >
                                             <div class="card attachment-card">
 
                                                 <div class="card-body py-2">
