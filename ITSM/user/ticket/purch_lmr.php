@@ -2480,7 +2480,7 @@ $(document).ready(function () {
 
         $.ajax({
 
-            url: '?ajax=ticket/includes/bulk_update_requests',
+            url: 'ticket/includes/bulk_update_requests.php',
 
             type: 'POST',
 
@@ -2735,23 +2735,33 @@ $(document).ready(function () {
                 }
             },
 
-            error: function (xhr, status, error) {
+                error: function (xhr, status, error) {
 
-                console.error('========== BULK ERROR ==========');
-                console.error('HTTP Status:', xhr.status);
-                console.error('AJAX Status:', status);
-                console.error('Error:', error);
-                console.error('Response:', xhr.responseText);
+                    console.error('========== BULK UPDATE ERROR ==========');
+                    console.error('HTTP Status:', xhr.status);
+                    console.error('AJAX Status:', status);
+                    console.error('Error:', error);
+                    console.error('Response Text:', xhr.responseText);
 
-                $('#bulkUpdateMessage')
-                    .removeClass('d-none alert-success')
-                    .addClass('alert-danger')
-                    .text(
-                        'Server error (' +
-                        xhr.status +
-                        '). Check browser console.'
+                    console.error(
+                        'Response JSON parse test:',
+                        function () {
+                            try {
+                                return JSON.parse(xhr.responseText);
+                            } catch (e) {
+                                return 'INVALID JSON: ' + e.message;
+                            }
+                        }()
                     );
-            },
+
+                    $('#bulkUpdateMessage')
+                        .removeClass('d-none alert-success')
+                        .addClass('alert-danger')
+                        .html(
+                            '<strong>Server response:</strong><br>' +
+                            $('<div>').text(xhr.responseText).html()
+                        );
+                },
 
             complete: function () {
 

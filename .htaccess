@@ -4,9 +4,10 @@ Options -Indexes
 RewriteEngine On
 
 # =========================================================
-# ALLOW ONLY THIS SPECIFIC FILE
+# ALLOW AJAX ENDPOINTS
 # =========================================================
 RewriteRule ^user/ticket/includes/assign_request\.php$ - [L]
+RewriteRule ^user/ticket/includes/bulk_update_requests\.php$ - [L]
 
 # =========================================================
 # BLOCK SENSITIVE DIRECTORIES
@@ -14,9 +15,9 @@ RewriteRule ^user/ticket/includes/assign_request\.php$ - [L]
 RewriteRule ^(?:config|includes|database|core|auth)(?:/|$) - [F,L]
 
 # =========================================================
-# BLOCK user/ticket/includes EXCEPT assign_request.php
+# BLOCK user/ticket/includes EXCEPT ALLOWED FILES
 # =========================================================
-RewriteRule ^user/ticket/includes/(?!assign_request\.php$).* - [F,L]
+RewriteRule ^user/ticket/includes/(?!assign_request\.php$|bulk_update_requests\.php$).* - [F,L]
 
 # =========================================================
 # CUSTOM ERROR PAGES
