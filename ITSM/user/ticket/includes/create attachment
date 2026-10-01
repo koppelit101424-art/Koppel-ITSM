@@ -13,3 +13,28 @@ CREATE TABLE purch_request_attachments (
         ON DELETE CASCADE
         ON UPDATE CASCADE
 );
+
+INSERT INTO `purch_request_attachments` (`attachment_id`, `request_id`, `file_name`, `file_path`, `date_uploaded`) VALUES
+(1, 299, '1772779072_0.png', 'uploads/purchasing/lmr_6abe53c9932794.10823792_0.png', '2026-10-01 20:36:25'),
+(2, 299, '1772779072_1 - Copy.jpeg', 'uploads/purchasing/lmr_6abe53c9937af9.06726966_1.jpeg', '2026-10-01 20:36:25'),
+(3, 299, '1772779072_2.jpeg', 'uploads/purchasing/lmr_6abe53c993bdd3.01304048_2.jpeg', '2026-10-01 20:36:25'),
+(4, 299, '1772779262_0 - Copy.png', 'uploads/purchasing/lmr_6abe53c9a55902.99251623_3.png', '2026-10-01 20:36:25'),
+(5, 299, '1772779262_0.png', 'uploads/purchasing/lmr_6abe53c9a5db99.18104112_4.png', '2026-10-01 20:36:25'),
+(6, 299, '1772787182_0 - Copy.jpeg', 'uploads/purchasing/lmr_6abe53c9a65973.65904549_5.jpeg', '2026-10-01 20:36:25'),
+(7, 299, '1772787182_0.jpeg', 'uploads/purchasing/lmr_6abe53c9a6b5a7.90169558_6.jpeg', '2026-10-01 20:36:25'),
+(8, 299, '1772787182_1.jpeg', 'uploads/purchasing/lmr_6abe53c9a70d30.78285801_7.jpeg', '2026-10-01 20:36:25'),
+(9, 299, '1772787182_2.jpeg', 'uploads/purchasing/lmr_6abe53c9a75203.46128220_8.jpeg', '2026-10-01 20:36:25'),
+(10, 299, '1772787807_0.pdf', 'uploads/purchasing/lmr_6abe53c9a79609.03497690_9.pdf', '2026-10-01 20:36:25'),
+(11, 301, '1772779072_0.png', 'uploads/purchasing/lmr_6abe566e1f8f74.73428235_0.png', '2026-10-01 20:47:42'),
+(12, 301, '1772787807_0.pdf', 'uploads/purchasing/lmr_6abe566e1fd111.90739288_1.pdf', '2026-10-01 20:47:42'),
+(13, 301, '1774338986_0.jpeg', 'uploads/purchasing/lmr_6abe566e2011c2.51676390_2.jpeg', '2026-10-01 20:47:42'),
+(14, 301, '1774498871_0.png', 'uploads/purchasing/lmr_6abe566e2057d2.80856349_3.png', '2026-10-01 20:47:42'),
+(15, 301, '1774500335_0.jpg', 'uploads/purchasing/lmr_6abe566e3bb2e9.88063127_4.jpg', '2026-10-01 20:47:42'),
+(16, 303, '1772779072_0.png', 'uploads/purchasing/lmr_6abe610feac3e5.67122625_0.png', '2026-10-01 21:33:03'),
+(17, 303, '1772779072_1.jpeg', 'uploads/purchasing/lmr_6abe61100b79a3.32723165_1.jpeg', '2026-10-01 21:33:04'),
+(18, 303, '1772787182_1.jpeg', 'uploads/purchasing/lmr_6abe6110102271.78059153_2.jpeg', '2026-10-01 21:33:04'),
+(19, 303, '1772787807_0.pdf', 'uploads/purchasing/lmr_6abe611010b9c9.15890108_3.pdf', '2026-10-01 21:33:04'),
+(20, 303, '1774498871_0.png', 'uploads/purchasing/lmr_6abe611010fbe3.36457817_4.png', '2026-10-01 21:33:04'),
+(21, 303, '1775117985_0.png', 'uploads/purchasing/lmr_6abe6110113eb4.16720440_5.png', '2026-10-01 21:33:04'),
+(22, 305, 'Create new user account.docx', 'uploads/purchasing/lmr_6abe6422355650.04764954_0.docx', '2026-10-01 21:46:10'),
+(23, 305, 'UPDATE CONTACT IN THUNDERBIRD.docx', 'uploads/purchasing/lmr_6abe6422359c45.78703447_1.docx', '2026-10-01 21:46:10');
