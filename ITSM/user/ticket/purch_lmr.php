@@ -1014,7 +1014,7 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
 
             <div class="modal-content">
 
-                <div class="modal-header bg-primary text-white">
+                <div class="modal-header bg-gradient-primary text-white">
 
                     <div>
                         <h5 class="modal-title" id="bulkUpdateModalLabel">
