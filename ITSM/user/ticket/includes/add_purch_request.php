@@ -17,50 +17,61 @@ include 'includes/db.php';
     $result = $userQuery->get_result();
     $user = $result->fetch_assoc();
 
-$lastLMR = $conn->query("
-    SELECT MAX(CAST(SUBSTRING(lmr_no, 4) AS UNSIGNED)) as max_id 
-    FROM request_tb
-    WHERE lmr_no LIKE 'PURCH-%'
-");
+// ==========================================
+// GENERATE LMR NUMBER
+// Format: DEPT-YYMM-00001
+// Example: MKTG-2610-00001
+// ==========================================
 
-$newLMR = 'PURCH-000001';
+    // Department prefixes
+    $departmentPrefixes = [
+        'Marketing'       => 'MKTG',
+        'Sales'           => 'SALES',
+        'PDED'            => 'PDED',
+        'PDED OEM'        => 'OEM',
+        'PDED DESIGN'     => 'DESIGN',
+        'Purchasing'      => 'PURCH',
+        'Accounting'      => 'ACTG',
+        'Information Technology'              => 'IT',
+        'Human Resource'  => 'HR',
+        'HR'              => 'HR',
+        'Logistics'       => 'LOGI',
+    ];
 
-// Determine LMR prefix based on department
-$departmentPrefixes = [
-    'Production' => 'PR0D',
-    'Sales'      => 'SLS',
-    'Marketing'  => 'MKTG',
-    'Service'    => 'SRVC',
-    'VRF'    => 'VRF',
-    'Human Resource'    => 'HR',
-    'PDED 0EM'    => '0EM',
-    'PDED DESIGN'    => 'PDED'
-];
+    // Get department from logged-in user
+    $department = trim($user['department'] ?? '');
 
-// Get department from logged-in user
-$department = $user['department'] ?? '';
+    // Get department prefix
+    $prefix = $departmentPrefixes[$department] ?? 'PURCH';
 
-$prefix = $departmentPrefixes[$department] ?? 'PURCH';
+    // Current year and month
+    $yearMonth = date('ym');
 
-// Get the latest number for this department/prefix
-$lastLMR = $conn->prepare("
-    SELECT MAX(CAST(SUBSTRING(lmr_no, 5) AS UNSIGNED)) AS max_id
-    FROM purch_request_tb
-    WHERE lmr_no LIKE CONCAT(?, '-%')
-");
+    // Prefix for this month's LMR
+    $lmrPrefix = $prefix . '-' . $yearMonth;
 
-$lastLMR->bind_param("s", $prefix);
-$lastLMR->execute();
+    // Find the latest number for this department and month
+    $lastLMR = $conn->prepare("
+        SELECT MAX(
+            CAST(SUBSTRING_INDEX(lmr_no, '-', -1) AS UNSIGNED)
+        ) AS max_id
+        FROM purch_request_tb
+        WHERE lmr_no LIKE CONCAT(?, '-%')
+    ");
 
-$result = $lastLMR->get_result();
-$row = $result->fetch_assoc();
+    $lastLMR->bind_param("s", $lmrPrefix);
+    $lastLMR->execute();
 
-$num = ((int)($row['max_id'] ?? 0)) + 1;
+    $result = $lastLMR->get_result();
+    $row = $result->fetch_assoc();
 
-// Generate new LMR number
-$newLMR = $prefix . '-' . str_pad($num, 6, '0', STR_PAD_LEFT);
+    // Increment number
+    $num = ((int)($row['max_id'] ?? 0)) + 1;
 
-$lastLMR->close();
+    // Generate LMR
+    $newLMR = $lmrPrefix . '-' . str_pad($num, 5, '0', STR_PAD_LEFT);
+
+    $lastLMR->close();
 
 $success = $error = '';
 $errors = [];
@@ -348,9 +359,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <div class="row mb-4">
 <div class="col-md-4">
 <label class="form-label">LMR No *</label>
-<input type="text" class="form-control" name="lmr_no" 
-  
-placeholder="e.g. (MKTG-2609-00001)">
+<input type="text"
+       class="form-control"
+       name="lmr_no"
+       value="<?= htmlspecialchars($newLMR) ?>"
+       >
 </div>
 
 <div class="col-md-4">
