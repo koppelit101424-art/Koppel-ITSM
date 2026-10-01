@@ -323,9 +323,9 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
                 <label class="form-label">Urgency</label>
                 <select id="statusUrgencyFilter" class="form-select">
                     <option value="">All </option>
-                    <option value="Urgent">Urgent</option>
-                    <option value="High">High</option>
-                    <option value="Medium">Medium </option>
+                    <option value="urgent">Urgent</option>
+                    <option value="high">High</option>
+                    <option value="medium">Medium</option>
                 </select>
             </div>
             <!-- Status -->
@@ -1517,6 +1517,7 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
 
     let originalStatus = '';
     let originalPurchaserId = '';
+    let originalPriority = '';
 
 
     // =====================================================
@@ -1600,13 +1601,14 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
 
             originalStatus = status;
             originalPurchaserId = purchaserId;
+            originalPriority = (priority || '').toString().toLowerCase().trim();
 
             $('#modalStatus').val(status);
             $('#modalPurchaser').val(purchaserId);
             $('#modalPO').val(po);
-            $('#modalPriority').val(priority);
-            resetSaveButton();
+            $('#modalPriority').val(originalPriority);
 
+            resetSaveButton();
         } else {
 
             // =================================================
@@ -1693,9 +1695,16 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
                 .trim();
 
 
-        const hasChanges =
-            currentStatus !== originalStatus ||
-            currentPurchaser !== originalPurchaserId;
+    const currentPriority =
+        ($('#modalPriority').val() || '')
+            .toString()
+            .toLowerCase()
+            .trim();
+
+    const hasChanges =
+        currentStatus !== originalStatus ||
+        currentPurchaser !== originalPurchaserId ||
+        currentPriority !== originalPriority;
 
 
         $('#saveRequestChanges').prop(
@@ -1723,7 +1732,9 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
         checkForChanges();
     });
 
-
+    $('#modalPriority').on('change', function () {
+        checkForChanges();
+    });
     // =====================================================
     // ASSIGN TO ME
     // =====================================================
@@ -1775,6 +1786,9 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
         const purchaserId =
             $('#modalPurchaser').val();
 
+        const priority =
+            $('#modalPriority').val();
+
 
         if (!requestId) {
             return;
@@ -1795,11 +1809,12 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
     type: 'POST',
     dataType: 'json',
 
-    data: {
-        request_id: requestId,
-        status: status,
-        purchaser_id: purchaserId
-    },
+        data: {
+            request_id: requestId,
+            status: status,
+            purchaser_id: purchaserId,
+            priority: priority
+        },
 
     success: function (response) {
 
@@ -1807,6 +1822,7 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
 
             originalStatus = status;
             originalPurchaserId = purchaserId;
+            originalPriority = priority;
 
             const row =
                 $('#requestsTable tbody tr[data-request-id="' +
@@ -1819,6 +1835,11 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
             row.data('status', status);
             row.data('purchaser-id', purchaserId);
 
+            row.attr('data-priority', priority);
+            row.data('priority', priority);
+
+            row.find('td').eq(9).text(formatStatus(priority));
+            
             const statusBadge =
                 row.find('td').eq(10).find('.badge');
 

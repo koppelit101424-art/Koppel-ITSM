@@ -36,7 +36,7 @@ try {
     $purchaser_id = isset($_POST['purchaser_id'])
         ? (int) $_POST['purchaser_id']
         : 1;
-
+    $priority = strtolower(trim($_POST['priority'] ?? ''));
 
     // =====================================================
     // VALIDATE REQUEST ID
@@ -46,6 +46,19 @@ try {
         throw new Exception('Invalid request ID.');
     }
 
+    // =====================================================
+    // VALIDATE PRIORITY
+    // =====================================================
+
+    $allowed_priorities = [
+        'urgent',
+        'high',
+        'medium'
+    ];
+
+    if (!in_array($priority, $allowed_priorities, true)) {
+        throw new Exception('Invalid priority.');
+    }
 
     // =====================================================
     // VALIDATE STATUS
@@ -225,7 +238,8 @@ try {
         UPDATE purch_request_tb
         SET
             status = ?,
-            purchaser_id = ?
+            purchaser_id = ?,
+            priority = ?
         WHERE request_id = ?
     ");
 
@@ -237,9 +251,10 @@ try {
     }
 
     $update->bind_param(
-        "sii",
+        "sisi",
         $status,
         $purchaser_id,
+        $priority,
         $request_id
     );
 
@@ -316,6 +331,9 @@ try {
     $response['purchaser_id'] =
         $purchaser_id;
 
+    $response['priority'] =
+        $priority;
+        
     $response['purchaser_name'] =
         $purchaser_name;
 
