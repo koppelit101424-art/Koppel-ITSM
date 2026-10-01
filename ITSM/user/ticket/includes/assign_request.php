@@ -37,7 +37,7 @@ try {
         ? (int) $_POST['purchaser_id']
         : 1;
     $priority = strtolower(trim($_POST['priority'] ?? ''));
-
+    $po_no = trim($_POST['po_no'] ?? '');
     // =====================================================
     // VALIDATE REQUEST ID
     // =====================================================
@@ -239,7 +239,8 @@ try {
         SET
             status = ?,
             purchaser_id = ?,
-            priority = ?
+            priority = ?,
+            po_no = ?
         WHERE request_id = ?
     ");
 
@@ -251,10 +252,11 @@ try {
     }
 
     $update->bind_param(
-        "sisi",
+    "sissi",
         $status,
         $purchaser_id,
         $priority,
+        $po_no,
         $request_id
     );
 
@@ -333,10 +335,12 @@ try {
 
     $response['priority'] =
         $priority;
-        
+
+    $response['po_no'] =
+        $po_no;
+
     $response['purchaser_name'] =
         $purchaser_name;
-
 
 } catch (Throwable $e) {
 

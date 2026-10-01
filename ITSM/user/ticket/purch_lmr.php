@@ -464,7 +464,7 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
                             <th>ID</th>
                             <th>LMR No.</th>
                             <th>PO No.</th>
-                            <th>User</th>
+                            <th>Requester</th>
                             <th>Department</th>
                             <th>Item</th>
                             <th>Qty</th>
@@ -1038,7 +1038,6 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
                 <div class="modal-body">
 
                     <div class="alert alert-info">
-                        Only fields you select below will be updated.
                         Leave a field unchanged if you do not want to modify it.
                     </div>
 
@@ -1254,8 +1253,19 @@ $(document).ready(function () {
 
     function updateSelectedCount() {
 
-        const selectedCount =
-            $('#requestsTable tbody .request-checkbox:checked').length;
+        let selectedCount = 0;
+
+        table.rows().every(function () {
+
+            const row = $(this.node());
+
+            if (
+                row.find('.request-checkbox').prop('checked')
+            ) {
+                selectedCount++;
+            }
+
+        });
 
         $('#selectedCount').text(selectedCount);
         $('#bulkSelectedCount').text(selectedCount);
@@ -1272,18 +1282,16 @@ $(document).ready(function () {
     // =====================================================
 
     $('#requestsTable tbody').on(
-        'click',
+        'change',
         '.request-checkbox',
         function (e) {
 
             e.stopPropagation();
 
             updateSelectedCount();
-
             updateSelectAllState();
         }
     );
-
 
     // =====================================================
     // SELECT ALL CURRENTLY DISPLAYED/FILTERED ROWS
@@ -1894,6 +1902,7 @@ $(document).ready(function () {
     let originalStatus = '';
     let originalPurchaserId = '';
     let originalPriority = '';
+    let originalPO = '';
 
 
     // =====================================================
@@ -1978,10 +1987,11 @@ $(document).ready(function () {
             originalStatus = status;
             originalPurchaserId = purchaserId;
             originalPriority = (priority || '').toString().toLowerCase().trim();
+            originalPO = (po || '').toString().trim();
 
             $('#modalStatus').val(status);
             $('#modalPurchaser').val(purchaserId);
-            $('#modalPO').val(po);
+            $('#modalPO').val(originalPO);
             $('#modalPriority').val(originalPriority);
 
             resetSaveButton();
@@ -2077,10 +2087,16 @@ $(document).ready(function () {
                 .toLowerCase()
                 .trim();
 
+        const currentPO =
+            ($('#modalPO').val() || '')
+                .toString()
+                .trim();
+
         const hasChanges =
             currentStatus !== originalStatus ||
             currentPurchaser !== originalPurchaserId ||
-            currentPriority !== originalPriority;
+            currentPriority !== originalPriority ||
+            currentPO !== originalPO;
 
 
             $('#saveRequestChanges').prop(
@@ -2109,6 +2125,9 @@ $(document).ready(function () {
         });
 
         $('#modalPriority').on('change', function () {
+            checkForChanges();
+        });
+        $('#modalPO').on('input', function () {
             checkForChanges();
         });
         // =====================================================
@@ -2165,6 +2184,9 @@ $(document).ready(function () {
             const priority =
                 $('#modalPriority').val();
 
+            const poNumber =
+            $('#modalPO').val().trim();
+
 
             if (!requestId) {
                 return;
@@ -2184,12 +2206,13 @@ $(document).ready(function () {
                 type: 'POST',
                 dataType: 'json',
 
-                    data: {
-                        request_id: requestId,
-                        status: status,
-                        purchaser_id: purchaserId,
-                        priority: priority
-                    },
+                data: {
+                    request_id: requestId,
+                    status: status,
+                    purchaser_id: purchaserId,
+                    priority: priority,
+                    po_no: poNumber
+                },
 
                 success: function (response) {
 
@@ -2198,6 +2221,7 @@ $(document).ready(function () {
                         originalStatus = status;
                         originalPurchaserId = purchaserId;
                         originalPriority = priority;
+                        originalPO = poNumber;
 
                         const row =
                             $('#requestsTable tbody tr[data-request-id="' +
@@ -2212,7 +2236,19 @@ $(document).ready(function () {
 
                         row.attr('data-priority', priority);
                         row.data('priority', priority);
+                        row.attr(
+                            'data-po',
+                            poNumber
+                        );
 
+                        row.data(
+                            'po',
+                            poNumber
+                        );
+
+                        row.find('td').eq(3).text(
+                            poNumber
+                        );
                         const priorityClass = {
                             urgent: 'priority-urgent',
                             high: 'priority-high',
@@ -2421,11 +2457,18 @@ $(document).ready(function () {
 
         const selectedIds = [];
 
-        $('#requestsTable tbody .request-checkbox:checked').each(function () {
+        table.rows().every(function () {
 
-            selectedIds.push(
-                parseInt($(this).val(), 10)
-            );
+            const checkbox =
+                $(this.node()).find('.request-checkbox');
+
+            if (checkbox.prop('checked')) {
+
+                selectedIds.push(
+                    parseInt(checkbox.val(), 10)
+                );
+
+            }
 
         });
 
@@ -2641,12 +2684,23 @@ $(document).ready(function () {
 
                             if (purchaserId !== '1') {
 
-                                purchaserName =
+                                // Get only the purchaser's name
+                                // from the option text:
+                                // Company - Fullname
+                                const purchaserText =
                                     $('#bulkPurchaser option:selected')
                                     .text()
                                     .trim();
+
+                                const parts = purchaserText.split(' - ');
+
+                                purchaserName =
+                                    parts.length > 1
+                                        ? parts.slice(1).join(' - ').trim()
+                                        : purchaserText;
                             }
 
+                            // Keep ONLY the name in the table/data attribute
                             row.attr(
                                 'data-purchaser-name',
                                 purchaserName
@@ -2657,12 +2711,11 @@ $(document).ready(function () {
                                 purchaserName
                             );
 
+                            // Display ONLY purchaser name in table
                             row.find('td').eq(9).text(
                                 purchaserName
                             );
                         }
-
-
                         // =====================================
                         // PO NUMBER
                         // =====================================

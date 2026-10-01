@@ -35,7 +35,7 @@ include 'includes/db.php';
         'Information Technology'              => 'IT',
         'Human Resource'  => 'HR',
         'HR'              => 'HR',
-        'Logistics'       => 'LOGI',
+        'Logistic'       => 'LOGI',
     ];
 
     // Get department from logged-in user
