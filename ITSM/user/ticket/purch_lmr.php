@@ -93,12 +93,12 @@ $sql = "
     FROM purch_request_tb r
     LEFT JOIN user_tb u 
         ON r.created_by = u.user_id
-    WHERE r.created_by = ?
+    WHERE TRIM(r.department) = TRIM(?)
     ORDER BY r.date_created ASC
-";
+    ";
 
     $stmt = $conn->prepare($sql);
-    $stmt->bind_param("i", $created_by);
+    $stmt->bind_param("s", $currentDepartment);
 }
 
 $stmt->execute();
@@ -107,79 +107,80 @@ $requests = $stmt->get_result();
 
 
 <style>
-.table-hover tbody tr:hover { background-color: #f1f1f1; }
-.badge-proceed {
-    background-color: #198754;
-    color: #fff;
-}
+    .table-hover tbody tr:hover { background-color: #f1f1f1; }
+    .badge-proceed {
+        background-color: #198754;
+        color: #fff;
+    }
 
-.badge-checking {
-    background-color: #0d6efd;
-    color: #fff;
-}
+    .badge-checking {
+        background-color: #0d6efd;
+        color: #fff;
+    }
 
-.badge-negotiation {
-    background-color: #6f42c1;
-    color: #fff;
-}
+    .badge-negotiation {
+        background-color: #6f42c1;
+        color: #fff;
+    }
 
-.badge-draft {
-    background-color: #fd7e14;
-    color: #fff;
-}
+    .badge-draft {
+        background-color: #fd7e14;
+        color: #fff;
+    }
 
-.badge-canceled {
-    background-color: #dc3545;
-    color: #fff;
-}
+    .badge-canceled {
+        background-color: #dc3545;
+        color: #fff;
+    }
 
-.badge-pending {
-    background-color: #ffc107;
-    color: #000;
-}
+    .badge-pending {
+        background-color: #ffc107;
+        color: #000;
+    }
 
-.badge-closed {
-    background-color: #6c757d;
-    color: #fff;
-}
+    .badge-closed {
+        background-color: #6c757d;
+        color: #fff;
+    }
 
-.status-filter.active { background-color: #1E3A8A; color: #fff; }
-.status-filter.active:hover { background-color: #1E3A8A; color: #fff; }
+    .status-filter.active { background-color: #1E3A8A; color: #fff; }
+    .status-filter.active:hover { background-color: #1E3A8A; color: #fff; }
 
 
-.custom-menu {
-    display: none;
-    position: absolute;
-    background: white;
-    border: 1px solid #ddd;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
-    z-index: 10000;
-    min-width: 180px;
-    border-radius: 4px;
-    padding: 5px 0;
-}
-.custom-menu a {
-    display: block;
-    padding: 8px 16px;
-    color: #333;
-    text-decoration: none;
-}
-.custom-menu a:hover { background-color: #f0f8ff; }
-.btn-outline-blue {
-    color: #1E3A8A;
-    border-color: #1E3A8A;
-}
-.btn-outline-blue:hover,
-.btn-outline-blue.active {
-    background-color: #1E3A8A;
-    color: white;
-}
-.unassigned-purchaser {
-    color: #dc3545;
-    font-weight: 600;
-}
+    .custom-menu {
+        display: none;
+        position: absolute;
+        background: white;
+        border: 1px solid #ddd;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+        z-index: 10000;
+        min-width: 180px;
+        border-radius: 4px;
+        padding: 5px 0;
+    }
+    .custom-menu a {
+        display: block;
+        padding: 8px 16px;
+        color: #333;
+        text-decoration: none;
+    }
+    .custom-menu a:hover { background-color: #f0f8ff; }
+    .btn-outline-blue {
+        color: #1E3A8A;
+        border-color: #1E3A8A;
+    }
+    .btn-outline-blue:hover,
+    .btn-outline-blue.active {
+        background-color: #1E3A8A;
+        color: white;
+    }
+    .unassigned-purchaser {
+        color: #dc3545;
+        font-weight: 600;
+    }
 
 </style>
+
 <div class="card ">
 <?php
 $isPurchasing =
@@ -358,58 +359,58 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
 
         </div>
 
-    <?php else: ?>
+            <?php else: ?>
 
-        <!-- ==========================================
-             NON-PURCHASING USERS
-        =========================================== -->
+                <!-- ==========================================
+                    NON-PURCHASING USERS
+                =========================================== -->
 
-    
-        <div class="row g-3 align-items-end">
-             <!-- Urgency -->
-            <div class="col-md-2">
-                <label class="form-label">Urgency</label>
-                <select id="statusUrgencyFilter" class="form-select">
-                    <option value="">All </option>
-                    <option value="Urgent">Urgent</option>
-                    <option value="High">High</option>
-                    <option value="Medium">Medium </option>
-                </select>
-            </div>
-            <!-- Status -->
-            <div class="col-md-2">
-                <label class="form-label">Status</label>
-                <select id="statusSelectFilter" class="form-select">
-                    <option value="">All Status</option>
-                    <option value="pending">Pending</option>
-                    <option value="checking requirements">Checking Requirements</option>
-                    <option value="canvassing">Canvassing</option>
-                    <option value="negotiation">Negotiation</option>
-                    <option value="under discussion">Under Discussion</option>
-                    <option value="draft">Draft </option>
-                    <option value="final">Final </option>
-                    <option value="end">End </option>
-                    <option value="closed">Closed</option>
-                </select>
-            </div>
+            
+                <div class="row g-3 align-items-end">
+                    <!-- Urgency -->
+                    <div class="col-md-2">
+                        <label class="form-label">Urgency</label>
+                        <select id="statusUrgencyFilter" class="form-select">
+                            <option value="">All </option>
+                            <option value="Urgent">Urgent</option>
+                            <option value="High">High</option>
+                            <option value="Medium">Medium </option>
+                        </select>
+                    </div>
+                    <!-- Status -->
+                    <div class="col-md-2">
+                        <label class="form-label">Status</label>
+                        <select id="statusSelectFilter" class="form-select">
+                            <option value="">All Status</option>
+                            <option value="pending">Pending</option>
+                            <option value="checking requirements">Checking Requirements</option>
+                            <option value="canvassing">Canvassing</option>
+                            <option value="negotiation">Negotiation</option>
+                            <option value="under discussion">Under Discussion</option>
+                            <option value="draft">Draft </option>
+                            <option value="final">Final </option>
+                            <option value="end">End </option>
+                            <option value="closed">Closed</option>
+                        </select>
+                    </div>
 
-            <!-- Date From -->
-            <div class="col-md-2">
-                <label class="form-label">Date From</label>
-                <input type="date" id="dateFrom" class="form-control">
-            </div>
+                    <!-- Date From -->
+                    <div class="col-md-2">
+                        <label class="form-label">Date From</label>
+                        <input type="date" id="dateFrom" class="form-control">
+                    </div>
 
-            <!-- Date To -->
-            <div class="col-md-2">
-                <label class="form-label">Date To</label>
-                <input type="date" id="dateTo" class="form-control">
-            </div>
+                    <!-- Date To -->
+                    <div class="col-md-2">
+                        <label class="form-label">Date To</label>
+                        <input type="date" id="dateTo" class="form-control">
+                    </div>
+
+                </div>
+
+            <?php endif; ?>
 
         </div>
-
-    <?php endif; ?>
-
-</div>
 
 
             <div class="table-responsive">
@@ -622,321 +623,321 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
             </div>
         </div>
     </div>
-<!-- Context Menu -->
-<!-- <div id="contextMenu" class="custom-menu">
-    <a href="#" id="deleteRequest" class="text-danger"><i class="fas fa-trash"></i> Delete Request</a>
-</div> -->
+    <!-- Context Menu -->
+    <!-- <div id="contextMenu" class="custom-menu">
+        <a href="#" id="deleteRequest" class="text-danger"><i class="fas fa-trash"></i> Delete Request</a>
+    </div> -->
 
-<!-- =========================================================
-     REQUEST DETAILS MODAL
-========================================================= -->
-<div class="modal fade modal-xl" id="requestDetailsModal" tabindex="-1"
-     aria-labelledby="requestDetailsModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered" >
-    <div class="modal-content border-0 shadow-xl">
+    <!-- =========================================================
+        REQUEST DETAILS MODAL
+    ========================================================= -->
+    <div class="modal fade modal-xl" id="requestDetailsModal" tabindex="-1"
+        aria-labelledby="requestDetailsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" >
+        <div class="modal-content border-0 shadow-xl">
 
-            <div class="modal-header bg-gradient-primary  text-white">
-                <div>
-                    <!-- <h5 class="modal-title" id="requestDetailsModalLabel">
-                        LMR Request Details
-                    </h5> -->
-                    <h5 id="modalLmrNo"></h5>
+                <div class="modal-header bg-gradient-primary  text-white">
+                    <div>
+                        <!-- <h5 class="modal-title" id="requestDetailsModalLabel">
+                            LMR Request Details
+                        </h5> -->
+                        <h5 id="modalLmrNo"></h5>
+                    </div>
+
+                    <button type="button"
+                            class="btn-close btn-close-white"
+                            data-bs-dismiss="modal"
+                            aria-label="Close">
+                    </button>
                 </div>
 
-                <button type="button"
-                        class="btn-close btn-close-white"
-                        data-bs-dismiss="modal"
-                        aria-label="Close">
-                </button>
-            </div>
+                <div class="modal-body">
 
-            <div class="modal-body">
-
-                <!-- Hidden request ID -->
-                <input type="hidden" id="modalRequestId">
-
-                <!-- =================================================
-                     REQUEST INFORMATION
-                ================================================== -->
-                <div class="row g-3">
-
-                    <!-- <div class="col-md-4">
-                        <label class="form-label fw-bold">LMR No.</label>
-                        <input type="text"
-                               id="modalLmr"
-                               class="form-control"
-                               readonly>
-                    </div> -->
-                    <div class="col-md-4">
-                        <label class="form-label fw-bold">Requested By</label>
-                        <input type="text"
-                               id="modalRequestor"
-                               class="form-control"
-                               readonly>
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label fw-bold">Company</label>
-                        <input type="text"
-                               id="modalCompany"
-                               class="form-control"
-                               readonly>
-                    </div>
-
-                    <div class="col-md-4">
-                        <label class="form-label fw-bold">Department</label>
-                        <input type="text"
-                               id="modalDepartment"
-                               class="form-control"
-                               readonly>
-                    </div>
-
-                    <div class="col-md-4">
-                        <label class="form-label fw-bold">Item</label>
-                        <input type="text"
-                               id="modalItem"
-                               class="form-control"
-                               readonly>
-                    </div>
-
-                    <div class="col-md-2">
-                        <label class="form-label fw-bold">Quantity</label>
-                        <input type="text"
-                               id="modalQuantity"
-                               class="form-control"
-                               readonly>
-                    </div>
-
-                    <div class="col-md-2">
-                        <label class="form-label fw-bold">UoM</label>
-                        <input type="text"
-                               id="modalUom"
-                               class="form-control"
-                               readonly>
-                    </div>
-
-                    <div class="col-md-2">
-                        <label class="form-label fw-bold">Date Needed</label>
-                        <input type="text"
-                               id="modalDateNeeded"
-                               class="form-control"
-                               readonly>
-                    </div>
-
-                    <div class="col-md-2">
-                        <label class="form-label fw-bold">Date Created</label>
-                        <input type="text"
-                               id="modalDateCreated"
-                               class="form-control"
-                               readonly>
-                    </div>
-
-                    <div class="col-6">
-                        <label class="form-label fw-bold">Description</label>
-                        <textarea id="modalDescription"
-                                  class="form-control"
-                                  rows="6"
-                                  readonly></textarea>
-                    </div>
-
-                    <div class="col-6">
-                        <label class="form-label fw-bold">Remarks</label>
-                        <textarea id="modalRemarks"
-                                  class="form-control"
-                                  rows="6"
-                                  readonly></textarea>
-                    </div>
-
-
+                    <!-- Hidden request ID -->
+                    <input type="hidden" id="modalRequestId">
 
                     <!-- =================================================
-                         PURCHASING CONTROLS
+                        REQUEST INFORMATION
                     ================================================== -->
-                    <?php
-                    $isPurchasing =
-                        strcasecmp(trim($currentDepartment), 'Purchasing') === 0
-                        || (
-                            isset($_SESSION['user_type'])
-                            && strcasecmp(trim($_SESSION['user_type']), 'admin') === 0
-                        );
-                    ?>
+                    <div class="row g-3">
 
-                    <?php if ($isPurchasing): ?>
-
-                        <div class="col-md-5">
-                            <label class="form-label fw-bold">
-                                Assigned Purchaser
-                            </label>
-
-                            <div class="input-group">
-
-                                <select id="modalPurchaser"
-                                        class="form-select">
-
-                                    <option value="1">
-                                        Unassigned
-                                    </option>
-
-                                    <?php
-                                    $purchaserQuery = $conn->query("
-                                        SELECT user_id, fullname, company
-                                        FROM user_tb
-                                        WHERE department = 'Purchasing' AND is_active = 1
-                                        ORDER BY company ASC
-                                    ");
-
-                                    while ($purchaser = $purchaserQuery->fetch_assoc()):
-                                    ?>
-
-                                        <option value="<?= (int)$purchaser['user_id'] ?>">
-                                            <?= htmlspecialchars($purchaser['company']) ?>-
-                                            <?= htmlspecialchars($purchaser['fullname']) ?>
-                                        </option>
-
-                                    <?php endwhile; ?>
-
-                                </select>
-
-                                <button type="button"
-                                        id="assignToMeBtn"
-                                        class="btn btn-outline-primary">
-                                    Assign to Me
-                                </button>
-
-                            </div>
-                        </div>
-                        <div class="col-md-2">
-
-                            <label class="form-label fw-bold">
-                                Urgency
-                            </label>
-
-                            <select id="modalPriority"
-                                    class="form-select">
-                                <option value="urgent">Urgent</option>
-                                <option value="high">High</option>
-                                <option value="medium">Medium</option>
-
-                            </select>
-                        </div>
-                        <div class="col-md-3">
-
-                            <label class="form-label fw-bold">
-                                Status
-                            </label>
-
-                            <select id="modalStatus"
-                                    class="form-select">
-
-                                <option value="pending"> Pending</option>
-                                <option value="checking requirements">Checking Requirements</option>
-                                <option value="canvassing">Canvassing</option>
-                                <option value="negotiation">Negotiation</option>
-                                <option value="under discussion">Under Discussion</option>
-                                <option value="draft">Draft </option>
-                                <option value="final">Final </option>
-                                <option value="end">End </option>
-                                <option value="closed">Closed</option>
-
-                            </select>
-                        </div>
-
-                        <div class="col-md-2">
-                            <label class="form-label fw-bold">PO Number</label>
+                        <!-- <div class="col-md-4">
+                            <label class="form-label fw-bold">LMR No.</label>
                             <input type="text"
-                                id="modalPO"
-                                class="form-control"
-                                readonly>
-                        </div>
-                        <div class="col-md-12">
-                            <label class="form-label fw-bold">Attachments</label>
-       
-                        </div>
-
-
-                    <?php else: ?>
-
-                        <!-- REQUESTOR VIEW -->
-
-                        <div class="col-md-6">
-
-                            <label class="form-label fw-bold">
-                                Assigned Purchaser
-                            </label>
-
-                            <input type="text"
-                                   id="modalPurchaserDisplay"
-                                   class="form-control"
-                                   readonly>
-
-                        </div>
-                        <div class="col-md-3">
-
-                            <label class="form-label fw-bold">
-                                Urgency
-                            </label>
-                            <input type="text"
-                                   id="modalPriorityDisplay"
-                                   class="form-control"
-                                   readonly>
-                        </div>
-                        <div class="col-md-3">
-
-                            <label class="form-label fw-bold">
-                                Status
-                            </label>
-
-                            <input type="text"
-                                   id="modalStatusDisplay"
-                                   class="form-control"
-                                   readonly>
-
-                        </div>
-                        <!-- <div class="col-md-2">
-                            <label class="form-label fw-bold">PO Number</label>
-                            <input type="text"
-                                id="modalPO"
+                                id="modalLmr"
                                 class="form-control"
                                 readonly>
                         </div> -->
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Requested By</label>
+                            <input type="text"
+                                id="modalRequestor"
+                                class="form-control"
+                                readonly>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Company</label>
+                            <input type="text"
+                                id="modalCompany"
+                                class="form-control"
+                                readonly>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Department</label>
+                            <input type="text"
+                                id="modalDepartment"
+                                class="form-control"
+                                readonly>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Item</label>
+                            <input type="text"
+                                id="modalItem"
+                                class="form-control"
+                                readonly>
+                        </div>
+
+                        <div class="col-md-2">
+                            <label class="form-label fw-bold">Quantity</label>
+                            <input type="text"
+                                id="modalQuantity"
+                                class="form-control"
+                                readonly>
+                        </div>
+
+                        <div class="col-md-2">
+                            <label class="form-label fw-bold">UoM</label>
+                            <input type="text"
+                                id="modalUom"
+                                class="form-control"
+                                readonly>
+                        </div>
+
+                        <div class="col-md-2">
+                            <label class="form-label fw-bold">Date Needed</label>
+                            <input type="text"
+                                id="modalDateNeeded"
+                                class="form-control"
+                                readonly>
+                        </div>
+
+                        <div class="col-md-2">
+                            <label class="form-label fw-bold">Date Created</label>
+                            <input type="text"
+                                id="modalDateCreated"
+                                class="form-control"
+                                readonly>
+                        </div>
+
+                        <div class="col-6">
+                            <label class="form-label fw-bold">Description</label>
+                            <textarea id="modalDescription"
+                                    class="form-control"
+                                    rows="6"
+                                    readonly></textarea>
+                        </div>
+
+                        <div class="col-6">
+                            <label class="form-label fw-bold">Remarks</label>
+                            <textarea id="modalRemarks"
+                                    class="form-control"
+                                    rows="6"
+                                    readonly></textarea>
+                        </div>
+
+
+
+                        <!-- =================================================
+                            PURCHASING CONTROLS
+                        ================================================== -->
+                        <?php
+                        $isPurchasing =
+                            strcasecmp(trim($currentDepartment), 'Purchasing') === 0
+                            || (
+                                isset($_SESSION['user_type'])
+                                && strcasecmp(trim($_SESSION['user_type']), 'admin') === 0
+                            );
+                        ?>
+
+                        <?php if ($isPurchasing): ?>
+
+                            <div class="col-md-5">
+                                <label class="form-label fw-bold">
+                                    Assigned Purchaser
+                                </label>
+
+                                <div class="input-group">
+
+                                    <select id="modalPurchaser"
+                                            class="form-select">
+
+                                        <option value="1">
+                                            Unassigned
+                                        </option>
+
+                                        <?php
+                                        $purchaserQuery = $conn->query("
+                                            SELECT user_id, fullname, company
+                                            FROM user_tb
+                                            WHERE department = 'Purchasing' AND is_active = 1
+                                            ORDER BY company ASC
+                                        ");
+
+                                        while ($purchaser = $purchaserQuery->fetch_assoc()):
+                                        ?>
+
+                                            <option value="<?= (int)$purchaser['user_id'] ?>">
+                                                <?= htmlspecialchars($purchaser['company']) ?>-
+                                                <?= htmlspecialchars($purchaser['fullname']) ?>
+                                            </option>
+
+                                        <?php endwhile; ?>
+
+                                    </select>
+
+                                    <button type="button"
+                                            id="assignToMeBtn"
+                                            class="btn btn-outline-primary">
+                                        Assign to Me
+                                    </button>
+
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+
+                                <label class="form-label fw-bold">
+                                    Urgency
+                                </label>
+
+                                <select id="modalPriority"
+                                        class="form-select">
+                                    <option value="urgent">Urgent</option>
+                                    <option value="high">High</option>
+                                    <option value="medium">Medium</option>
+
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+
+                                <label class="form-label fw-bold">
+                                    Status
+                                </label>
+
+                                <select id="modalStatus"
+                                        class="form-select">
+
+                                    <option value="pending"> Pending</option>
+                                    <option value="checking requirements">Checking Requirements</option>
+                                    <option value="canvassing">Canvassing</option>
+                                    <option value="negotiation">Negotiation</option>
+                                    <option value="under discussion">Under Discussion</option>
+                                    <option value="draft">Draft </option>
+                                    <option value="final">Final </option>
+                                    <option value="end">End </option>
+                                    <option value="closed">Closed</option>
+
+                                </select>
+                            </div>
+
+                            <div class="col-md-2">
+                                <label class="form-label fw-bold">PO Number</label>
+                                <input type="text"
+                                    id="modalPO"
+                                    class="form-control"
+                                    readonly>
+                            </div>
+                            <div class="col-md-12">
+                                <label class="form-label fw-bold">Attachments</label>
+        
+                            </div>
+
+
+                        <?php else: ?>
+
+                            <!-- REQUESTOR VIEW -->
+
+                            <div class="col-md-6">
+
+                                <label class="form-label fw-bold">
+                                    Assigned Purchaser
+                                </label>
+
+                                <input type="text"
+                                    id="modalPurchaserDisplay"
+                                    class="form-control"
+                                    readonly>
+
+                            </div>
+                            <div class="col-md-3">
+
+                                <label class="form-label fw-bold">
+                                    Urgency
+                                </label>
+                                <input type="text"
+                                    id="modalPriorityDisplay"
+                                    class="form-control"
+                                    readonly>
+                            </div>
+                            <div class="col-md-3">
+
+                                <label class="form-label fw-bold">
+                                    Status
+                                </label>
+
+                                <input type="text"
+                                    id="modalStatusDisplay"
+                                    class="form-control"
+                                    readonly>
+
+                            </div>
+                            <!-- <div class="col-md-2">
+                                <label class="form-label fw-bold">PO Number</label>
+                                <input type="text"
+                                    id="modalPO"
+                                    class="form-control"
+                                    readonly>
+                            </div> -->
+
+                        <?php endif; ?>
+
+                    </div>
+
+                    <!-- =================================================
+                        SAVE MESSAGE
+                    ================================================== -->
+                    <div id="modalSaveMessage"
+                        class="alert d-none mt-4 mb-0">
+                    </div>
+
+                </div>
+
+                <div class="modal-footer">
+
+                    <button type="button"
+                            class="btn btn-secondary"
+                            data-bs-dismiss="modal">
+                        Close
+                    </button>
+
+                    <?php if ($isPurchasing): ?>
+
+                        <button type="button"
+                                id="saveRequestChanges"
+                                class="btn btn-primary"
+                                disabled>
+                            <i class="fas fa-save me-1"></i>
+                            Save Changes
+                        </button>
 
                     <?php endif; ?>
 
                 </div>
 
-                <!-- =================================================
-                     SAVE MESSAGE
-                ================================================== -->
-                <div id="modalSaveMessage"
-                     class="alert d-none mt-4 mb-0">
-                </div>
-
             </div>
-
-            <div class="modal-footer">
-
-                <button type="button"
-                        class="btn btn-secondary"
-                        data-bs-dismiss="modal">
-                    Close
-                </button>
-
-                <?php if ($isPurchasing): ?>
-
-                    <button type="button"
-                            id="saveRequestChanges"
-                            class="btn btn-primary"
-                            disabled>
-                        <i class="fas fa-save me-1"></i>
-                        Save Changes
-                    </button>
-
-                <?php endif; ?>
-
-            </div>
-
         </div>
     </div>
-</div>
 
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
@@ -944,75 +945,26 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
 <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
 
-<!-- <script>
-$(document).ready(function () {
-    const table = $('#requestsTable').DataTable({
-        pageLength: 10,
-        order: [[0, "desc"]],
-        columnDefs: [{ orderable: false, targets: [5, 9] }]
-    });
 
-    // Status filter
-    $.fn.dataTable.ext.search.push(function(settings, data, dataIndex) {
-        const selectedStatus = $('.status-filter.active').data('status');
-        const rowStatus = $(table.row(dataIndex).node()).data('status');
-        if (!selectedStatus) return true;
-        return rowStatus === selectedStatus;
-    });
-
-    $('.status-filter').on('click', function () {
-        $('.status-filter').removeClass('active');
-        $(this).addClass('active');
-        table.draw();
-    });
-});
-
-// Context menu
-let currentRequestId = null;
-
-$(function () {
-
-    $('.btn-print').on('click', function (e) {
-
-        e.preventDefault();
-        e.stopPropagation();
-
-        const status = ($(this).data('status') || '').toLowerCase().trim();
-        const lmr = $(this).data('lmr');
-
-        if (status !== 'proceed request') {
-            alert('Printing is only available when the request status is "Proceed Request".');
-            return;
-        }
-
-        window.open(
-            '?page=ticket/includes/print_request&lmr_no=' + encodeURIComponent(lmr),
-            '_blank'
-        );
-
-    });
-
-});
-</script> -->
 <script>
-$(document).ready(function () {
+    $(document).ready(function () {
 
-    const table = $('#requestsTable').DataTable({
-        pageLength: 20,
+        const table = $('#requestsTable').DataTable({
+            pageLength: 20,
 
-        lengthMenu: [
-            [10, 20, 50, 100, 500, 1000, 5000, 10000],
-            [10, 20, 50, 100, 500, 1000, 5000, 10000]
-        ],
+            lengthMenu: [
+                [10, 20, 50, 100, 500, 1000, 5000, 10000],
+                [10, 20, 50, 100, 500, 1000, 5000, 10000]
+            ],
 
-        order: [[0, "desc"]],
+            order: [[0, "desc"]],
 
-      columnDefs: [
-        {
-            orderable: false,
-            targets: [12]
-        }
-    ]
+        columnDefs: [
+            {
+                orderable: false,
+                targets: [12]
+            }
+        ]
     });
 
 
@@ -1020,7 +972,7 @@ $(document).ready(function () {
     // CUSTOM FILTER
     // =====================================================
 
-$.fn.dataTable.ext.search.push(function (settings, data, dataIndex) {
+    $.fn.dataTable.ext.search.push(function (settings, data, dataIndex) {
 
     // Only apply this filter to requestsTable
     if (settings.nTable.id !== 'requestsTable') {
@@ -1191,7 +1143,7 @@ $.fn.dataTable.ext.search.push(function (settings, data, dataIndex) {
     // =====================================================
 
     return true;
-});
+    });
 
 
 
