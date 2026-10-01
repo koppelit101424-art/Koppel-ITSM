@@ -178,7 +178,36 @@ $requests = $stmt->get_result();
         color: #dc3545;
         font-weight: 600;
     }
+    .priority-badge {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 12px;
+        font-weight: 600;
+        font-size: 12px;
+        text-align: center;
+        min-width: 65px;
+    }
 
+    .priority-urgent {
+        background-color: #dc3545;
+        color: white;
+    }
+
+    .priority-high {
+        background-color: #ffc107;
+        color: white;
+    }
+
+    .priority-medium {
+        background-color: #0d6efd;
+        /* color: #212529; */
+        color: white;
+    }
+
+    .priority-default {
+        background-color: #6c757d;
+        color: white;
+    }
 </style>
 
 <div class="card ">
@@ -523,7 +552,22 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
                                             <?= htmlspecialchars($purchaser_name) ?>
                                         <?php endif; ?>
                                     </td>
-                                    <td><?= htmlspecialchars($row['priority']) ?></td>
+                                    <td class="priority-cell">
+                                        <?php
+                                            $priority = strtolower(trim($row['priority'] ?? ''));
+
+                                            $priorityClass = match ($priority) {
+                                                'urgent' => 'priority-urgent',
+                                                'high'   => 'priority-high',
+                                                'medium' => 'priority-medium',
+                                                default  => 'priority-default'
+                                            };
+
+                                            echo '<span class="priority-badge ' . $priorityClass . '">' .
+                                                htmlspecialchars(ucfirst($priority)) .
+                                                '</span>';
+                                        ?>
+                                    </td>
                                     <td>
                                         <?php 
                                             $status = strtolower(trim($row['status']));
@@ -1838,7 +1882,17 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
             row.attr('data-priority', priority);
             row.data('priority', priority);
 
-            row.find('td').eq(9).text(formatStatus(priority));
+            const priorityClass = {
+                urgent: 'priority-urgent',
+                high: 'priority-high',
+                medium: 'priority-medium'
+            };
+
+            row.find('td').eq(9).html(
+                `<span class="priority-badge ${priorityClass[priority] || 'priority-default'}">
+                    ${priority.charAt(0).toUpperCase() + priority.slice(1)}
+                </span>`
+            );
             
             const statusBadge =
                 row.find('td').eq(10).find('.badge');
