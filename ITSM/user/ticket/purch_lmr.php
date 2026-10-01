@@ -645,7 +645,7 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
                             <!-- <td><?= htmlspecialchars($row['remarks'] ?? '-') ?></td> -->
                             <td onclick="event.stopPropagation();">
 
-                                <a href="?page=ticket/view_request&request_id=<?= $row['request_id'] ?>"
+                                <a href="?page=ticket/view_purch_request&request_id=<?= (int)$row['request_id'] ?>"
                                 class="btn btn-sm btn-primary"
                                 title="View">
                                     <i class="fas fa-eye"></i>
@@ -1054,7 +1054,7 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
                                     class="form-select">
 
                                 <option value="">
-                                    -- No Change --
+                                    No Change
                                 </option>
 
                                 <option value="pending">
@@ -1109,7 +1109,7 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
                                     class="form-select">
 
                                 <option value="">
-                                    -- No Change --
+                                    No Change
                                 </option>
 
                                 <option value="urgent">
@@ -1140,7 +1140,7 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
                                     class="form-select">
 
                                 <option value="">
-                                    -- No Change --
+                                    No Change
                                 </option>
 
                                 <option value="1">

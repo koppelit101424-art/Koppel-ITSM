@@ -254,6 +254,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $conn->begin_transaction();
 
             $insertedCount = 0;
+            $firstRequestId = 0;
 
             foreach ($validItems as $itemData) {
 
@@ -282,8 +283,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         "Failed to insert item '{$itemData['item']}': " .
                         $stmt->error;
 
-                    // Stop inserting if one item fails
                     break;
+                }
+
+                /*
+                * Save the first generated request_id.
+                * This will be used as the attachment reference.
+                */
+                if ($firstRequestId === 0) {
+                    $firstRequestId = $stmt->insert_id;
                 }
 
                 $insertedCount++;
@@ -292,6 +300,190 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // ==========================================
             // COMMIT / ROLLBACK
             // ==========================================
+
+            if (empty($errors)) {
+
+                /*
+                * ==========================================
+                * HANDLE ATTACHMENTS
+                * ==========================================
+                */
+
+                if (!empty($_FILES['attachments']['name'][0])) {
+
+                    $uploadDir = __DIR__ . "/../../../uploads/purchasing/";
+                    $dbDir = "uploads/purchasing/";
+
+                    /*
+                    * Create upload directory if it doesn't exist
+                    */
+                    if (!is_dir($uploadDir)) {
+
+                        if (!mkdir($uploadDir, 0777, true)) {
+                            $errors[] = "Unable to create attachment directory.";
+                        }
+                    }
+
+                    /*
+                    * Maximum 10 attachments
+                    */
+                    if (empty($errors)) {
+
+                        $files = $_FILES['attachments'];
+
+                        $fileCount = count($files['name']);
+
+                        if ($fileCount > 10) {
+                            $errors[] = "Maximum of 10 attachments is allowed.";
+                        }
+                    }
+
+                    /*
+                    * Process files
+                    */
+                    if (empty($errors)) {
+
+                        $allowed = [
+                            'jpg',
+                            'jpeg',
+                            'png',
+                            'pdf',
+                            'doc',
+                            'docx'
+                        ];
+
+                        for ($i = 0; $i < $fileCount; $i++) {
+
+                            /*
+                            * Skip empty file slots
+                            */
+                            if (
+                                empty($files['name'][$i]) ||
+                                $files['error'][$i] === UPLOAD_ERR_NO_FILE
+                            ) {
+                                continue;
+                            }
+
+                            /*
+                            * Check upload error
+                            */
+                            if ($files['error'][$i] !== UPLOAD_ERR_OK) {
+                                $errors[] =
+                                    "Failed to upload file: " .
+                                    $files['name'][$i];
+
+                                break;
+                            }
+
+                            /*
+                            * Original filename
+                            */
+                            $originalName =
+                                basename($files['name'][$i]);
+
+                            /*
+                            * Get extension
+                            */
+                            $ext = strtolower(
+                                pathinfo(
+                                    $originalName,
+                                    PATHINFO_EXTENSION
+                                )
+                            );
+
+                            /*
+                            * Validate extension
+                            */
+                            if (!in_array($ext, $allowed, true)) {
+
+                                $errors[] =
+                                    "Invalid file type: " .
+                                    $originalName;
+
+                                break;
+                            }
+
+                            /*
+                            * Generate unique filename
+                            */
+                            $newName =
+                                uniqid('lmr_', true) .
+                                '_' .
+                                $i .
+                                '.' .
+                                $ext;
+
+                            $fullPath =
+                                $uploadDir . $newName;
+
+                            $dbPath =
+                                $dbDir . $newName;
+
+                            /*
+                            * Move uploaded file
+                            */
+                            if (!move_uploaded_file(
+                                $files['tmp_name'][$i],
+                                $fullPath
+                            )) {
+
+                                $errors[] =
+                                    "Failed to save file: " .
+                                    $originalName;
+
+                                break;
+                            }
+
+                            /*
+                            * Save attachment record
+                            */
+                            $stmtAttach = $conn->prepare("
+                                INSERT INTO purch_request_attachments
+                                (
+                                    request_id,
+                                    file_name,
+                                    file_path
+                                )
+                                VALUES (?, ?, ?)
+                            ");
+
+                            if (!$stmtAttach) {
+
+                                $errors[] =
+                                    "Attachment database error: " .
+                                    $conn->error;
+
+                                break;
+                            }
+
+                            $stmtAttach->bind_param(
+                                "iss",
+                                $firstRequestId,
+                                $originalName,
+                                $dbPath
+                            );
+
+                            if (!$stmtAttach->execute()) {
+
+                                $errors[] =
+                                    "Failed to save attachment: " .
+                                    $originalName;
+
+                                $stmtAttach->close();
+                                break;
+                            }
+
+                            $stmtAttach->close();
+                        }
+                    }
+                }
+
+
+                /*
+                * ==========================================
+                * COMMIT / ROLLBACK
+                * ==========================================
+                */
 
                 if (empty($errors)) {
 
@@ -302,13 +494,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     echo "<script>
                         window.location.href = '?page=ticket/purch_lmr';
                     </script>";
+
                     exit;
+
+                } else {
+
+                    $conn->rollback();
+
+                    $stmt->close();
                 }
-                else {
-
-                $conn->rollback();
-
-                $stmt->close();
             }
         }
     }
@@ -354,7 +548,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <a href="?page=ticket/requests" class="alert-link">View Requests</a>
 </div>
 <?php endif; ?>
-<form method="POST" action="" id="requestForm">
+<form method="POST"
+      action=""
+      id="requestForm"
+      enctype="multipart/form-data">
 
 <div class="row mb-4">
 <div class="col-md-4">
@@ -401,7 +598,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <button type="button" class="btn btn-outline-primary mt-2" onclick="addItemRow()">
 <i class="fas fa-plus"></i> Add Item
 </button>
+<div class="mb-4 mt-4">
+    <label class="form-label fw-bold">
+        Attachments
+    </label>
 
+    <input
+        type="file"
+        name="attachments[]"
+        id="attachments"
+        class="form-control"
+        multiple
+        accept=".jpg,.jpeg,.png,.pdf,.doc,.docx"
+    >
+
+    <small class="text-muted">
+        Maximum 10 files.
+        Allowed: JPG, JPEG, PNG, PDF, DOC, DOCX.
+    </small>
+
+    <div id="attachmentError"
+         class="text-danger mt-2"
+         style="display:none;">
+    </div>
+</div>
 <div class="d-flex justify-content-end mt-4">
 <button type="submit" class="btn btn-primary me-2">
 <!-- <i class="fas fa-save me-1"></i>  -->
@@ -484,7 +704,34 @@ function addItemRow() {
 
 window.onload = addItemRow;
 </script>
+<script>
 
+document.getElementById('requestForm').addEventListener('submit', function(e) {
+
+    const attachmentInput =
+        document.getElementById('attachments');
+
+    const errorBox =
+        document.getElementById('attachmentError');
+
+    errorBox.style.display = 'none';
+    errorBox.textContent = '';
+
+    if (attachmentInput.files.length > 10) {
+
+        e.preventDefault();
+
+        errorBox.textContent =
+            'You can attach a maximum of 10 files.';
+
+        errorBox.style.display = 'block';
+
+        return false;
+    }
+
+});
+
+</script>
 
 </body>
 </html>

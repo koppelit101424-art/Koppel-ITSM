@@ -1,0 +1,15 @@
+CREATE TABLE purch_request_attachments (
+    attachment_id INT AUTO_INCREMENT PRIMARY KEY,
+    request_id INT NOT NULL,
+    file_name VARCHAR(255) NOT NULL,
+    file_path VARCHAR(500) NOT NULL,
+    date_uploaded DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    INDEX idx_request_id (request_id),
+
+    CONSTRAINT fk_purch_request_attachment
+        FOREIGN KEY (request_id)
+        REFERENCES purch_request_tb(request_id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
+);
