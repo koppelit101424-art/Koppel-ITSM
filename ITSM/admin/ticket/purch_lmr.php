@@ -1,6 +1,8 @@
 <?php
+
 include __DIR__ . '/../../includes/auth.php';
 include __DIR__ . '/../../includes/db.php';
+
 
 $created_by = $_SESSION['user_id'];
 
@@ -53,6 +55,8 @@ $sql = "
         r.remarks,
         r.date_created,
         r.status,
+        r.priority,
+        r.po_no,
         r.created_by,
         r.purchaser_id
     FROM purch_request_tb r
@@ -84,17 +88,19 @@ $sql = "
         r.remarks,
         r.date_created,
         r.status,
+        r.priority,
+        r.po_no,
         r.created_by,
         r.purchaser_id
     FROM purch_request_tb r
     LEFT JOIN user_tb u 
         ON r.created_by = u.user_id
-    WHERE r.created_by = ?
+    WHERE TRIM(r.department) = TRIM(?)
     ORDER BY r.date_created ASC
-";
+    ";
 
     $stmt = $conn->prepare($sql);
-    $stmt->bind_param("i", $created_by);
+    $stmt->bind_param("s", $currentDepartment);
 }
 
 $stmt->execute();
@@ -103,91 +109,152 @@ $requests = $stmt->get_result();
 
 
 <style>
-.table-hover tbody tr:hover { background-color: #f1f1f1; }
+    .table-hover tbody tr:hover { background-color: #f1f1f1; }
+    .badge-proceed {
+        background-color: #198754;
+        color: #fff;
+    }
 
-.badge-proceed {
-    background-color: #198754;
-    color: #fff;
-}
-.badge-checking {
-    background-color: #0d6efd;
-    color: #fff;
-}
+    .badge-checking {
+        background-color: #0d6efd;
+        color: #fff;
+    }
 
-.badge-negotiation {
-    background-color: #6f42c1;
-    color: #fff;
-}
+    .badge-negotiation {
+        background-color: #6f42c1;
+        color: #fff;
+    }
 
-.badge-draft {
-    background-color: #fd7e14;
-    color: #fff;
-}
+    .badge-draft {
+        background-color: #fd7e14;
+        color: #fff;
+    }
 
-.badge-canceled {
-    background-color: #dc3545;
-    color: #fff;
-}
+    .badge-canceled {
+        background-color: #dc3545;
+        color: #fff;
+    }
 
-.badge-pending {
-    background-color: #ffc107;
-    color: #000;
-}
+    .badge-pending {
+        background-color: #ffc107;
+        color: #000;
+    }
 
-.badge-closed {
-    background-color: #6c757d;
-    color: #fff;
-}
+    .badge-closed {
+        background-color: #6c757d;
+        color: #fff;
+    }
 
-.status-filter.active { background-color: #1E3A8A; color: #fff; }
-.status-filter.active:hover { background-color: #1E3A8A; color: #fff; }
+    .status-filter.active { background-color: #1E3A8A; color: #fff; }
+    .status-filter.active:hover { background-color: #1E3A8A; color: #fff; }
 
 
-.custom-menu {
-    display: none;
-    position: absolute;
-    background: white;
-    border: 1px solid #ddd;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
-    z-index: 10000;
-    min-width: 180px;
-    border-radius: 4px;
-    padding: 5px 0;
-}
-.custom-menu a {
-    display: block;
-    padding: 8px 16px;
-    color: #333;
-    text-decoration: none;
-}
-.custom-menu a:hover { background-color: #f0f8ff; }
-.btn-outline-blue {
-    color: #1E3A8A;
-    border-color: #1E3A8A;
-}
-.btn-outline-blue:hover,
-.btn-outline-blue.active {
-    background-color: #1E3A8A;
-    color: white;
-}
-.unassigned-purchaser {
-    color: #dc3545;
-    font-weight: 600;
-}
+    .custom-menu {
+        display: none;
+        position: absolute;
+        background: white;
+        border: 1px solid #ddd;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+        z-index: 10000;
+        min-width: 180px;
+        border-radius: 4px;
+        padding: 5px 0;
+    }
+    .custom-menu a {
+        display: block;
+        padding: 8px 16px;
+        color: #333;
+        text-decoration: none;
+    }
+    .custom-menu a:hover { background-color: #f0f8ff; }
+    .btn-outline-blue {
+        color: #1E3A8A;
+        border-color: #1E3A8A;
+    }
+    .btn-outline-blue:hover,
+    .btn-outline-blue.active {
+        background-color: #1E3A8A;
+        color: white;
+    }
+    .unassigned-purchaser {
+        color: #dc3545;
+        font-weight: 600;
+    }
+    .priority-badge {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 12px;
+        font-weight: 600;
+        font-size: 12px;
+        text-align: center;
+        min-width: 65px;
+    }
+
+    .priority-urgent {
+        background-color: #dc3545;
+        color: white;
+    }
+
+    .priority-high {
+        background-color: #ffc107;
+        color: white;
+    }
+
+    .priority-medium {
+        background-color: #0d6efd;
+        /* color: #212529; */
+        color: white;
+    }
+
+    .priority-default {
+        background-color: #6c757d;
+        color: white;
+    }
 </style>
 
-    <div class="card ">
-        <div class="card-header d-flex justify-content-between align-items-center text-white">
-            <span>Purchasing LMR</span>
+<div class="card ">
+<?php
+$isPurchasing =
+    strcasecmp(trim($currentDepartment), 'Purchasing') === 0
+    || (
+        isset($_SESSION['user_type'])
+        && strcasecmp(trim($_SESSION['user_type']), 'admin') === 0
+    );
+?>
+
+<div class="card-header d-flex justify-content-between align-items-center text-white">
+    <span>Purchasing LMR</span>
+
+    <div class="d-flex gap-2">
+        <a href="?page=ticket/includes/add_purch_request"
+           class="btn btn-sm btn-primary">
+            <i class="fas fa-plus me-1"></i>
+            Create LMR
+        </a>
+
+        <?php if ($isPurchasing): ?>
+
+            <button type="button"
+                    class="btn btn-warning btn-sm"
+                    id="bulkUpdateBtn"
+                    disabled>
+                <i class="fas fa-edit me-1"></i>
+                Bulk Update
+                <span id="selectedCount" class="badge bg-dark ms-1">0</span>
+            </button>
+
             <button type="button"
                     class="btn btn-info btn-sm"
                     id="exportPurchasingCSV">
                 <i class="fas fa-file-csv me-1"></i>
                 Export CSV
             </button>
-        </div>
 
-        <div class="card-body">
+        <?php endif; ?>
+    </div>
+</div>
+
+ <div class="card-body">
 
 <div class="card-body">
 <?php
@@ -298,14 +365,29 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
 
             </div>
 
+            <!-- Urgency -->
+            <div class="col-md-1">
+                <label class="form-label">Urgency</label>
+                <select id="statusUrgencyFilter" class="form-select">
+                    <option value="">All </option>
+                    <option value="urgent">Urgent</option>
+                    <option value="high">High</option>
+                    <option value="medium">Medium</option>
+                </select>
+            </div>
             <!-- Status -->
-            <div class="col-md-2">
+            <div class="col-md-1">
                 <label class="form-label">Status</label>
                 <select id="statusSelectFilter" class="form-select">
                     <option value="">All Status</option>
                     <option value="pending">Pending</option>
-                    <option value="proceed request">Proceed Request</option>
-                    <option value="checking request">Checking Request</option>
+                    <option value="checking requirements">Checking Requirements</option>
+                    <option value="canvassing">Canvassing</option>
+                    <option value="negotiation">Negotiation</option>
+                    <option value="under discussion">Under Discussion</option>
+                    <option value="draft">Draft </option>
+                    <option value="final">Final </option>
+                    <option value="end">End </option>
                     <option value="closed">Closed</option>
                 </select>
             </div>
@@ -324,58 +406,77 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
 
         </div>
 
-    <?php else: ?>
+            <?php else: ?>
 
-        <!-- ==========================================
-             NON-PURCHASING USERS
-        =========================================== -->
+                <!-- ==========================================
+                    NON-PURCHASING USERS
+                =========================================== -->
 
-        <div class="d-flex flex-wrap gap-2 mb-3">
+            
+                <div class="row g-3 align-items-end">
+                    <!-- Urgency -->
+                    <div class="col-md-2">
+                        <label class="form-label">Urgency</label>
+                        <select id="statusUrgencyFilter" class="form-select">
+                            <option value="">All </option>
+                            <option value="Urgent">Urgent</option>
+                            <option value="High">High</option>
+                            <option value="Medium">Medium </option>
+                        </select>
+                    </div>
+                    <!-- Status -->
+                    <div class="col-md-2">
+                        <label class="form-label">Status</label>
+                        <select id="statusSelectFilter" class="form-select">
+                            <option value="">All Status</option>
+                            <option value="pending">Pending</option>
+                            <option value="checking requirements">Checking Requirements</option>
+                            <option value="canvassing">Canvassing</option>
+                            <option value="negotiation">Negotiation</option>
+                            <option value="under discussion">Under Discussion</option>
+                            <option value="draft">Draft </option>
+                            <option value="final">Final </option>
+                            <option value="end">End </option>
+                            <option value="closed">Closed</option>
+                        </select>
+                    </div>
 
-            <button
-                class="btn btn-outline-blue btn-sm status-filter active"
-                data-status="">
-                All
-            </button>
+                    <!-- Date From -->
+                    <div class="col-md-2">
+                        <label class="form-label">Date From</label>
+                        <input type="date" id="dateFrom" class="form-control">
+                    </div>
 
-            <button
-                class="btn btn-outline-blue btn-sm status-filter"
-                data-status="pending">
-                Pending
-            </button>
+                    <!-- Date To -->
+                    <div class="col-md-2">
+                        <label class="form-label">Date To</label>
+                        <input type="date" id="dateTo" class="form-control">
+                    </div>
 
-            <button
-                class="btn btn-outline-blue btn-sm status-filter"
-                data-status="approved">
-                Approved
-            </button>
+                </div>
 
-            <button
-                class="btn btn-outline-blue btn-sm status-filter"
-                data-status="rejected">
-                Rejected
-            </button>
+            <?php endif; ?>
 
         </div>
-
-    <?php endif; ?>
-
-</div>
 
 
             <div class="table-responsive">
                 <table id="requestsTable" class="table table-hover align-middle">
                     <thead>
                         <tr>
-                            <th>#</th>
+                            <th>
+                                <input type="checkbox" id="selectAllRequests">
+                            </th>
+                            <th>ID</th>
                             <th>LMR No.</th>
-                            <th>User</th>
+                            <th>PO No.</th>
+                            <th>Requester</th>
                             <th>Department</th>
                             <th>Item</th>
                             <th>Qty</th>
                             <th>UoM</th>
                             <th>Assigned to</th>
-                            <!-- <th>Requested by</th> -->
+                            <th>Urgency</th>
                             <th>Status</th>
                             <th>Date Created</th>
                             <th>Date Needed</th>
@@ -436,6 +537,8 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
                             data-request-id="<?= (int)$row['request_id'] ?>"
                             data-lmr-no="<?= htmlspecialchars($row['lmr_no'], ENT_QUOTES) ?>"
                             data-status="<?= htmlspecialchars(strtolower(trim($row['status'])), ENT_QUOTES) ?>"
+                            data-priority="<?= htmlspecialchars($row['priority'] ?? '', ENT_QUOTES) ?>"
+                            data-po="<?= htmlspecialchars($row['po_no'] ?? '', ENT_QUOTES) ?>"
                             data-company="<?= htmlspecialchars($row['company'], ENT_QUOTES) ?>"
                             data-department="<?= htmlspecialchars($row['department'], ENT_QUOTES) ?>"
                             data-item="<?= htmlspecialchars($row['item'], ENT_QUOTES) ?>"
@@ -450,116 +553,138 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
                             data-requestor-name="<?= htmlspecialchars($requestor_name, ENT_QUOTES) ?>"
                             style="cursor:pointer;"
                         >
+                        <td onclick="event.stopPropagation();">
+                            <input 
+                                type="checkbox"
+                                class="request-checkbox"
+                                value="<?= (int)$row['request_id'] ?>"
+                            >
+                        </td>
+                            <td><?= htmlspecialchars($row['request_id']) ?></td>
+                            <td><?= htmlspecialchars($row['lmr_no']) ?></td>
+                            <td><?= htmlspecialchars($row['po_no']) ?></td>
+                            <td><?= htmlspecialchars($requestor_name) ?></td>
+                            
+                            <td><?= htmlspecialchars($row['department']) ?></td>
+                            <td><?= htmlspecialchars($row['item']) ?></td>
 
-                                    <td><?= $i++ ?></td>
-                                    <td><?= htmlspecialchars($row['lmr_no']) ?></td>
-                                    <td><?= htmlspecialchars($requestor_name) ?></td>
-                                 
-                                    <td><?= htmlspecialchars($row['department']) ?></td>
-                                    <td><?= htmlspecialchars($row['item']) ?></td>
+                            <td><?= $row['quantity'] ?></td>
+                            <td><?= htmlspecialchars($row['UoM']) ?></td>
+                            <td>
+                                <?php if ($purchaser_id == 1): ?>
+                                    <span class="unassigned-purchaser">
+                                        Unassigned
+                                    </span>
+                                <?php else: ?>
+                                    <?= htmlspecialchars($purchaser_name) ?>
+                                <?php endif; ?>
+                            </td>
+                            <td class="priority-cell">
+                                <?php
+                                    $priority = strtolower(trim($row['priority'] ?? ''));
 
-                                    <td><?= $row['quantity'] ?></td>
-                                    <td><?= htmlspecialchars($row['UoM']) ?></td>
-                                  <td>
-                                        <?php if ($purchaser_id == 1): ?>
-                                            <span class="unassigned-purchaser">
-                                                Unassigned
-                                            </span>
-                                        <?php else: ?>
-                                            <?= htmlspecialchars($purchaser_name) ?>
-                                        <?php endif; ?>
-                                    </td>
-                                    <td>
-                                        <?php 
-                                            $status = strtolower(trim($row['status']));
+                                    $priorityClass = match ($priority) {
+                                        'urgent' => 'priority-urgent',
+                                        'high'   => 'priority-high',
+                                        'medium' => 'priority-medium',
+                                        default  => 'priority-default'
+                                    };
 
-                                            switch ($status) {
-                                                case 'proceed request':
-                                                    $statusClass = 'badge-proceed';
-                                                    break;
+                                    echo '<span class="priority-badge ' . $priorityClass . '">' .
+                                        htmlspecialchars(ucfirst($priority)) .
+                                        '</span>';
+                                ?>
+                            </td>
+                            <td>
+                                <?php 
+                                    $status = strtolower(trim($row['status']));
 
-                                                case 'checking requirements':
-                                                case 'checking request':
-                                                case 'canvassing':
-                                                    $statusClass = 'badge-checking';
-                                                    break;
+                                    switch ($status) {
+                                        case 'proceed request':
+                                            $statusClass = 'badge-proceed';
+                                            break;
 
-                                                case 'negotiation':
-                                                case 'under discussion':
-                                                    $statusClass = 'badge-negotiation';
-                                                    break;
+                                        case 'checking requirements':
+                                        case 'canvassing':
+                                            $statusClass = 'badge-checking';
+                                            break;
 
-                                                case 'draft':
-                                                    $statusClass = 'badge-draft';
-                                                    break;
+                                        case 'negotiation':
+                                        case 'under discussion':
+                                            $statusClass = 'badge-negotiation';
+                                            break;
 
-                                                case 'final':
-                                                    $statusClass = 'badge-proceed';
-                                                    break;
+                                        case 'draft':
+                                            $statusClass = 'badge-draft';
+                                            break;
 
-                                                case 'pending':
-                                                    $statusClass = 'badge-pending';
-                                                    break;
+                                        case 'final':
+                                            $statusClass = 'badge-proceed';
+                                            break;
 
-                                                case 'end':
-                                                case 'closed':
-                                                    $statusClass = 'badge-closed';
-                                                    break;
+                                        case 'pending':
+                                            $statusClass = 'badge-pending';
+                                            break;
 
-                                                case 'canceled':
-                                                    $statusClass = 'badge-canceled';
-                                                    break;
+                                        case 'end':
+                                        case 'closed':
+                                            $statusClass = 'badge-closed';
+                                            break;
 
-                                                default:
-                                                    $statusClass = 'badge-pending';
-                                                    break;
-                                            }
-                                        ?>
+                                        case 'canceled':
+                                            $statusClass = 'badge-canceled';
+                                            break;
 
-                                        <span class="badge <?= $statusClass ?>" style="width: 100%;">
-                                            <?= ucfirst($row['status']) ?>
-                                        </span>
-                                    </td>
-                                    
-                                    <td><?= date('m-d-Y', strtotime($row['date_created'])) ?></td>
-                                    <td><?= date('m-d-Y', strtotime( $row['date_needed'])) ?></td>
-                                    <!-- <td><?= htmlspecialchars($row['remarks'] ?? '-') ?></td> -->
-                                    <td onclick="event.stopPropagation();">
+                                        default:
+                                            $statusClass = 'badge-pending';
+                                            break;
+                                    }
+                                ?>
 
-                                        <a href="?page=ticket/view_request&request_id=<?= $row['request_id'] ?>"
-                                        class="btn btn-sm btn-primary"
-                                        title="View">
-                                            <i class="fas fa-eye"></i>
-                                        </a>
+                                <span class="badge <?= $statusClass ?>" style="width: 100%;">
+                                    <?= ucfirst($row['status']) ?>
+                                </span>
+                            </td>
+                            
+                            <td><?= date('m-d-Y', strtotime($row['date_created'])) ?></td>
+                            <td><?= date('m-d-Y', strtotime( $row['date_needed'])) ?></td>
+                            <!-- <td><?= htmlspecialchars($row['remarks'] ?? '-') ?></td> -->
+                            <td onclick="event.stopPropagation();">
 
-                                        <?php
-                                        $isLocalUser =
-                                            (int)$row['created_by'] === (int)$_SESSION['user_id'];
+                                <a href="?page=ticket/view_purch_request&request_id=<?= (int)$row['request_id'] ?>"
+                                class="btn btn-sm btn-primary"
+                                title="View">
+                                    <i class="fas fa-eye"></i>
+                                </a>
 
-                                        $isPending =
-                                            strcasecmp(trim($row['status']), 'pending') === 0;
-                                        ?>
+                                <?php
+                                $isLocalUser =
+                                    (int)$row['created_by'] === (int)$_SESSION['user_id'];
 
-                                        <?php if ($isLocalUser && $isPending): ?>
-                                            <a href="?page=ticket/includes/edit_request&request_id=<?= (int)$row['request_id'] ?>"
-                                            class="btn btn-sm btn-warning"
-                                            title="Edit">
-                                                <i class="fas fa-edit"></i>
-                                            </a>
-                                        <?php endif; ?>
+                                $isPending =
+                                    strcasecmp(trim($row['status']), 'pending') === 0;
+                                ?>
 
-                                        <button
-                                            type="button"
-                                            class="btn btn-sm btn-success btn-print"
-                                            data-lmr="<?= htmlspecialchars($row['lmr_no']) ?>"
-                                            data-status="<?= htmlspecialchars(strtolower(trim($row['status']))) ?>"
-                                            title="Print">
-                                            <i class="fas fa-print"></i>
-                                        </button>
+                                <?php if ($isLocalUser && $isPending): ?>
+                                    <a href="?page=ticket/includes/edit_request&request_id=<?= (int)$row['request_id'] ?>"
+                                    class="btn btn-sm btn-warning"
+                                    title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                <?php endif; ?>
 
-                                    </td>
+                                <!-- <button
+                                    type="button"
+                                    class="btn btn-sm btn-success btn-print"
+                                    data-lmr="<?= htmlspecialchars($row['lmr_no']) ?>"
+                                    data-status="<?= htmlspecialchars(strtolower(trim($row['status']))) ?>"
+                                    title="Print">
+                                    <i class="fas fa-print"></i>
+                                </button> -->
 
-                                </tr>
+                            </td>
+
+                        </tr>
                             <?php endwhile; ?>
                         <?php else: ?>
                         
@@ -569,1003 +694,1415 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
             </div>
         </div>
     </div>
-<!-- Context Menu -->
-<!-- <div id="contextMenu" class="custom-menu">
-    <a href="#" id="deleteRequest" class="text-danger"><i class="fas fa-trash"></i> Delete Request</a>
-</div> -->
+    <!-- Context Menu -->
+    <!-- <div id="contextMenu" class="custom-menu">
+        <a href="#" id="deleteRequest" class="text-danger"><i class="fas fa-trash"></i> Delete Request</a>
+    </div> -->
 
-<!-- =========================================================
-     REQUEST DETAILS MODAL
-========================================================= -->
-<div class="modal fade modal-xl" id="requestDetailsModal" tabindex="-1"
-     aria-labelledby="requestDetailsModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered" >
-    <div class="modal-content border-0 shadow-xl">
+    <!-- =========================================================
+        REQUEST DETAILS MODAL
+    ========================================================= -->
+    <div class="modal fade modal-xl" id="requestDetailsModal" tabindex="-1"
+        aria-labelledby="requestDetailsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" >
+        <div class="modal-content border-0 shadow-xl">
 
-            <div class="modal-header bg-gradient-primary  text-white">
-                <div>
-                    <!-- <h5 class="modal-title" id="requestDetailsModalLabel">
-                        LMR Request Details
-                    </h5> -->
-                    <h5 id="modalLmrNo"></h5>
+                <div class="modal-header bg-gradient-primary  text-white">
+                    <div>
+                        <!-- <h5 class="modal-title" id="requestDetailsModalLabel">
+                            LMR Request Details
+                        </h5> -->
+                        <h5 id="modalLmrNo"></h5>
+                    </div>
+
+                    <button type="button"
+                            class="btn-close btn-close-white"
+                            data-bs-dismiss="modal"
+                            aria-label="Close">
+                    </button>
                 </div>
 
-                <button type="button"
-                        class="btn-close btn-close-white"
-                        data-bs-dismiss="modal"
-                        aria-label="Close">
-                </button>
-            </div>
+                <div class="modal-body">
 
-            <div class="modal-body">
-
-                <!-- Hidden request ID -->
-                <input type="hidden" id="modalRequestId">
-
-                <!-- =================================================
-                     REQUEST INFORMATION
-                ================================================== -->
-                <div class="row g-3">
-
-                    <div class="col-md-4">
-                        <label class="form-label fw-bold">LMR No.</label>
-                        <input type="text"
-                               id="modalLmr"
-                               class="form-control"
-                               readonly>
-                    </div>
-
-                    <div class="col-md-4">
-                        <label class="form-label fw-bold">Company</label>
-                        <input type="text"
-                               id="modalCompany"
-                               class="form-control"
-                               readonly>
-                    </div>
-
-                    <div class="col-md-4">
-                        <label class="form-label fw-bold">Department</label>
-                        <input type="text"
-                               id="modalDepartment"
-                               class="form-control"
-                               readonly>
-                    </div>
-
-                    <div class="col-md-6">
-                        <label class="form-label fw-bold">Item</label>
-                        <input type="text"
-                               id="modalItem"
-                               class="form-control"
-                               readonly>
-                    </div>
-
-                    <div class="col-md-3">
-                        <label class="form-label fw-bold">Quantity</label>
-                        <input type="text"
-                               id="modalQuantity"
-                               class="form-control"
-                               readonly>
-                    </div>
-
-                    <div class="col-md-3">
-                        <label class="form-label fw-bold">UoM</label>
-                        <input type="text"
-                               id="modalUom"
-                               class="form-control"
-                               readonly>
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label fw-bold">Requested By</label>
-                        <input type="text"
-                               id="modalRequestor"
-                               class="form-control"
-                               readonly>
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label fw-bold">Date Needed</label>
-                        <input type="text"
-                               id="modalDateNeeded"
-                               class="form-control"
-                               readonly>
-                    </div>
-
-                    <div class="col-md-4">
-                        <label class="form-label fw-bold">Date Created</label>
-                        <input type="text"
-                               id="modalDateCreated"
-                               class="form-control"
-                               readonly>
-                    </div>
-
-                    <div class="col-12">
-                        <label class="form-label fw-bold">Description</label>
-                        <textarea id="modalDescription"
-                                  class="form-control"
-                                  rows="3"
-                                  readonly></textarea>
-                    </div>
-
-                    <div class="col-12">
-                        <label class="form-label fw-bold">Remarks</label>
-                        <textarea id="modalRemarks"
-                                  class="form-control"
-                                  rows="3"
-                                  readonly></textarea>
-                    </div>
-
-
+                    <!-- Hidden request ID -->
+                    <input type="hidden" id="modalRequestId">
 
                     <!-- =================================================
-                         PURCHASING CONTROLS
+                        REQUEST INFORMATION
                     ================================================== -->
-                    <?php
-                    $isPurchasing =
-                        strcasecmp(trim($currentDepartment), 'Purchasing') === 0
-                        || (
-                            isset($_SESSION['user_type'])
-                            && strcasecmp(trim($_SESSION['user_type']), 'admin') === 0
-                        );
-                    ?>
+                    <div class="row g-3">
+
+                        <!-- <div class="col-md-4">
+                            <label class="form-label fw-bold">LMR No.</label>
+                            <input type="text"
+                                id="modalLmr"
+                                class="form-control"
+                                readonly>
+                        </div> -->
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Requested By</label>
+                            <input type="text"
+                                id="modalRequestor"
+                                class="form-control"
+                                readonly>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Company</label>
+                            <input type="text"
+                                id="modalCompany"
+                                class="form-control"
+                                readonly>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Department</label>
+                            <input type="text"
+                                id="modalDepartment"
+                                class="form-control"
+                                readonly>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Item</label>
+                            <input type="text"
+                                id="modalItem"
+                                class="form-control"
+                                readonly>
+                        </div>
+
+                        <div class="col-md-2">
+                            <label class="form-label fw-bold">Quantity</label>
+                            <input type="text"
+                                id="modalQuantity"
+                                class="form-control"
+                                readonly>
+                        </div>
+
+                        <div class="col-md-2">
+                            <label class="form-label fw-bold">UoM</label>
+                            <input type="text"
+                                id="modalUom"
+                                class="form-control"
+                                readonly>
+                        </div>
+
+                        <div class="col-md-2">
+                            <label class="form-label fw-bold">Date Needed</label>
+                            <input type="text"
+                                id="modalDateNeeded"
+                                class="form-control"
+                                readonly>
+                        </div>
+
+                        <div class="col-md-2">
+                            <label class="form-label fw-bold">Date Created</label>
+                            <input type="text"
+                                id="modalDateCreated"
+                                class="form-control"
+                                readonly>
+                        </div>
+
+                        <div class="col-6">
+                            <label class="form-label fw-bold">Description</label>
+                            <textarea id="modalDescription"
+                                    class="form-control"
+                                    rows="6"
+                                    readonly></textarea>
+                        </div>
+
+                        <div class="col-6">
+                            <label class="form-label fw-bold">Remarks</label>
+                            <textarea id="modalRemarks"
+                                    class="form-control"
+                                    rows="6"
+                                    readonly></textarea>
+                        </div>
+
+
+
+                        <!-- =================================================
+                            PURCHASING CONTROLS
+                        ================================================== -->
+                        <?php
+                        $isPurchasing =
+                            strcasecmp(trim($currentDepartment), 'Purchasing') === 0
+                            || (
+                                isset($_SESSION['user_type'])
+                                && strcasecmp(trim($_SESSION['user_type']), 'admin') === 0
+                            );
+                        ?>
+
+                        <?php if ($isPurchasing): ?>
+
+                            <div class="col-md-5">
+                                <label class="form-label fw-bold">
+                                    Assigned Purchaser
+                                </label>
+
+                                <div class="input-group">
+
+                                    <select id="modalPurchaser"
+                                            class="form-select">
+
+                                        <option value="1">
+                                            Unassigned
+                                        </option>
+
+                                        <?php
+                                        $purchaserQuery = $conn->query("
+                                            SELECT user_id, fullname, company
+                                            FROM user_tb
+                                            WHERE department = 'Purchasing' AND is_active = 1
+                                            ORDER BY company ASC
+                                        ");
+
+                                        while ($purchaser = $purchaserQuery->fetch_assoc()):
+                                        ?>
+
+                                            <option value="<?= (int)$purchaser['user_id'] ?>">
+                                                <?= htmlspecialchars($purchaser['company']) ?>-
+                                                <?= htmlspecialchars($purchaser['fullname']) ?>
+                                            </option>
+
+                                        <?php endwhile; ?>
+
+                                    </select>
+
+                                    <button type="button"
+                                            id="assignToMeBtn"
+                                            class="btn btn-outline-primary">
+                                        Assign to Me
+                                    </button>
+
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+
+                                <label class="form-label fw-bold">
+                                    Urgency
+                                </label>
+
+                                <select id="modalPriority"
+                                        class="form-select">
+                                    <option value="urgent">Urgent</option>
+                                    <option value="high">High</option>
+                                    <option value="medium">Medium</option>
+
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+
+                                <label class="form-label fw-bold">
+                                    Status
+                                </label>
+
+                                <select id="modalStatus"
+                                        class="form-select">
+
+                                    <option value="pending"> Pending</option>
+                                    <option value="checking requirements">Checking Requirements</option>
+                                    <option value="canvassing">Canvassing</option>
+                                    <option value="negotiation">Negotiation</option>
+                                    <option value="under discussion">Under Discussion</option>
+                                    <option value="draft">Draft </option>
+                                    <option value="final">Final </option>
+                                    <option value="end">End </option>
+                                    <option value="closed">Closed</option>
+
+                                </select>
+                            </div>
+
+                            <div class="col-md-2">
+                                <label class="form-label fw-bold">PO Number</label>
+                                <input type="text"
+                                    id="modalPO"
+                                    class="form-control"
+                                    >
+                            </div>
+                            <div class="col-md-12">
+                                <label class="form-label fw-bold">Attachments</label>
+        
+                            </div>
+
+
+                        <?php else: ?>
+
+                            <!-- REQUESTOR VIEW -->
+
+                            <div class="col-md-6">
+
+                                <label class="form-label fw-bold">
+                                    Assigned Purchaser
+                                </label>
+
+                                <input type="text"
+                                    id="modalPurchaserDisplay"
+                                    class="form-control"
+                                    readonly>
+
+                            </div>
+                            <div class="col-md-3">
+
+                                <label class="form-label fw-bold">
+                                    Urgency
+                                </label>
+                                <input type="text"
+                                    id="modalPriorityDisplay"
+                                    class="form-control"
+                                    readonly>
+                            </div>
+                            <div class="col-md-3">
+
+                                <label class="form-label fw-bold">
+                                    Status
+                                </label>
+
+                                <input type="text"
+                                    id="modalStatusDisplay"
+                                    class="form-control"
+                                    readonly>
+
+                            </div>
+                            <!-- <div class="col-md-2">
+                                <label class="form-label fw-bold">PO Number</label>
+                                <input type="text"
+                                    id="modalPO"
+                                    class="form-control"
+                                    readonly>
+                            </div> -->
+
+                        <?php endif; ?>
+
+                    </div>
+
+                    <!-- =================================================
+                        SAVE MESSAGE
+                    ================================================== -->
+                    <div id="modalSaveMessage"
+                        class="alert d-none mt-4 mb-0">
+                    </div>
+
+                </div>
+
+                <div class="modal-footer">
+
+                    <button type="button"
+                            class="btn btn-secondary"
+                            data-bs-dismiss="modal">
+                        Close
+                    </button>
 
                     <?php if ($isPurchasing): ?>
 
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold">
-                                Assigned Purchaser
-                            </label>
-
-                            <div class="input-group">
-
-                                <select id="modalPurchaser"
-                                        class="form-select" disabled>
-
-                                    <option value="1">
-                                        Unassigned
-                                    </option>
-
-                                    <?php
-                                    $purchaserQuery = $conn->query("
-                                        SELECT user_id, fullname, company
-                                        FROM user_tb
-                                        WHERE department = 'Purchasing' AND is_active = 1
-                                        ORDER BY company ASC
-                                    ");
-
-                                    while ($purchaser = $purchaserQuery->fetch_assoc()):
-                                    ?>
-
-                                        <option value="<?= (int)$purchaser['user_id'] ?>">
-                                            <?= htmlspecialchars($purchaser['company']) ?>-
-                                            <?= htmlspecialchars($purchaser['fullname']) ?>
-                                        </option>
-
-                                    <?php endwhile; ?>
-
-                                </select>
-
-                                <!-- <button type="button"
-                                        id="assignToMeBtn"
-                                        class="btn btn-outline-primary">
-                                    Assign to Me
-                                </button> -->
-
-                            </div>
-                        </div>
-
-                        <div class="col-md-6">
-
-                            <label class="form-label fw-bold">
-                                Status
-                            </label>
-
-                            <select id="modalStatus"
-                                    class="form-select" disabled>
-
-                                <option value="pending">Pending</option>
-                                <option value="checking requirements">Checking Requirements</option>
-                                <option value="canvassing">Canvassing</option>
-                                <option value="negotiation">Negotiation</option>
-                                <option value="under discussion">Under Discussion</option>
-                                <option value="draft">Draft </option>
-                                <option value="final">Final </option>
-                                <option value="end">End </option>
-                                <option value="closed">Closed</option>
-
-                            </select>
-
-                        </div>
-
-                    <?php else: ?>
-
-                        <!-- REQUESTOR VIEW -->
-
-                        <div class="col-md-6">
-
-                            <label class="form-label fw-bold">
-                                Assigned Purchaser
-                            </label>
-
-                            <input type="text"
-                                   id="modalPurchaserDisplay"
-                                   class="form-control"
-                                   readonly>
-
-                        </div>
-
-                        <div class="col-md-6">
-
-                            <label class="form-label fw-bold">
-                                Status
-                            </label>
-
-                            <input type="text"
-                                   id="modalStatusDisplay"
-                                   class="form-control"
-                                   readonly>
-
-                        </div>
+                        <button type="button"
+                                id="saveRequestChanges"
+                                class="btn btn-primary"
+                                disabled>
+                            <i class="fas fa-save me-1"></i>
+                            Save Changes
+                        </button>
 
                     <?php endif; ?>
 
                 </div>
 
-                <!-- =================================================
-                     SAVE MESSAGE
-                ================================================== -->
-                <div id="modalSaveMessage"
-                     class="alert d-none mt-4 mb-0">
+            </div>
+        </div>
+    </div>
+
+    <!-- =========================================================
+        BULK UPDATE MODAL
+        ========================================================= -->
+        <div class="modal fade" id="bulkUpdateModal" tabindex="-1"
+            aria-labelledby="bulkUpdateModalLabel" aria-hidden="true">
+
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+
+            <div class="modal-content">
+
+                <div class="modal-header bg-gradient-primary text-white">
+
+                    <div>
+                        <h5 class="modal-title" id="bulkUpdateModalLabel">
+                            Bulk Update Requests
+                        </h5>
+
+                        <small>
+                            Selected:
+                            <strong id="bulkSelectedCount">0</strong>
+                            requests
+                        </small>
+                    </div>
+
+                    <button type="button"
+                            class="btn-close btn-close-white"
+                            data-bs-dismiss="modal">
+                    </button>
+
+                </div>
+
+                <div class="modal-body">
+
+                    <div class="alert alert-info">
+                        Leave a field unchanged if you do not want to modify it.
+                    </div>
+
+                    <div class="row g-3">
+
+                        <!-- STATUS -->
+                        <div class="col-md-6">
+
+                            <label class="form-label fw-bold">
+                                Status
+                            </label>
+
+                            <select id="bulkStatus"
+                                    class="form-select">
+
+                                <option value="">
+                                    No Change
+                                </option>
+
+                                <option value="pending">
+                                    Pending
+                                </option>
+
+                                <option value="checking requirements">
+                                    Checking Requirements
+                                </option>
+
+                                <option value="canvassing">
+                                    Canvassing
+                                </option>
+
+                                <option value="negotiation">
+                                    Negotiation
+                                </option>
+
+                                <option value="under discussion">
+                                    Under Discussion
+                                </option>
+
+                                <option value="draft">
+                                    Draft
+                                </option>
+
+                                <option value="final">
+                                    Final
+                                </option>
+
+                                <option value="end">
+                                    End
+                                </option>
+
+                                <option value="closed">
+                                    Closed
+                                </option>
+
+                            </select>
+
+                        </div>
+
+
+                        <!-- PRIORITY -->
+                        <div class="col-md-6">
+
+                            <label class="form-label fw-bold">
+                                Priority
+                            </label>
+
+                            <select id="bulkPriority"
+                                    class="form-select">
+
+                                <option value="">
+                                    No Change
+                                </option>
+
+                                <option value="urgent">
+                                    Urgent
+                                </option>
+
+                                <option value="high">
+                                    High
+                                </option>
+
+                                <option value="medium">
+                                    Medium
+                                </option>
+
+                            </select>
+
+                        </div>
+
+
+                        <!-- PURCHASER -->
+                        <div class="col-md-6">
+
+                            <label class="form-label fw-bold">
+                                Assigned Purchaser
+                            </label>
+
+                            <select id="bulkPurchaser"
+                                    class="form-select">
+
+                                <option value="">
+                                    No Change
+                                </option>
+
+                                <option value="1">
+                                    Unassigned
+                                </option>
+
+                                <?php
+                                $bulkPurchaserQuery = $conn->query("
+                                    SELECT user_id, fullname, company
+                                    FROM user_tb
+                                    WHERE department = 'Purchasing'
+                                    AND is_active = 1
+                                    ORDER BY company ASC, fullname ASC
+                                ");
+
+                                while ($bulkPurchaser = $bulkPurchaserQuery->fetch_assoc()):
+                                ?>
+
+                                    <option value="<?= (int)$bulkPurchaser['user_id'] ?>">
+                                        <?= htmlspecialchars($bulkPurchaser['company']) ?> -
+                                        <?= htmlspecialchars($bulkPurchaser['fullname']) ?>
+                                    </option>
+
+                                <?php endwhile; ?>
+
+                            </select>
+
+                        </div>
+
+
+                        <!-- PO NUMBER -->
+                        <div class="col-md-6">
+
+                            <label class="form-label fw-bold">
+                                PO Number
+                            </label>
+
+                            <input type="text"
+                                id="bulkPO"
+                                class="form-control"
+                                placeholder="Leave blank for no change">
+
+                        </div>
+
+                    </div>
+
+
+                    <div id="bulkUpdateMessage"
+                        class="alert d-none mt-4 mb-0">
+                    </div>
+
+                </div>
+
+
+                <div class="modal-footer">
+
+                    <button type="button"
+                            class="btn btn-secondary"
+                            data-bs-dismiss="modal">
+                        Cancel
+                    </button>
+
+                    <button type="button"
+                            class="btn btn-primary"
+                            id="confirmBulkUpdate">
+
+                        <i class="fas fa-save me-1"></i>
+                        Update Selected
+
+                    </button>
+
                 </div>
 
             </div>
 
-            <div class="modal-footer">
-<!-- 
-                <button type="button"
-                        class="btn btn-secondary"
-                        data-bs-dismiss="modal">
-                    Close
-                </button> -->
-
-                <?php if ($isPurchasing): ?>
-
-                    <!-- <button type="button"
-                            id="saveRequestChanges"
-                            class="btn btn-primary"
-                            disabled>
-                        <i class="fas fa-save me-1"></i>
-                        Save Changes
-                    </button> -->
-
-                <?php endif; ?>
-
-            </div>
-
         </div>
+
     </div>
-</div>
+
+    <!-- <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script> -->
 
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
-<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+<script>
+$(document).ready(function () {
 
-<!-- <script>
-    $(document).ready(function () {
-        const table = $('#requestsTable').DataTable({
-            pageLength: 10,
-            order: [[0, "desc"]],
-            columnDefs: [{ orderable: false, targets: [5, 9] }]
-        });
+    const table = $('#requestsTable').DataTable({
+        pageLength: 20,
 
-        // Status filter
-        $.fn.dataTable.ext.search.push(function(settings, data, dataIndex) {
-            const selectedStatus = $('.status-filter.active').data('status');
-            const rowStatus = $(table.row(dataIndex).node()).data('status');
-            if (!selectedStatus) return true;
-            return rowStatus === selectedStatus;
-        });
+        lengthMenu: [
+            [10, 20, 50, 100, 500, 1000, 5000, 10000],
+            [10, 20, 50, 100, 500, 1000, 5000, 10000]
+        ],
 
-        $('.status-filter').on('click', function () {
-            $('.status-filter').removeClass('active');
-            $(this).addClass('active');
-            table.draw();
-        });
+        order: [[1, "desc"]],
+
+        columnDefs: [
+            {
+                orderable: false,
+                targets: [0, 14]
+            }
+        ]
     });
 
-    // Context menu
-    let currentRequestId = null;
+    // =====================================================
+    // BULK SELECTION
+    // =====================================================
 
-    $(function () {
+    function updateSelectedCount() {
 
-    $('.btn-print').on('click', function (e) {
+        let selectedCount = 0;
 
-        e.preventDefault();
-        e.stopPropagation();
+        table.rows().every(function () {
 
-        const status = ($(this).data('status') || '').toLowerCase().trim();
-        const lmr = $(this).data('lmr');
+            const row = $(this.node());
 
-        if (status !== 'proceed request') {
-            alert('Printing is only available when the request status is "Proceed Request".');
+            if (
+                row.find('.request-checkbox').prop('checked')
+            ) {
+                selectedCount++;
+            }
+
+        });
+
+        $('#selectedCount').text(selectedCount);
+        $('#bulkSelectedCount').text(selectedCount);
+
+        $('#bulkUpdateBtn').prop(
+            'disabled',
+            selectedCount === 0
+        );
+    }
+
+
+    // =====================================================
+    // INDIVIDUAL CHECKBOX
+    // =====================================================
+
+    $('#requestsTable tbody').on(
+        'change',
+        '.request-checkbox',
+        function (e) {
+
+            e.stopPropagation();
+
+            updateSelectedCount();
+            updateSelectAllState();
+        }
+    );
+
+    // =====================================================
+    // SELECT ALL CURRENTLY DISPLAYED/FILTERED ROWS
+    // =====================================================
+
+    $('#selectAllRequests').on('change', function () {
+
+        const checked = $(this).prop('checked');
+
+        // Only select rows currently visible after filters/search
+        table.rows({
+            search: 'applied'
+        }).nodes().to$()
+        .find('.request-checkbox')
+        .prop('checked', checked);
+
+        updateSelectedCount();
+    });
+
+
+    // =====================================================
+    // UPDATE SELECT ALL STATE
+    // =====================================================
+
+    function updateSelectAllState() {
+
+        const visibleCheckboxes =
+            table.rows({
+                search: 'applied'
+            }).nodes().to$()
+            .find('.request-checkbox');
+
+        const checkedCount =
+            visibleCheckboxes.filter(':checked').length;
+
+        if (visibleCheckboxes.length === 0) {
+
+            $('#selectAllRequests')
+                .prop('checked', false)
+                .prop('indeterminate', false);
+
             return;
         }
 
-        window.open(
-            '?page=ticket/includes/print_request&lmr_no=' + encodeURIComponent(lmr),
-            '_blank'
+        $('#selectAllRequests').prop(
+            'checked',
+            checkedCount === visibleCheckboxes.length
         );
 
+        $('#selectAllRequests').prop(
+            'indeterminate',
+            checkedCount > 0 &&
+            checkedCount < visibleCheckboxes.length
+        );
+    }                                
+
+    // =====================================================
+    // CUSTOM FILTER
+    // =====================================================
+
+    $.fn.dataTable.ext.search.push(function (settings, data, dataIndex) {
+
+        // Only apply this filter to requestsTable
+        if (settings.nTable.id !== 'requestsTable') {
+            return true;
+        }
+
+        const row = table.row(dataIndex).node();
+
+        if (!row) {
+            return true;
+        }
+
+        const $row = $(row);
+
+        // =====================================================
+        // GET ROW DATA
+        // Use attr() so AJAX-updated values are always current
+        // =====================================================
+
+        const rowStatus = (
+            $row.attr('data-status') || ''
+        ).toString().toLowerCase().trim();
+
+        const rowCompany = (
+            $row.attr('data-company') || ''
+        ).toString().toLowerCase().trim();
+
+        const rowDepartment = (
+            $row.attr('data-department') || ''
+        ).toString().toLowerCase().trim();
+
+        const rowPriority = (
+            $row.attr('data-priority') || ''
+        ).toString().toLowerCase().trim();
+
+        const purchaserId = (
+            $row.attr('data-purchaser-id') || ''
+        ).toString().trim();
+
+        const rowDateCreated = (
+            $row.attr('data-date-created') || ''
+        ).toString().trim();
+
+
+    // =====================================================
+    // GET FILTER VALUES
+    // =====================================================
+
+        const requestView =
+            $('#requestViewFilter').val() || '';
+
+        const department =
+            ($('#departmentFilter').val() || '')
+            .toString()
+            .toLowerCase()
+            .trim();
+
+        const company =
+            ($('#companyFilter').val() || '')
+            .toString()
+            .toLowerCase()
+            .trim();
+
+        const status =
+            ($('#statusSelectFilter').val() || '')
+            .toString()
+            .toLowerCase()
+            .trim();
+
+        const urgency =
+            ($('#statusUrgencyFilter').val() || '')
+            .toString()
+            .toLowerCase()
+            .trim();
+
+        const dateFrom =
+            $('#dateFrom').val() || '';
+
+        const dateTo =
+            $('#dateTo').val() || '';
+
+
+        // =====================================================
+        // ASSIGNED TO ME
+        // =====================================================
+
+        if (requestView === 'assigned') {
+
+            const currentUserId =
+                '<?= (int)$_SESSION['user_id'] ?>';
+
+            if (purchaserId !== currentUserId) {
+                return false;
+            }
+        }
+
+
+        // =====================================================
+        // COMPANY
+        // =====================================================
+
+        if (company && rowCompany !== company) {
+            return false;
+        }
+
+
+        // =====================================================
+        // DEPARTMENT
+        // =====================================================
+
+        if (department && rowDepartment !== department) {
+            return false;
+        }
+
+
+        // =====================================================
+        // URGENCY
+        // =====================================================
+
+        if (urgency && rowPriority !== urgency) {
+            return false;
+        }
+
+
+        // =====================================================
+        // STATUS
+        // =====================================================
+
+        if (status && rowStatus !== status) {
+            return false;
+        }
+
+
+        // =====================================================
+        // DATE CREATED
+        // =====================================================
+
+        // Convert:
+        // 2026-09-30 14:25:00
+        //
+        // into:
+        // 2026-09-30
+
+        const rowDate =
+            rowDateCreated.substring(0, 10);
+
+
+        // =====================================================
+        // DATE FROM
+        // =====================================================
+
+        if (dateFrom && rowDate < dateFrom) {
+            return false;
+        }
+
+
+        // =====================================================
+        // DATE TO
+        // =====================================================
+
+        if (dateTo && rowDate > dateTo) {
+            return false;
+        }
+
+
+        // =====================================================
+        // PASSED ALL FILTERS
+        // =====================================================
+
+        return true;
     });
 
-});
-</script> -->
-<script>
-    $(document).ready(function () {
 
-        const table = $('#requestsTable').DataTable({
-            pageLength: 10,
-            order: [[0, "desc"]],
-            columnDefs: [
-                { orderable: false, targets: [5, 9, 11] }
-            ]
+    // =====================================================
+    // PURCHASING FILTERS - ON CHANGE
+    // =====================================================
+
+    $('#companyFilter, #requestViewFilter, #departmentFilter, #statusUrgencyFilter, #statusSelectFilter, #dateFrom, #dateTo')
+        .on('change', function () {
+            table.draw();
         });
 
-        // EXPORT PURCHASING REQUESTS TO CSV
-        // Exports only the currently filtered/visible requests
-        // =====================================================
+    // =====================================================
+    // NON-PURCHASING STATUS FILTER
+    // =====================================================
 
-            function exportPurchasingCSV() {
+    $('.status-filter').on('click', function () {
 
-                const rows = [];
+        $('.status-filter').removeClass('active');
+        $(this).addClass('active');
 
-                // CSV Headers
-                const headers = [
-                    "LMR No.",
-                    "Company",
-                    "Requested By",
-                    "Department",
-                    "Item",
-                    "Description",
-                    "Quantity",
-                    "UoM",
-                    "Assigned To",
-                    "Status",
-                    "Date Created",
-                    "Date Needed",
-                    "Remarks"
-                ];
+        table.draw();
+    });
 
-                rows.push(headers);
 
-                // -------------------------------------------------
-                // Get rows currently displayed by DataTables
-                // -------------------------------------------------
+    // =====================================================
+    // NON-PURCHASING STATUS FILTER
+    // =====================================================
 
-                table.rows({
-                    search: 'applied',
-                    order: 'applied'
-                }).every(function () {
+    $.fn.dataTable.ext.search.push(function (settings, data, dataIndex) {
 
-                    const row = this.node();
+        if (settings.nTable.id !== 'requestsTable') {
+            return true;
+        }
 
-                    if (!row) {
-                        return;
-                    }
+        // If Purchasing filters exist, don't use button filter
+        if ($('#statusSelectFilter').length) {
+            return true;
+        }
 
-                    const $row = $(row);
+        const selectedStatus = $('.status-filter.active').data('status');
 
-                    // -------------------------------------------------
-                    // Get data from data-* attributes
-                    // -------------------------------------------------
 
-                    const lmrNo =
-                        $row.attr('data-lmr-no') || '';
 
-                    const company =
-                        $row.attr('data-company') || '';
+        if (!selectedStatus) {
+            return true;
+        }
 
-                    const requestor =
-                        $row.attr('data-requestor-name') || '';
+        const row = table.row(dataIndex).node();
 
-                    const department =
-                        $row.attr('data-department') || '';
+        if (!row) {
+            return true;
+        }
 
-                    const item =
-                        $row.attr('data-item') || '';
+        const rowStatus = ($(row).data('status') || '')
+            .toString()
+            .toLowerCase()
+            .trim();
 
-                    const description =
-                        $row.attr('data-description') || '';
+        return rowStatus === selectedStatus;
+    });
 
-                    const quantity =
-                        $row.attr('data-quantity') || '';
+    // =====================================================
+    // OPEN BULK UPDATE MODAL
+    // =====================================================
 
-                    const uom =
-                        $row.attr('data-uom') || '';
+    $('#bulkUpdateBtn').on('click', function () {
 
-                    const purchaser =
-                        $row.attr('data-purchaser-name') || 'Unassigned';
+        const selectedCount =
+            $('#requestsTable tbody .request-checkbox:checked').length;
 
-                    const status =
-                        $row.attr('data-status') || '';
+        if (selectedCount === 0) {
 
-                    const dateCreated =
-                        $row.attr('data-date-created') || '';
+            alert('Please select at least one request.');
 
-                    const dateNeeded =
-                        $row.attr('data-date-needed') || '';
+            return;
+        }
 
-                    const remarks =
-                        $row.attr('data-remarks') || '';
+        $('#bulkSelectedCount').text(selectedCount);
 
-                    // -------------------------------------------------
-                    // Format status
-                    // -------------------------------------------------
+        $('#bulkUpdateMessage')
+            .addClass('d-none')
+            .removeClass('alert-success alert-danger')
+            .text('');
 
-                    const formattedStatus = status
-                        ? status.replace(/\b\w/g, function (letter) {
-                            return letter.toUpperCase();
-                        })
-                        : '';
+        $('#bulkStatus').val('');
+        $('#bulkPriority').val('');
+        $('#bulkPurchaser').val('');
+        $('#bulkPO').val('');
 
-                    // -------------------------------------------------
-                    // Format dates
-                    // -------------------------------------------------
+        const bulkModal =
+            new bootstrap.Modal(
+                document.getElementById('bulkUpdateModal')
+            );
 
-                    function formatCSVDate(value) {
+        bulkModal.show();
+    });
 
-                        if (!value) {
-                            return '';
-                        }
 
-                        const date = new Date(value);
+    // =====================================================
+    // EXPORT PURCHASING REQUESTS TO CSV
+    // Exports only the currently filtered/visible requests
+    // =====================================================
 
-                        if (isNaN(date.getTime())) {
-                            return value;
-                        }
+    function exportPurchasingCSV() {
 
-                        const month = String(
-                            date.getMonth() + 1
-                        ).padStart(2, '0');
+        const rows = [];
 
-                        const day = String(
-                            date.getDate()
-                        ).padStart(2, '0');
-
-                        const year = date.getFullYear();
-
-                        return month + '-' + day + '-' + year;
-                    }
-
-                    // -------------------------------------------------
-                    // Add row
-                    // -------------------------------------------------
-
-                    rows.push([
-                        lmrNo,
-                        company,
-                        requestor,
-                        department,
-                        item,
-                        description,
-                        quantity,
-                        uom,
-                        purchaser,
-                        formattedStatus,
-                        formatCSVDate(dateCreated),
-                        formatCSVDate(dateNeeded),
-                        remarks
-                    ]);
-
-                });
-
-                // -------------------------------------------------
-                // Check if there are records
-                // -------------------------------------------------
-
-                if (rows.length === 1) {
-
-                    alert(
-                        'There are no purchasing requests to export.'
-                    );
-
-                    return;
-                }
-
-                // -------------------------------------------------
-                // Convert values to CSV-safe format
-                // -------------------------------------------------
-
-                function escapeCSV(value) {
-
-                    if (value === null || value === undefined) {
-                        return '""';
-                    }
-
-                    value = String(value);
-
-                    // Escape double quotes
-                    value = value.replace(/"/g, '""');
-
-                    // Wrap every value in quotes
-                    return '"' + value + '"';
-                }
-
-                const csvContent = rows
-                    .map(function (row) {
-
-                        return row
-                            .map(escapeCSV)
-                            .join(',');
-
-                    })
-                    .join('\r\n');
-
-                // -------------------------------------------------
-                // Add UTF-8 BOM
-                // Helps Excel display special characters correctly
-                // -------------------------------------------------
-
-                const BOM = '\uFEFF';
-
-                const blob = new Blob(
-                    [BOM + csvContent],
-                    {
-                        type: 'text/csv;charset=utf-8;'
-                    }
-                );
-
-                // -------------------------------------------------
-                // Create filename
-                // -------------------------------------------------
-
-                const today = new Date();
-
-                const year = today.getFullYear();
-
-                const month = String(
-                    today.getMonth() + 1
-                ).padStart(2, '0');
-
-                const day = String(
-                    today.getDate()
-                ).padStart(2, '0');
-
-                const filename =
-                    'purchasing_requests_' +
-                    year + '-' +
-                    month + '-' +
-                    day +
-                    '.csv';
-
-                // -------------------------------------------------
-                // Download
-                // -------------------------------------------------
-
-                const link = document.createElement('a');
-
-                link.href = URL.createObjectURL(blob);
-                link.download = filename;
-
-                document.body.appendChild(link);
-
-                link.click();
-
-                document.body.removeChild(link);
-
-                URL.revokeObjectURL(link.href);
-            }
-
-
-            // =====================================================
-            // EXPORT BUTTON
-            // =====================================================
-
-            $('#exportPurchasingCSV').on('click', function () {
-                exportPurchasingCSV();
-            });
-        // =====================================================
-        // CUSTOM FILTER
-        // =====================================================
-
-        $.fn.dataTable.ext.search.push(function (settings, data, dataIndex) {
-
-            // Only apply to our table
-            if (settings.nTable.id !== 'requestsTable') {
-                return true;
-            }
-
-            const row = table.row(dataIndex).node();
+        // CSV Headers
+        const headers = [
+            "LMR No.",
+            "Company",
+            "Requested By",
+            "Department",
+            "Item",
+            "Description",
+            "Quantity",
+            "UoM",
+            "Assigned To",
+            "Status",
+            "Date Created",
+            "Date Needed",
+            "Remarks"
+        ];
+
+        rows.push(headers);
+
+        // -------------------------------------------------
+        // Get rows currently displayed by DataTables
+        // -------------------------------------------------
+
+        table.rows({
+            search: 'applied',
+            order: 'applied'
+        }).every(function () {
+
+            const row = this.node();
 
             if (!row) {
-                return true;
+                return;
             }
 
             const $row = $(row);
 
-            // Row data
-            const rowStatus = ($row.data('status') || '').toString().toLowerCase().trim();
+            // -------------------------------------------------
+            // Get data from data-* attributes
+            // -------------------------------------------------
 
-            const rowCompany = ($row.data('company') || '')
-                .toString()
-                .toLowerCase()
-                .trim();
-            const rowDepartment = ($row.data('department') || '')
-                .toString()
-                .toLowerCase()
-                .trim();
+            const lmrNo =
+                $row.attr('data-lmr-no') || '';
 
-            const purchaserId = ($row.data('purchaser-id') || '')
-                .toString()
-                .trim();
+            const company =
+                $row.attr('data-company') || '';
 
-            const rowDate = ($row.data('date-created') || '')
-                .toString()
-                .trim();
+            const requestor =
+                $row.attr('data-requestor-name') || '';
 
+            const department =
+                $row.attr('data-department') || '';
 
-            // =================================================
-            // PURCHASING FILTERS
-            // =================================================
+            const item =
+                $row.attr('data-item') || '';
 
-            const requestView = $('#requestViewFilter').val();
-            const department = $('#departmentFilter').val();
-            const company = $('#companyFilter').val();
+            const description =
+                $row.attr('data-description') || '';
 
-            const status = $('#statusSelectFilter').val();
-            const dateFrom = $('#dateFrom').val();
-            const dateTo = $('#dateTo').val();
+            const quantity =
+                $row.attr('data-quantity') || '';
 
+            const uom =
+                $row.attr('data-uom') || '';
 
-            // -----------------------------------------------
-            // Assigned to Me
-            // -----------------------------------------------
-
-            if (requestView === 'assigned') {
-
-                // PHP session user ID
-                const currentUserId = '<?= (int)$_SESSION['user_id'] ?>';
-
-                if (purchaserId !== currentUserId) {
-                    return false;
-                }
-            }
-
-                if (company && rowCompany !== company) {
-                    return false;
-                }
-
-
-            // -----------------------------------------------
-            // Department
-            // -----------------------------------------------
-
-            if (department && rowDepartment !== department) {
-                return false;
-            }
-
-
-            // -----------------------------------------------
-            // Status
-            // -----------------------------------------------
-
-            if (status && rowStatus !== status) {
-                return false;
-            }
-
-
-            // -----------------------------------------------
-            // Date From
-            // -----------------------------------------------
-
-            if (dateFrom && rowDate < dateFrom) {
-                return false;
-            }
-
-
-            // -----------------------------------------------
-            // Date To
-            // -----------------------------------------------
-
-            if (dateTo && rowDate > dateTo) {
-                return false;
-            }
-
-
-            return true;
-        });
-
-
-        // =====================================================
-        // PURCHASING FILTERS - ON CHANGE
-        // =====================================================
-
-        $('#companyFilter, #requestViewFilter, #departmentFilter, #statusSelectFilter, #dateFrom, #dateTo')
-            .on('change', function () {
-                table.draw();
-            });
-
-
-
-        // =====================================================
-        // NON-PURCHASING STATUS FILTER
-        // =====================================================
-
-        $('.status-filter').on('click', function () {
-
-            $('.status-filter').removeClass('active');
-            $(this).addClass('active');
-
-            table.draw();
-        });
-
-
-        // =====================================================
-        // NON-PURCHASING STATUS FILTER
-        // =====================================================
-
-        $.fn.dataTable.ext.search.push(function (settings, data, dataIndex) {
-
-            if (settings.nTable.id !== 'requestsTable') {
-                return true;
-            }
-
-            // If Purchasing filters exist, don't use button filter
-            if ($('#statusSelectFilter').length) {
-                return true;
-            }
-
-            const selectedStatus = $('.status-filter.active').data('status');
-
-
-
-            if (!selectedStatus) {
-                return true;
-            }
-
-            const row = table.row(dataIndex).node();
-
-            if (!row) {
-                return true;
-            }
-
-            const rowStatus = ($(row).data('status') || '')
-                .toString()
-                .toLowerCase()
-                .trim();
-
-            return rowStatus === selectedStatus;
-        });
-
-
-        // =====================================================
-        // PRINT
-        // =====================================================
-
-        $('.btn-print').on('click', function (e) {
-
-            e.preventDefault();
-            e.stopPropagation();
-
-            const status = ($(this).data('status') || '')
-                .toString()
-                .toLowerCase()
-                .trim();
-
-            const lmr = $(this).data('lmr');
-
-            if (status !== 'proceed request') {
-                alert('Printing is only available when the request status is "Proceed Request".');
-                return;
-            }
-
-            window.open(
-                '?page=ticket/includes/print_request&lmr_no=' +
-                encodeURIComponent(lmr),
-                '_blank'
-            );
-        });
-
-        
-        // =====================================================
-        // USER / ROLE
-        // =====================================================
-
-        const isPurchasing = <?= $isPurchasing ? 'true' : 'false' ?>;
-        const currentUserId = <?= (int)$_SESSION['user_id'] ?>;
-
-
-        // =====================================================
-        // MODAL
-        // =====================================================
-
-        const modalElement = document.getElementById('requestDetailsModal');
-
-        const requestModal = new bootstrap.Modal(modalElement);
-
-
-        // =====================================================
-        // ORIGINAL VALUES
-        // Used to determine whether Save should be enabled
-        // =====================================================
-
-        let originalStatus = '';
-        let originalPurchaserId = '';
-
-
-        // =====================================================
-        // OPEN REQUEST MODAL
-        // =====================================================
-
-        $('#requestsTable tbody').on('click', 'tr', function (e) {
-
-            // Don't open modal when clicking action buttons/links
-            if (
-                $(e.target).closest('a').length ||
-                $(e.target).closest('button').length
-            ) {
-                return;
-            }
-
-            const row = $(this);
-
-            const requestId = row.data('request-id');
-
-            const lmrNo = row.data('lmr-no');
-            const company = row.data('company');
-            const department = row.data('department');
-            const item = row.data('item');
-            const description = row.data('description');
-            const quantity = row.data('quantity');
-            const uom = row.data('uom');
-
-            const dateNeeded = row.data('date-needed');
-            const dateCreated = row.data('date-created');
-
-            const remarks = row.data('remarks');
+            const purchaser =
+                $row.attr('data-purchaser-name') || 'Unassigned';
 
             const status =
-                (row.data('status') || '')
-                    .toString()
-                    .toLowerCase()
-                    .trim();
+                $row.attr('data-status') || '';
 
-            const purchaserId =
-                (row.data('purchaser-id') || '1')
-                    .toString();
+            const dateCreated =
+                $row.attr('data-date-created') || '';
 
-            const purchaserName =
-                row.data('purchaser-name') || 'Unassigned';
+            const dateNeeded =
+                $row.attr('data-date-needed') || '';
 
-            const requestorName =
-                row.data('requestor-name') || 'Unknown';
+            const remarks =
+                $row.attr('data-remarks') || '';
 
+            // -------------------------------------------------
+            // Format status
+            // -------------------------------------------------
 
-            // =================================================
-            // SET MODAL DATA
-            // =================================================
+            const formattedStatus = status
+                ? status.replace(/\b\w/g, function (letter) {
+                    return letter.toUpperCase();
+                })
+                : '';
 
-            $('#modalRequestId').val(requestId);
+            // -------------------------------------------------
+            // Format dates
+            // -------------------------------------------------
 
-            $('#modalLmrNo').text('LMR No. ' + lmrNo);
+            function formatCSVDate(value) {
 
-            $('#modalLmr').val(lmrNo);
-            $('#modalCompany').val(company);
-            $('#modalDepartment').val(department);
-            $('#modalItem').val(item);
-            $('#modalDescription').val(description);
-            $('#modalQuantity').val(quantity);
-            $('#modalUom').val(uom);
+                if (!value) {
+                    return '';
+                }
 
-            $('#modalDateNeeded').val(formatDate(dateNeeded));
-            $('#modalDateCreated').val(formatDate(dateCreated));
+                const date = new Date(value);
 
-            $('#modalRemarks').val(remarks || '-');
+                if (isNaN(date.getTime())) {
+                    return value;
+                }
 
-            $('#modalRequestor').val(requestorName);
+                const month = String(
+                    date.getMonth() + 1
+                ).padStart(2, '0');
 
+                const day = String(
+                    date.getDate()
+                ).padStart(2, '0');
 
-            // =================================================
-            // PURCHASING
-            // =================================================
+                const year = date.getFullYear();
 
-            if (isPurchasing) {
-
-                originalStatus = status;
-                originalPurchaserId = purchaserId;
-
-                $('#modalStatus').val(status);
-                $('#modalPurchaser').val(purchaserId);
-
-                resetSaveButton();
-
-            } else {
-
-                // =================================================
-                // REQUESTOR
-                // =================================================
-
-                $('#modalStatusDisplay').val(
-                    formatStatus(status)
-                );
-
-                $('#modalPurchaserDisplay').val(
-                    purchaserName
-                );
+                return month + '-' + day + '-' + year;
             }
 
+            // -------------------------------------------------
+            // Add row
+            // -------------------------------------------------
 
-            // =================================================
-            // SHOW MODAL
-            // =================================================
-
-            requestModal.show();
+            rows.push([
+                lmrNo,
+                company,
+                requestor,
+                department,
+                item,
+                description,
+                quantity,
+                uom,
+                purchaser,
+                formattedStatus,
+                formatCSVDate(dateCreated),
+                formatCSVDate(dateNeeded),
+                remarks
+            ]);
 
         });
 
+        // -------------------------------------------------
+        // Check if there are records
+        // -------------------------------------------------
 
-        // =====================================================
-        // FORMAT DATE
-        // =====================================================
+        if (rows.length === 1) {
 
-        function formatDate(value) {
+            alert(
+                'There are no purchasing requests to export.'
+            );
 
-            if (!value) {
-                return '-';
+            return;
+        }
+
+        // -------------------------------------------------
+        // Convert values to CSV-safe format
+        // -------------------------------------------------
+
+        function escapeCSV(value) {
+
+            if (value === null || value === undefined) {
+                return '""';
             }
 
-            const date = new Date(value);
+            value = String(value);
 
-            if (isNaN(date.getTime())) {
-                return value;
+            // Escape double quotes
+            value = value.replace(/"/g, '""');
+
+            // Wrap every value in quotes
+            return '"' + value + '"';
+        }
+
+        const csvContent = rows
+            .map(function (row) {
+
+                return row
+                    .map(escapeCSV)
+                    .join(',');
+
+            })
+            .join('\r\n');
+
+        // -------------------------------------------------
+        // Add UTF-8 BOM
+        // Helps Excel display special characters correctly
+        // -------------------------------------------------
+
+        const BOM = '\uFEFF';
+
+        const blob = new Blob(
+            [BOM + csvContent],
+            {
+                type: 'text/csv;charset=utf-8;'
             }
+        );
 
-            const month = String(date.getMonth() + 1).padStart(2, '0');
-            const day = String(date.getDate()).padStart(2, '0');
-            const year = date.getFullYear();
+        // -------------------------------------------------
+        // Create filename
+        // -------------------------------------------------
 
-            return month + '-' + day + '-' + year;
+        const today = new Date();
+
+        const year = today.getFullYear();
+
+        const month = String(
+            today.getMonth() + 1
+        ).padStart(2, '0');
+
+        const day = String(
+            today.getDate()
+        ).padStart(2, '0');
+
+        const filename =
+            'purchasing_requests_' +
+            year + '-' +
+            month + '-' +
+            day +
+            '.csv';
+
+        // -------------------------------------------------
+        // Download
+        // -------------------------------------------------
+
+        const link = document.createElement('a');
+
+        link.href = URL.createObjectURL(blob);
+        link.download = filename;
+
+        document.body.appendChild(link);
+
+        link.click();
+
+        document.body.removeChild(link);
+
+        URL.revokeObjectURL(link.href);
+    }
+
+
+    // =====================================================
+    // EXPORT BUTTON
+    // =====================================================
+
+    $('#exportPurchasingCSV').on('click', function () {
+        exportPurchasingCSV();
+    });
+
+    // =====================================================
+    // USER / ROLE
+    // =====================================================
+
+    const isPurchasing = <?= $isPurchasing ? 'true' : 'false' ?>;
+    const currentUserId = <?= (int)$_SESSION['user_id'] ?>;
+
+
+    // =====================================================
+    // MODAL
+    // =====================================================
+
+    const modalElement = document.getElementById('requestDetailsModal');
+
+    const requestModal = new bootstrap.Modal(modalElement);
+
+
+    // =====================================================
+    // ORIGINAL VALUES
+    // Used to determine whether Save should be enabled
+    // =====================================================
+
+    let originalStatus = '';
+    let originalPurchaserId = '';
+    let originalPriority = '';
+    let originalPO = '';
+
+
+    // =====================================================
+    // OPEN REQUEST MODAL
+    // =====================================================
+
+    $('#requestsTable tbody').on('click', 'tr', function (e) {
+
+        // Don't open modal when clicking action buttons/links
+        if (
+            $(e.target).closest('a').length ||
+            $(e.target).closest('button').length
+        ) {
+            return;
+        }
+
+        const row = $(this);
+
+        const requestId = row.data('request-id');
+
+        const lmrNo = row.data('lmr-no');
+        const company = row.data('company');
+        const department = row.data('department');
+        const item = row.data('item');
+        const description = row.data('description');
+        const quantity = row.data('quantity');
+        const uom = row.data('uom');
+
+        const dateNeeded = row.data('date-needed');
+        const dateCreated = row.data('date-created');
+        const po = row.data('po');
+        const priority = row.data('priority');
+        const remarks = row.data('remarks');
+
+        const status =
+            (row.data('status') || '')
+                .toString()
+                .toLowerCase()
+                .trim();
+
+        const purchaserId =
+            (row.data('purchaser-id') || '1')
+                .toString();
+
+        const purchaserName =
+            row.data('purchaser-name') || 'Unassigned';
+
+        const requestorName =
+            row.data('requestor-name') || 'Unknown';
+
+
+        // =================================================
+        // SET MODAL DATA
+        // =================================================
+
+        $('#modalRequestId').val(requestId);
+
+        $('#modalLmrNo').text('LMR No. ' + lmrNo);
+
+        $('#modalLmr').val(lmrNo);
+        $('#modalCompany').val(company);
+        $('#modalDepartment').val(department);
+        $('#modalItem').val(item);
+        $('#modalDescription').val(description);
+        $('#modalQuantity').val(quantity);
+        $('#modalUom').val(uom);
+
+        $('#modalDateNeeded').val(formatDate(dateNeeded));
+        $('#modalDateCreated').val(formatDate(dateCreated));
+
+        $('#modalRemarks').val(remarks || '-');
+
+        $('#modalRequestor').val(requestorName);
+
+
+        // =================================================
+        // PURCHASING
+        // =================================================
+
+        if (isPurchasing) {
+
+            originalStatus = status;
+            originalPurchaserId = purchaserId;
+            originalPriority = (priority || '').toString().toLowerCase().trim();
+            originalPO = (po || '').toString().trim();
+
+            $('#modalStatus').val(status);
+            $('#modalPurchaser').val(purchaserId);
+            $('#modalPO').val(originalPO);
+            $('#modalPriority').val(originalPriority);
+
+            resetSaveButton();
+        } else {
+
+            // =================================================
+            // REQUESTOR
+            // =================================================
+
+            $('#modalStatusDisplay').val(
+                formatStatus(status)
+            );
+            $('#modalPriorityDisplay').val(
+                formatStatus(priority)
+            );
+            $('#modalPurchaserDisplay').val(
+                purchaserName
+            );
         }
 
 
-        // =====================================================
-        // FORMAT STATUS
-        // =====================================================
+        // =================================================
+        // SHOW MODAL
+        // =================================================
 
-        function formatStatus(status) {
+        requestModal.show();
 
-            if (!status) {
-                return '-';
-            }
+    });
 
-            return status
-                .replace(/\b\w/g, function (letter) {
-                    return letter.toUpperCase();
-                });
+
+    // =====================================================
+    // FORMAT DATE
+    // =====================================================
+
+    function formatDate(value) {
+
+        if (!value) {
+            return '-';
         }
 
+        const date = new Date(value);
 
-        // =====================================================
-        // CHECK FOR CHANGES
-        // =====================================================
+        if (isNaN(date.getTime())) {
+            return value;
+        }
 
-        function checkForChanges() {
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        const year = date.getFullYear();
 
-            const currentStatus =
-                ($('#modalStatus').val() || '')
-                    .toString()
-                    .toLowerCase()
-                    .trim();
-
-            const currentPurchaser =
-                ($('#modalPurchaser').val() || '')
-                    .toString()
-                    .trim();
+        return month + '-' + day + '-' + year;
+    }
 
 
-            const hasChanges =
-                currentStatus !== originalStatus ||
-                currentPurchaser !== originalPurchaserId;
+    // =====================================================
+    // FORMAT STATUS
+    // =====================================================
+
+    function formatStatus(status) {
+
+        if (!status) {
+            return '-';
+        }
+
+        return status
+            .replace(/\b\w/g, function (letter) {
+                return letter.toUpperCase();
+            });
+    }
+
+
+    // =====================================================
+    // CHECK FOR CHANGES
+    // =====================================================
+
+    function checkForChanges() {
+
+        const currentStatus =
+            ($('#modalStatus').val() || '')
+                .toString()
+                .toLowerCase()
+                .trim();
+
+        const currentPurchaser =
+            ($('#modalPurchaser').val() || '')
+                .toString()
+                .trim();
+
+
+        const currentPriority =
+            ($('#modalPriority').val() || '')
+                .toString()
+                .toLowerCase()
+                .trim();
+
+        const currentPO =
+            ($('#modalPO').val() || '')
+                .toString()
+                .trim();
+
+        const hasChanges =
+            currentStatus !== originalStatus ||
+            currentPurchaser !== originalPurchaserId ||
+            currentPriority !== originalPriority ||
+            currentPO !== originalPO;
 
 
             $('#saveRequestChanges').prop(
@@ -1573,15 +2110,15 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
                 !hasChanges
             );
 
-        }
+    }
 
 
-        // =====================================================
-        // STATUS CHANGE
-        // =====================================================
+    // =====================================================
+    // STATUS CHANGE
+    // =====================================================
 
-        $('#modalStatus').on('change', function () {
-            checkForChanges();
+    $('#modalStatus').on('change', function () {
+        checkForChanges();
         });
 
 
@@ -1593,7 +2130,12 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
             checkForChanges();
         });
 
-
+        $('#modalPriority').on('change', function () {
+            checkForChanges();
+        });
+        $('#modalPO').on('input', function () {
+            checkForChanges();
+        });
         // =====================================================
         // ASSIGN TO ME
         // =====================================================
@@ -1625,14 +2167,14 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
                 .addClass('d-none')
                 .removeClass('alert-success alert-danger')
                 .text('');
-        }
+    }
 
 
-        // =====================================================
-        // SAVE CHANGES
-        // =====================================================
+    // =====================================================
+    // SAVE CHANGES
+    // =====================================================
 
-        $('#saveRequestChanges').on('click', function () {
+    $('#saveRequestChanges').on('click', function () {
 
             const button = $(this);
 
@@ -1644,6 +2186,12 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
 
             const purchaserId =
                 $('#modalPurchaser').val();
+
+            const priority =
+                $('#modalPriority').val();
+
+            const poNumber =
+            $('#modalPO').val().trim();
 
 
             if (!requestId) {
@@ -1659,152 +2207,223 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
                 'Saving...'
             );
 
+            $.ajax({
+                url: 'ticket/includes/assign_request.php',
+                type: 'POST',
+                dataType: 'json',
 
-    $.ajax({
-    url: 'ticket/includes/assign_request.php',
-        type: 'POST',
-        dataType: 'json',
+                data: {
+                    request_id: requestId,
+                    status: status,
+                    purchaser_id: purchaserId,
+                    priority: priority,
+                    po_no: poNumber
+                },
 
-        data: {
-            request_id: requestId,
-            status: status,
-            purchaser_id: purchaserId
-        },
+                success: function (response) {
 
-        success: function (response) {
+                    if (response.success) {
 
-            if (response.success) {
+                        originalStatus = status;
+                        originalPurchaserId = purchaserId;
+                        originalPriority = priority;
+                        originalPO = poNumber;
 
-                originalStatus = status;
-                originalPurchaserId = purchaserId;
+                        const row =
+                            $('#requestsTable tbody tr[data-request-id="' +
+                            requestId +
+                            '"]');
 
-                const row =
-                    $('#requestsTable tbody tr[data-request-id="' +
-                    requestId +
-                    '"]');
+                        row.attr('data-status', status);
+                        row.attr('data-purchaser-id', purchaserId);
 
-                row.attr('data-status', status);
-                row.attr('data-purchaser-id', purchaserId);
+                        row.data('status', status);
+                        row.data('purchaser-id', purchaserId);
 
-                row.data('status', status);
-                row.data('purchaser-id', purchaserId);
+                        row.attr('data-priority', priority);
+                        row.data('priority', priority);
+                        row.attr(
+                            'data-po',
+                            poNumber
+                        );
 
-                const statusBadge =
-                    row.find('td').eq(8).find('.badge');
+                        row.data(
+                            'po',
+                            poNumber
+                        );
 
-                statusBadge.removeClass(
-                    'badge-proceed badge-checking badge-pending badge-closed badge-canceled'
-                );
+                        row.find('td').eq(3).text(
+                            poNumber
+                        );
+                        const priorityClass = {
+                            urgent: 'priority-urgent',
+                            high: 'priority-high',
+                            medium: 'priority-medium'
+                        };
 
-                let statusClass = 'badge-pending';
+                        row.find('td').eq(10).html(
+                            `<span class="priority-badge ${priorityClass[priority] || 'priority-default'}">
+                                ${priority.charAt(0).toUpperCase() + priority.slice(1)}
+                            </span>`
+                        );
+                        
+                        const statusBadge =
+                            row.find('td').eq(11).find('.badge');
 
-                if (status === 'checking requirements' ||
-                    status === 'checking request' ||
-                    status === 'canvassing') {
-                    statusClass = 'badge-checking';
-                }
-                else if (status === 'negotiation' ||
-                        status === 'under discussion') {
-                    statusClass = 'badge-negotiation';
-                }
-                else if (status === 'draft') {
-                    statusClass = 'badge-draft';
-                }
-                else if (status === 'final') {
-                    statusClass = 'badge-proceed';
-                }
-                else if (status === 'end' || status === 'closed') {
-                    statusClass = 'badge-closed';
-                }
+                        statusBadge.removeClass(
+                            'badge-proceed badge-checking badge-pending badge-closed badge-canceled'
+                        );
 
-                statusBadge
-                    .addClass(statusClass)
-                    .text(formatStatus(status));
+                        let statusClass = 'badge-pending';
 
-                if (response.purchaser_name) {
+                        if (status === 'checking requirements' ||
+                            status === 'canvassing') {
+                            statusClass = 'badge-checking';
+                        }
+                        else if (status === 'negotiation' ||
+                                status === 'under discussion') {
+                            statusClass = 'badge-negotiation';
+                        }
+                        else if (status === 'draft') {
+                            statusClass = 'badge-draft';
+                        }
+                        else if (status === 'final') {
+                            statusClass = 'badge-proceed';
+                        }
+                        else if (status === 'end' || status === 'closed') {
+                            statusClass = 'badge-closed';
+                        }
 
-                    row.attr(
-                        'data-purchaser-name',
-                        response.purchaser_name
-                    );
+                        statusBadge
+                            .addClass(statusClass)
+                            .text(formatStatus(status));
 
-                    row.data(
-                        'purchaser-name',
-                        response.purchaser_name
-                    );
+                        if (response.purchaser_name) {
 
-                    row.find('td').eq(7).text(
-                        response.purchaser_name
-                    );
-                }
+                            row.attr(
+                                'data-purchaser-name',
+                                response.purchaser_name
+                            );
 
-                $('#modalSaveMessage')
-                    .removeClass('d-none alert-danger')
-                    .addClass('alert-success')
-                    .text(
-                        response.message ||
-                        'Request updated successfully.'
-                    );
+                            row.data(
+                                'purchaser-name',
+                                response.purchaser_name
+                            );
 
-                button
-                    .prop('disabled', true)
-                    .html(
-                        '<i class="fas fa-check me-1"></i> Saved'
-                    );
+                            row.find('td').eq(9).text(
+                                response.purchaser_name
+                            );
+                        }
 
-                table.draw(false);
+                        $('#modalSaveMessage')
+                            .removeClass('d-none alert-danger')
+                            .addClass('alert-success')
+                            .text(
+                                response.message ||
+                                'Request updated successfully.'
+                            );
 
-                setTimeout(function () {
-                    button.html(
-                        '<i class="fas fa-save me-1"></i> Save Changes'
-                    );
-                }, 1500);
+                        button
+                            .prop('disabled', true)
+                            .html(
+                                '<i class="fas fa-check me-1"></i> Saved'
+                            );
 
-            } else {
+                    // Reload the page so the table gets fresh DB data
+                        // setTimeout(function () {
+                        //     window.location.reload();
+                        // }, 500);
 
-                showSaveError(
-                    response.message ||
-                    'Unable to update request.'
-                );
-            }
-        },
+                        table.draw(false);
 
-        error: function (xhr) {
+                        setTimeout(function () {
+                            button.html(
+                                '<i class="fas fa-save me-1"></i> Save Changes'
+                            );
+                            }, 1500);
 
-            console.error('HTTP Status:', xhr.status);
-            console.error('Response:', xhr.responseText);
+                        } else {
 
-            showSaveError(
-                'Server error (' +
-                xhr.status +
-                '): ' +
-                xhr.responseText
-            );
-        }
+                            showSaveError(
+                                response.message ||
+                                'Unable to update request.'
+                            );
+                        }
+                    },
+
+                    error: function (xhr) {
+
+                        console.error('HTTP Status:', xhr.status);
+                        console.error('Response:', xhr.responseText);
+
+                        showSaveError(
+                            'Server error (' +
+                            xhr.status +
+                            '): ' +
+                            xhr.responseText
+                        );
+                    }
+                    });
+
+                    });
+
+
+                        // =====================================================
+                        // ERROR
+                        // =====================================================
+
+                    function showSaveError(message) {
+
+                        $('#modalSaveMessage')
+                            .removeClass('d-none alert-success')
+                            .addClass('alert-danger')
+                            .text(message);
+
+                        $('#saveRequestChanges')
+                            .prop('disabled', false)
+                            .html(
+                                '<i class="fas fa-save me-1"></i> Save Changes'
+                            );
+
+                    }
+
+
+                    // =====================================================
+                    // PRINT
+                    // =====================================================
+
+                    $('.btn-print').on('click', function (e) {
+
+                        e.preventDefault();
+                        e.stopPropagation();
+
+                        const status =
+                            ($(this).data('status') || '')
+                                .toString()
+                                .toLowerCase()
+                                .trim();
+
+                        const lmr =
+                            $(this).data('lmr');
+
+
+                        if (status !== 'final') {
+
+                            alert(
+                                'Printing is only available when the request status is "Proceed Request".'
+                            );
+
+                            return;
+                        }
+
+
+                        window.open(
+                            '?page=ticket/includes/print_request&lmr_no=' +
+                            encodeURIComponent(lmr),
+                            '_blank'
+                        );
+
     });
-
-    });
-
-
-    // =====================================================
-    // ERROR
-    // =====================================================
-
-    function showSaveError(message) {
-
-        $('#modalSaveMessage')
-            .removeClass('d-none alert-success')
-            .addClass('alert-danger')
-            .text(message);
-
-        $('#saveRequestChanges')
-            .prop('disabled', false)
-            .html(
-                '<i class="fas fa-save me-1"></i> Save Changes'
-            );
-
-    }
-
 
     // =====================================================
     // PRINT
@@ -1815,36 +2434,413 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
         e.preventDefault();
         e.stopPropagation();
 
-        const status =
-            ($(this).data('status') || '')
-                .toString()
-                .toLowerCase()
-                .trim();
+        const status = ($(this).data('status') || '')
+            .toString()
+            .toLowerCase()
+            .trim();
 
-        const lmr =
-            $(this).data('lmr');
-
+        const lmr = $(this).data('lmr');
 
         if (status !== 'proceed request') {
-
-            alert(
-                'Printing is only available when the request status is "Proceed Request".'
-            );
-
+            alert('Printing is only available when the request status is "Proceed Request".');
             return;
         }
-
 
         window.open(
             '?page=ticket/includes/print_request&lmr_no=' +
             encodeURIComponent(lmr),
             '_blank'
         );
+    });
+    
+    // =====================================================
+    // CONFIRM BULK UPDATE
+    // =====================================================
+
+    $('#confirmBulkUpdate').on('click', function () {
+
+        const button = $(this);
+
+        const selectedIds = [];
+
+        table.rows().every(function () {
+
+            const checkbox =
+                $(this.node()).find('.request-checkbox');
+
+            if (checkbox.prop('checked')) {
+
+                selectedIds.push(
+                    parseInt(checkbox.val(), 10)
+                );
+
+            }
+
+        });
+
+        if (selectedIds.length === 0) {
+
+            alert('Please select at least one request.');
+
+            return;
+        }
+
+        const status = $('#bulkStatus').val() || '';
+        const priority = $('#bulkPriority').val() || '';
+        const purchaserId = $('#bulkPurchaser').val() || '';
+        const poNumber = $('#bulkPO').val().trim();
+
+        if (
+            status === '' &&
+            priority === '' &&
+            purchaserId === '' &&
+            poNumber === ''
+        ) {
+
+            alert(
+                'Please select or enter at least one field to update.'
+            );
+
+            return;
+        }
+
+        if (!confirm(
+            'Are you sure you want to update ' +
+            selectedIds.length +
+            ' selected request(s)?'
+        )) {
+
+            return;
+        }
+
+        console.log('========== BULK UPDATE ==========');
+        console.log('Selected IDs:', selectedIds);
+        console.log('Status:', status);
+        console.log('Priority:', priority);
+        console.log('Purchaser:', purchaserId);
+        console.log('PO:', poNumber);
+
+        button.prop('disabled', true);
+
+        button.html(
+            '<span class="spinner-border spinner-border-sm me-1"></span>' +
+            'Updating...'
+        );
+
+        $.ajax({
+
+            url: 'ticket/includes/bulk_update_requests.php',
+
+            type: 'POST',
+
+            dataType: 'json',
+
+            data: {
+                request_ids: selectedIds,
+                status: status,
+                priority: priority,
+                purchaser_id: purchaserId,
+                po_no: poNumber
+            },
+
+            success: function (response) {
+
+                console.log('Bulk response:', response);
+
+                if (response.success) {
+
+                    $('#bulkUpdateMessage')
+                        .removeClass('d-none alert-danger')
+                        .addClass('alert-success')
+                        .text(
+                            response.message ||
+                            'Requests updated successfully.'
+                        );
+
+                    selectedIds.forEach(function (requestId) {
+
+                        const row = $(
+                            '#requestsTable tbody tr[data-request-id="' +
+                            requestId +
+                            '"]'
+                        );
+
+                        if (!row.length) {
+                            return;
+                        }
+
+
+                        // =====================================
+                        // STATUS
+                        // =====================================
+
+                        if (status !== '') {
+
+                            row.attr('data-status', status);
+                            row.data('status', status);
+
+                            const statusBadge =
+                                row.find('td').eq(11).find('.badge');
+
+                            statusBadge.removeClass(
+                                'badge-proceed ' +
+                                'badge-checking ' +
+                                'badge-negotiation ' +
+                                'badge-draft ' +
+                                'badge-pending ' +
+                                'badge-closed ' +
+                                'badge-canceled'
+                            );
+
+                            let statusClass = 'badge-pending';
+
+                            if (
+                                status === 'checking requirements' ||
+                                status === 'canvassing'
+                            ) {
+
+                                statusClass = 'badge-checking';
+
+                            } else if (
+                                status === 'negotiation' ||
+                                status === 'under discussion'
+                            ) {
+
+                                statusClass = 'badge-negotiation';
+
+                            } else if (status === 'draft') {
+
+                                statusClass = 'badge-draft';
+
+                            } else if (status === 'final') {
+
+                                statusClass = 'badge-proceed';
+
+                            } else if (
+                                status === 'end' ||
+                                status === 'closed'
+                            ) {
+
+                                statusClass = 'badge-closed';
+                            }
+
+                            statusBadge
+                                .addClass(statusClass)
+                                .text(formatStatus(status));
+                        }
+
+
+                        // =====================================
+                        // PRIORITY
+                        // =====================================
+
+                        if (priority !== '') {
+
+                            row.attr(
+                                'data-priority',
+                                priority
+                            );
+
+                            row.data(
+                                'priority',
+                                priority
+                            );
+
+                            const priorityClass = {
+
+                                urgent: 'priority-urgent',
+                                high: 'priority-high',
+                                medium: 'priority-medium'
+
+                            };
+
+                            row.find('td').eq(10).html(
+
+                                `<span class="priority-badge ${
+                                    priorityClass[priority] ||
+                                    'priority-default'
+                                }">
+                                    ${
+                                        priority.charAt(0).toUpperCase() +
+                                        priority.slice(1)
+                                    }
+                                </span>`
+
+                            );
+                        }
+
+
+                        // =====================================
+                        // PURCHASER
+                        // =====================================
+
+                        if (purchaserId !== '') {
+
+                            row.attr(
+                                'data-purchaser-id',
+                                purchaserId
+                            );
+
+                            row.data(
+                                'purchaser-id',
+                                purchaserId
+                            );
+
+                            let purchaserName = 'Unassigned';
+
+                            if (purchaserId !== '1') {
+
+                                // Get only the purchaser's name
+                                // from the option text:
+                                // Company - Fullname
+                                const purchaserText =
+                                    $('#bulkPurchaser option:selected')
+                                    .text()
+                                    .trim();
+
+                                const parts = purchaserText.split(' - ');
+
+                                purchaserName =
+                                    parts.length > 1
+                                        ? parts.slice(1).join(' - ').trim()
+                                        : purchaserText;
+                            }
+
+                            // Keep ONLY the name in the table/data attribute
+                            row.attr(
+                                'data-purchaser-name',
+                                purchaserName
+                            );
+
+                            row.data(
+                                'purchaser-name',
+                                purchaserName
+                            );
+
+                            // Display ONLY purchaser name in table
+                            row.find('td').eq(9).text(
+                                purchaserName
+                            );
+                        }
+                        // =====================================
+                        // PO NUMBER
+                        // =====================================
+
+                        if (poNumber !== '') {
+
+                            row.attr(
+                                'data-po',
+                                poNumber
+                            );
+
+                            row.data(
+                                'po',
+                                poNumber
+                            );
+
+                            row.find('td').eq(3).text(
+                                poNumber
+                            );
+                        }
+
+
+                        // =====================================
+                        // UNCHECK
+                        // =====================================
+
+                        row.find('.request-checkbox')
+                            .prop('checked', false);
+
+                    });
+
+
+                    $('#selectAllRequests')
+                        .prop('checked', false)
+                        .prop('indeterminate', false);
+
+                    updateSelectedCount();
+
+                    table.draw(false);
+
+
+                    setTimeout(function () {
+
+                        const modalElement =
+                            document.getElementById(
+                                'bulkUpdateModal'
+                            );
+
+                        const modal =
+                            bootstrap.Modal.getInstance(
+                                modalElement
+                            );
+
+                        if (modal) {
+                            modal.hide();
+                        }
+
+                    }, 1000);
+
+
+                } else {
+
+                    $('#bulkUpdateMessage')
+                        .removeClass('d-none alert-success')
+                        .addClass('alert-danger')
+                        .text(
+                            response.message ||
+                            'Unable to update requests.'
+                        );
+                }
+            },
+
+                error: function (xhr, status, error) {
+
+                    console.error('========== BULK UPDATE ERROR ==========');
+                    console.error('HTTP Status:', xhr.status);
+                    console.error('AJAX Status:', status);
+                    console.error('Error:', error);
+                    console.error('Response Text:', xhr.responseText);
+
+                    console.error(
+                        'Response JSON parse test:',
+                        function () {
+                            try {
+                                return JSON.parse(xhr.responseText);
+                            } catch (e) {
+                                return 'INVALID JSON: ' + e.message;
+                            }
+                        }()
+                    );
+
+                    $('#bulkUpdateMessage')
+                        .removeClass('d-none alert-success')
+                        .addClass('alert-danger')
+                        .html(
+                            '<strong>Server response:</strong><br>' +
+                            $('<div>').text(xhr.responseText).html()
+                        );
+                },
+
+            complete: function () {
+
+                button.prop('disabled', false);
+
+                button.html(
+                    '<i class="fas fa-save me-1"></i>' +
+                    ' Update Selected'
+                );
+            }
+
+        });
 
     });
 
-});
+});                              
+  
+
 </script>
+
 
 
 <?php $conn->close(); ?>

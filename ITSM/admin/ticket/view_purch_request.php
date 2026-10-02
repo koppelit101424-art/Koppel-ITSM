@@ -1,7 +1,7 @@
 <?php
 
-include 'includes/auth.php';
-include 'includes/db.php';
+include __DIR__ . '/../../includes/auth.php';
+include __DIR__ . '/../../includes/db.php';
 
 $request_id = (int)($_GET['request_id'] ?? 0);
 
