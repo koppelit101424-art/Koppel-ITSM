@@ -724,23 +724,36 @@ if (!empty($requestIds)) {
 
                         <hr class="mt-4">
 
-                        <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
 
-                            <h6 class="mb-0 fw-bold">
+                        <h6 class="mb-0 fw-bold">
+                            <i class="fas fa-paperclip me-2"></i>
+                            Attachments
+                        </h6>
 
-                                <i class="fas fa-paperclip me-2"></i>
-
-                                Attachments
-
-                            </h6>
+                        <div class="d-flex align-items-center gap-2">
 
                             <span class="badge bg-secondary">
-
                                 <?= count($attachments) ?>
-
                             </span>
 
+                            <?php if (!empty($attachments)): ?>
+
+                                <button
+                                    type="button"
+                                    class="btn btn-sm btn-outline-success"
+                                    id="downloadAllAttachments"
+                                >
+                                    <i class="fas fa-download me-1"></i>
+                                    Download All
+                                </button>
+
+                            <?php endif; ?>
+
                         </div>
+
+                    </div>
+
 
 
                         <?php if (empty($attachments)): ?>
@@ -980,6 +993,81 @@ $(document).on('click', '#showAllItemsBtn', function () {
         }, 300);
     }
 });
+</script>
+<script>
+
+document.getElementById('downloadAllAttachments')?.addEventListener('click', function () {
+
+    const attachmentIds = [
+        <?php foreach ($attachments as $attachment): ?>
+            <?= (int)$attachment['attachment_id'] ?>,
+        <?php endforeach; ?>
+    ];
+
+    if (attachmentIds.length === 0) {
+        alert('No attachments found.');
+        return;
+    }
+
+    const button = this;
+
+    // Prevent double clicking
+    button.disabled = true;
+
+    button.innerHTML = `
+        <i class="fas fa-spinner fa-spin me-1"></i>
+        Downloading...
+    `;
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Download each file separately
+    |--------------------------------------------------------------------------
+    */
+
+    attachmentIds.forEach(function (attachmentId, index) {
+
+        setTimeout(function () {
+
+            const link = document.createElement('a');
+
+            link.href =
+                'ticket/download_purch_attachment.php?attachment_id='
+                + attachmentId;
+
+            link.download = '';
+
+            document.body.appendChild(link);
+
+            link.click();
+
+            document.body.removeChild(link);
+
+        }, index * 1200);
+
+    });
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Restore button
+    |--------------------------------------------------------------------------
+    */
+
+    setTimeout(function () {
+
+        button.disabled = false;
+
+        button.innerHTML = `
+            <i class="fas fa-download me-1"></i>
+            Download All
+        `;
+
+    }, attachmentIds.length * 1200 + 1000);
+
+});
+
 </script>
 
 <?php
