@@ -2,17 +2,19 @@
 
 /*
 |--------------------------------------------------------------------------
-| Standalone Attachment Preview
+| Standalone Attachment Preview - ADMIN
 |--------------------------------------------------------------------------
-| File location:
-| ITSM/user/ticket/preview_purch_attachment.php
 |
-| Attachment location:
+| File:
+| ITSM/admin/ticket/preview_purch_attachment.php
+|
+| Uploads:
 | ITSM/user/uploads/purchasing/
-|--------------------------------------------------------------------------
+|
 */
 
 require_once __DIR__ . '/../../includes/db.php';
+
 
 // ---------------------------------------------------------
 // GET ATTACHMENT ID
@@ -61,32 +63,48 @@ if (!$attachment) {
 
 
 // ---------------------------------------------------------
-// FILE INFORMATION
+// FILE NAME
 // ---------------------------------------------------------
 
 $fileName = basename($attachment['file_name']);
 
-/*
-|--------------------------------------------------------------------------
-| Database file_path example:
-|
-| uploads/purchasing/lmr_abc123.png
-|
-| Current script:
-|
-| ITSM/user/ticket/preview_purch_attachment.php
-|
-| ../
-|   ↓
-| ITSM/user/
-|
-| Result:
-|
-| ITSM/user/uploads/purchasing/lmr_abc123.png
-|--------------------------------------------------------------------------
-*/
 
-$filePath = __DIR__ . '/../' . $attachment['file_path'];
+// ---------------------------------------------------------
+// FILE PATH
+// ---------------------------------------------------------
+//
+// Database example:
+//
+// uploads/purchasing/lmr_abc123.pdf
+//
+// Actual physical location:
+//
+// ITSM/user/uploads/purchasing/lmr_abc123.pdf
+//
+// Current script:
+//
+// ITSM/admin/ticket/preview_purch_attachment.php
+//
+// We need to go from:
+//
+// ITSM/admin/ticket/
+//
+// back to:
+//
+// ITSM/
+//
+// then into:
+//
+// user/uploads/purchasing/
+//
+// ---------------------------------------------------------
+
+$fileNameOnly = basename($attachment['file_path']);
+
+$filePath =
+    dirname(__DIR__, 2) .
+    '/user/uploads/purchasing/' .
+    $fileNameOnly;
 
 
 // ---------------------------------------------------------
@@ -96,7 +114,8 @@ $filePath = __DIR__ . '/../' . $attachment['file_path'];
 $realFilePath = realpath($filePath);
 
 $uploadBasePath = realpath(
-    __DIR__ . '/../uploads/purchasing'
+    dirname(__DIR__, 2) .
+    '/user/uploads/purchasing'
 );
 
 if (
