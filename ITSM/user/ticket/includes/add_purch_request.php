@@ -11,46 +11,119 @@ include 'includes/db.php';
 
     $user_id = $_SESSION['user_id'];
 
-    $userQuery = $conn->prepare("SELECT fullname, department FROM user_tb WHERE user_id = ?");
+    $userQuery = $conn->prepare("
+        SELECT fullname, department, area
+        FROM user_tb
+        WHERE user_id = ?
+    ");
+
     $userQuery->bind_param("i", $user_id);
     $userQuery->execute();
     $result = $userQuery->get_result();
     $user = $result->fetch_assoc();
 
-// ==========================================
-// GENERATE LMR NUMBER
-// Format: DEPT-YYMM-00001
-// Example: MKTG-2610-00001
-// ==========================================
+    // ==========================================
+    // GENERATE LMR NUMBER
+    //
+    // Mandaluyong:
+    //     Use DEPARTMENT prefix
+    //     Example: ACTG-2610-00001
+    //
+    // Other branches:
+    //     Use BRANCH prefix
+    //     Example: CEB-2610-00001
+    // ==========================================
 
     // Department prefixes
     $departmentPrefixes = [
-        'Marketing'       => 'MKTG',
-        'Sales'           => 'SALES',
-        'PDED'            => 'PDED',
-        'PDED OEM'        => 'OEM',
-        'PDED DESIGN'     => 'DESIGN',
-        'Purchasing'      => 'PURCH',
-        'Accounting'      => 'ACTG',
-        'Information Technology'              => 'IT',
-        'Human Resource'  => 'HR',
-        'HR'              => 'HR',
-        'Logistic'       => 'LOGI',
+        'Marketing'              => 'MKTG',
+        'Sales'                  => 'SALES',
+        'PDED'                   => 'PDED',
+        'PDED OEM'               => 'OEM',
+        'PDED DESIGN'            => 'DESIGN',
+        'Purchasing'             => 'PURCH',
+        'Accounting'             => 'ACTG',
+        'Information Technology' => 'IT',
+        'Human Resource'         => 'HR',
+        'HR'                     => 'HR',
+        'Logistic'               => 'LOGI',
     ];
 
-    // Get department from logged-in user
+    // Branch prefixes
+    $areaPrefixes = [
+
+        'Tarlac'      => 'TAR',
+        'TARLAC'      => 'TAR',
+
+        'Cebu'       => 'CEB',
+        'CEBU'       => 'CEB',
+
+        'Iloilo'     => 'ILO',
+        'ILOILO'     => 'ILO',
+
+        'Davao'      => 'DAV',
+        'DAVAO'      => 'DAV',
+
+        'CDO'        => 'CDO',
+        'Cagayan de Oro' => 'CDO',
+        'Cagayan De Oro' => 'CDO',
+
+        'Mandaluyong' => null,
+        'MANDALUYONG' => null,
+    ];
+
+    // Get user's department
     $department = trim($user['department'] ?? '');
 
-    // Get department prefix
+    // Get user's branch
+    $area = trim($user['area'] ?? '');
+
+    // Normalize for matching
+    $areaKey = strtolower($area);
+
+    // Default to department prefix
     $prefix = $departmentPrefixes[$department] ?? 'PURCH';
+
+    // ==========================================
+    // DETERMINE LMR PREFIX
+    // ==========================================
+    //
+    // If branch is NOT Mandaluyong:
+    //     use branch prefix
+    //
+    // If branch IS Mandaluyong:
+    //     use department prefix
+    // ==========================================
+
+    if ($areaKey !== '' && $areaKey !== 'mandaluyong') {
+
+        $normalizedAreaPrefixes = [
+            'cebu'            => 'CEB',
+            'iloilo'          => 'ILO',
+            'davao'           => 'DAV',
+            'cdo'             => 'CDO',
+            'cagayan de oro'  => 'CDO',
+            'tarlac'  => 'TAR',
+        ];
+
+        if (isset($normalizedAreaPrefixes[$areaKey])) {
+            $prefix = $normalizedAreaPrefixes[$areaKey];
+        }
+    }
 
     // Current year and month
     $yearMonth = date('ym');
 
-    // Prefix for this month's LMR
+    // Example:
+    // Mandaluyong + Accounting = ACTG-2610
+    // Cebu + Accounting       = CEB-2610
     $lmrPrefix = $prefix . '-' . $yearMonth;
 
-    // Find the latest number for this department and month
+
+    // ==========================================
+    // FIND LAST NUMBER
+    // ==========================================
+
     $lastLMR = $conn->prepare("
         SELECT MAX(
             CAST(SUBSTRING_INDEX(lmr_no, '-', -1) AS UNSIGNED)
@@ -65,13 +138,15 @@ include 'includes/db.php';
     $result = $lastLMR->get_result();
     $row = $result->fetch_assoc();
 
-    // Increment number
     $num = ((int)($row['max_id'] ?? 0)) + 1;
 
     // Generate LMR
-    $newLMR = $lmrPrefix . '-' . str_pad($num, 5, '0', STR_PAD_LEFT);
+    $newLMR =
+        $lmrPrefix . '-' .
+        str_pad($num, 5, '0', STR_PAD_LEFT);
 
     $lastLMR->close();
+
 
 $success = $error = '';
 $errors = [];
@@ -92,6 +167,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $requestor = trim($user['fullname'] ?? '');
     $department = trim($user['department'] ?? '');
     $created_by = $user_id;
+    $area = trim($user['area'] ?? '');
+
     // Default purchaser
     $purchaser_id = 1;
 
