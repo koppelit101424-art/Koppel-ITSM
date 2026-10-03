@@ -378,11 +378,11 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
                     <option value="checking requirements">Checking Requirements</option>
                     <option value="canvassing">Canvassing</option>
                     <option value="negotiation">Negotiation</option>
-                    <option value="under discussion">Under Discussion</option>
-                    <option value="draft">Draft </option>
-                    <option value="final">Final </option>
-                    <option value="end">End </option>
-                    <option value="closed">Closed</option>
+                    <option value="draft po under discussion">Draft PO Under Discussion</option>
+                    <option value="draft po approved">Draft PO Approved</option>
+                    <option value="final po approved">Final PO Approved</option>
+                    <option value="rejected">Rejected </option>
+                    <!-- <option value="closed">Closed</option> -->
                 </select>
             </div>
 
@@ -424,14 +424,14 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
                         <select id="statusSelectFilter" class="form-select">
                             <option value="">All Status</option>
                             <option value="pending">Pending</option>
-                            <option value="checking requirements">Checking Requirements</option>
-                            <option value="canvassing">Canvassing</option>
-                            <option value="negotiation">Negotiation</option>
-                            <option value="under discussion">Under Discussion</option>
-                            <option value="draft">Draft </option>
-                            <option value="final">Final </option>
-                            <option value="end">End </option>
-                            <option value="closed">Closed</option>
+                                <option value="checking requirements">Checking Requirements</option>
+                                <option value="canvassing">Canvassing</option>
+                                <option value="negotiation">Negotiation</option>
+                                <option value="draft po under discussion">Draft PO Under Discussion</option>
+                                <option value="draft po approved">Draft PO Approved</option>
+                                <option value="final po approved">Final PO Approved</option>
+                                <option value="rejected">Rejected </option>
+                            <!-- <option value="closed">Closed</option> -->
                         </select>
                     </div>
 
@@ -604,15 +604,15 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
                                             break;
 
                                         case 'negotiation':
-                                        case 'under discussion':
+                                        case 'draft po under discussion':
                                             $statusClass = 'badge-negotiation';
                                             break;
 
-                                        case 'draft':
+                                        case 'draft po approved':
                                             $statusClass = 'badge-draft';
                                             break;
 
-                                        case 'final':
+                                        case 'final po approved':
                                             $statusClass = 'badge-proceed';
                                             break;
 
@@ -625,7 +625,7 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
                                             $statusClass = 'badge-closed';
                                             break;
 
-                                        case 'canceled':
+                                        case 'rejected':
                                             $statusClass = 'badge-canceled';
                                             break;
 
@@ -897,11 +897,11 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
                                     <option value="checking requirements">Checking Requirements</option>
                                     <option value="canvassing">Canvassing</option>
                                     <option value="negotiation">Negotiation</option>
-                                    <option value="under discussion">Under Discussion</option>
-                                    <option value="draft">Draft </option>
-                                    <option value="final">Final </option>
-                                    <option value="end">End </option>
-                                    <option value="closed">Closed</option>
+                                    <option value="draft po under discussion">Draft PO Under Discussion</option>
+                                    <option value="draft po approved">Draft PO Approved</option>
+                                    <option value="final po approved">Final PO Approved</option>
+                                    <option value="rejected">Rejected </option>
+                                    <!-- <option value="closed">Closed</option> -->
 
                                 </select>
                             </div>
@@ -1073,25 +1073,25 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
                                     Negotiation
                                 </option>
 
-                                <option value="under discussion">
-                                    Under Discussion
+                                <option value="draft po under discussion">
+                                    Draft PO Under Discussion
                                 </option>
 
-                                <option value="draft">
-                                    Draft
+                                <option value="draft po approved">
+                                    Draft PO Approved
                                 </option>
 
-                                <option value="final">
-                                    Final
+                                <option value="final po approved">
+                                    Final PO Approved
                                 </option>
 
-                                <option value="end">
-                                    End
+                                <option value="rejected">
+                                    Rejected
                                 </option>
 
-                                <option value="closed">
+                                <!-- <option value="closed">
                                     Closed
-                                </option>
+                                </option> -->
 
                             </select>
 
@@ -2275,16 +2275,16 @@ $(document).ready(function () {
                             statusClass = 'badge-checking';
                         }
                         else if (status === 'negotiation' ||
-                                status === 'under discussion') {
+                                status === 'draft po under discussion') {
                             statusClass = 'badge-negotiation';
                         }
-                        else if (status === 'draft') {
+                        else if (status === 'draft po approved') {
                             statusClass = 'badge-draft';
                         }
-                        else if (status === 'final') {
+                        else if (status === 'final po approved') {
                             statusClass = 'badge-proceed';
                         }
-                        else if (status === 'end' || status === 'closed') {
+                        else if (status === 'rejected' || status === 'closed') {
                             statusClass = 'badge-closed';
                         }
 
@@ -2597,21 +2597,21 @@ $(document).ready(function () {
 
                             } else if (
                                 status === 'negotiation' ||
-                                status === 'under discussion'
+                                status === 'draft po under discussion'
                             ) {
 
                                 statusClass = 'badge-negotiation';
 
-                            } else if (status === 'draft') {
+                            } else if (status === 'draft po approved') {
 
                                 statusClass = 'badge-draft';
 
-                            } else if (status === 'final') {
+                            } else if (status === 'final po approved') {
 
                                 statusClass = 'badge-proceed';
 
                             } else if (
-                                status === 'end' ||
+                                status === 'rejected' ||
                                 status === 'closed'
                             ) {
 

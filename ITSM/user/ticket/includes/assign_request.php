@@ -69,10 +69,10 @@ try {
         'checking requirements',
         'canvassing',
         'negotiation',
-        'under discussion',
-        'draft',
-        'final',
-        'end',
+        'draft po under discussion',
+        'draft po approved',
+        'final po approved',
+        'rejected',
         'closed'
     ];
 
