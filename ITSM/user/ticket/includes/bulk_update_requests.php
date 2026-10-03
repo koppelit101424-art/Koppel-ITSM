@@ -118,7 +118,7 @@ try {
 
     $orderStatus =
         strtolower(
-            trim($_POST['order_status'] ?? '')
+            trim($_POST['order_status'] ?? 'n/a')
         );
 
     $poNo =
@@ -330,32 +330,25 @@ try {
     // FINAL PO RULE
     // =====================================================
 
-    if ($status === 'final po approved') {
+        if ($status === 'final po approved') {
 
-        if ($poNo === '') {
-            throw new Exception(
-                'PO Number is required when Status is Final PO Approved.'
-            );
+            if ($poNo === '') {
+                throw new Exception(
+                    'PO Number is required when Status is Final PO Approved.'
+                );
+            }
+
+            if ($orderStatus === '') {
+                $orderStatus = 'n/a';
+            }
+
+        } else {
+
+            // When moving away from Final PO Approved,
+            // automatically clear PO Number and reset Order Status.
+            $poNo = null;
+            $orderStatus = 'n/a';
         }
-
-        if ($orderStatus === '') {
-            $orderStatus = 'N/A';
-        }
-
-    } else {
-
-        if ($poNo !== '') {
-            throw new Exception(
-                'PO Number can only be changed when Status is Final PO Approved.'
-            );
-        }
-
-        if ($orderStatus !== '') {
-            throw new Exception(
-                'Order Status can only be changed when Status is Final PO Approved.'
-            );
-        }
-    }
 
     // =====================================================
     // BUILD UPDATE
