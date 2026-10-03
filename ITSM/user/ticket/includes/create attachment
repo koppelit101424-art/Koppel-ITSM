@@ -54,7 +54,7 @@ ON UPDATE CASCADE
 ON DELETE RESTRICT;
 
 ALTER TABLE purch_request_tb
-ADD COLUMN order_status VARCHAR(30) NOT NULL DEFAULT 'Pending' AFTER status;
+ADD COLUMN order_status VARCHAR(30) NOT NULL DEFAULT 'N/A' AFTER status;
 
 
 CREATE TABLE request_category_tb (
@@ -78,5 +78,16 @@ INSERT INTO request_category_tb (category_name) VALUES
 ('Marketing Materials/Items'),
 ('Testing/License'),
 ('OEM');
+
+
+
+closed -cannot be edited both bulk and individual
+
+on bulk here are to be modified
+all process on individual is okay
+when the status is Final PO approved and then suddenly some changes made and goes back to other status like canvasing, negotiation etc
+the po number i set to null and the order status is set to n/a (jsut like the process on individial edit)
+
+
 
 

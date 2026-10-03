@@ -307,6 +307,7 @@ try {
     $allowedOrderStatuses = [
         'n/a',
         'order acknowledged',
+        'goods delivered',
         'goods received',
         'payment processing',
         'payment issued',
