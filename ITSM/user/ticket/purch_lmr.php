@@ -47,6 +47,8 @@ $sql = "
         u.company,
         r.department,
         r.item,
+        r.category_id,
+        rc.category_name,
         r.description,
         r.quantity,
         r.UoM,
@@ -54,6 +56,7 @@ $sql = "
         r.remarks,
         r.date_created,
         r.status,
+        r.order_status,
         r.priority,
         r.po_no,
         r.created_by,
@@ -61,6 +64,8 @@ $sql = "
     FROM purch_request_tb r
     LEFT JOIN user_tb u 
         ON r.created_by = u.user_id
+    LEFT JOIN request_category_tb rc
+        ON r.category_id = rc.category_id
     ORDER BY r.date_created ASC
 ";
 
@@ -80,6 +85,8 @@ $sql = "
         u.company AS company,
         r.department,
         r.item,
+        r.category_id,
+        rc.category_name,
         r.description,
         r.quantity,
         r.UoM,
@@ -87,6 +94,7 @@ $sql = "
         r.remarks,
         r.date_created,
         r.status,
+        r.order_status,
         r.priority,
         r.po_no,
         r.created_by,
@@ -94,9 +102,11 @@ $sql = "
     FROM purch_request_tb r
     LEFT JOIN user_tb u 
         ON r.created_by = u.user_id
+    LEFT JOIN request_category_tb rc
+        ON r.category_id = rc.category_id
     WHERE TRIM(r.department) = TRIM(?)
     ORDER BY r.date_created ASC
-    ";
+";
 
     $stmt = $conn->prepare($sql);
     $stmt->bind_param("s", $currentDepartment);
@@ -161,7 +171,7 @@ $requests = $stmt->get_result();
     }
     .custom-menu a {
         display: block;
-        padding: 8px 16px;
+        padding: 8px 13px;
         color: #333;
         text-decoration: none;
     }
@@ -276,6 +286,20 @@ $isPurchasing =
 
     $userQuery->close();
 
+
+    $categoryQuery = $conn->query("
+    SELECT category_id, category_name
+    FROM request_category_tb
+    WHERE status = 1
+    ORDER BY category_name ASC
+    ");
+
+    $filterCategories = [];
+
+    while ($categoryRow = $categoryQuery->fetch_assoc()) {
+        $filterCategories[] = $categoryRow;
+    }
+
 $departmentQuery = $conn->query("
     SELECT DISTINCT department
     FROM purch_request_tb
@@ -344,7 +368,7 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
             </div>
 
             <!-- Department -->
-            <div class="col-md-2">
+            <div class="col-md-3">
                   <label class="form-label">Departments</label>
                 <select id="departmentFilter" class="form-select">
                     <option value="">All Departments</option>
@@ -360,7 +384,7 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
             </div>
 
             <!-- Urgency -->
-            <div class="col-md-1">
+            <div class="col-md-2">
                 <label class="form-label">Urgency</label>
                 <select id="statusUrgencyFilter" class="form-select">
                     <option value="">All </option>
@@ -369,8 +393,27 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
                     <option value="medium">Medium</option>
                 </select>
             </div>
+            <!-- Category -->
+            <div class="col-md-3">
+                <label class="form-label">Category</label>
+
+                <select id="categoryFilter" class="form-select">
+                    <option value="">All Categories</option>
+
+                    <?php foreach ($filterCategories as $category): ?>
+
+                        <option value="<?= htmlspecialchars(
+                            strtolower(trim($category['category_name']))
+                        ) ?>">
+                            <?= htmlspecialchars($category['category_name']) ?>
+                        </option>
+
+                    <?php endforeach; ?>
+
+                </select>
+            </div>
             <!-- Status -->
-            <div class="col-md-1">
+            <div class="col-md-3">
                 <label class="form-label">Status</label>
                 <select id="statusSelectFilter" class="form-select">
                     <option value="">All Status</option>
@@ -385,15 +428,31 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
                     <!-- <option value="closed">Closed</option> -->
                 </select>
             </div>
+            <!-- Order Status -->
+            <div class="col-md-3">
+                <label class="form-label">Order Status</label>
 
+                <select id="orderStatusFilter" class="form-select">
+
+                    <option value="">All Order Status</option>
+
+                    <option value="n/a">N/A</option>
+                    <option value="order acknowledged">Order Acknowledged</option>
+                    <option value="goods received">Goods Received</option>
+                    <option value="payment processing">Payment Processing</option>
+                    <option value="payment issued">Payment Issued</option>
+                    <option value="closed">Closed</option>
+
+                </select>
+            </div>
             <!-- Date From -->
-            <div class="col-md-2">
+            <div class="col-md-3">
                 <label class="form-label">Date From</label>
                 <input type="date" id="dateFrom" class="form-control">
             </div>
 
             <!-- Date To -->
-            <div class="col-md-2">
+            <div class="col-md-3">
                 <label class="form-label">Date To</label>
                 <input type="date" id="dateTo" class="form-control">
             </div>
@@ -461,20 +520,22 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
                             <th>
                                 <input type="checkbox" id="selectAllRequests">
                             </th>
+
                             <th>ID</th>
                             <th>LMR No.</th>
                             <th>PO No.</th>
                             <th>Requester</th>
                             <th>Department</th>
                             <th>Item</th>
-                            <th>Qty</th>
-                            <th>UoM</th>
+                            <th>Category</th>
+                            <!-- <th>Qty</th> -->
+                            <!-- <th>UoM</th> -->
                             <th>Assigned to</th>
                             <th>Urgency</th>
                             <th>Status</th>
+                            <th>Order Status</th>
                             <th>Date Created</th>
-                            <th>Date Needed</th>
-                            <!-- <th>Remarks</th> -->
+                            <!-- <th>Date Needed</th> -->
                             <th>Action</th>
                         </tr>
                     </thead>
@@ -527,26 +588,29 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
                             $stmtRequestor->close();
                                 ?>
  
-                        <tr
-                            data-request-id="<?= (int)$row['request_id'] ?>"
-                            data-lmr-no="<?= htmlspecialchars($row['lmr_no'], ENT_QUOTES) ?>"
-                            data-status="<?= htmlspecialchars(strtolower(trim($row['status'])), ENT_QUOTES) ?>"
-                            data-priority="<?= htmlspecialchars($row['priority'] ?? '', ENT_QUOTES) ?>"
-                            data-po="<?= htmlspecialchars($row['po_no'] ?? '', ENT_QUOTES) ?>"
-                            data-company="<?= htmlspecialchars($row['company'], ENT_QUOTES) ?>"
-                            data-department="<?= htmlspecialchars($row['department'], ENT_QUOTES) ?>"
-                            data-item="<?= htmlspecialchars($row['item'], ENT_QUOTES) ?>"
-                            data-description="<?= htmlspecialchars($row['description'] ?? '', ENT_QUOTES) ?>"
-                            data-quantity="<?= htmlspecialchars($row['quantity'], ENT_QUOTES) ?>"
-                            data-uom="<?= htmlspecialchars($row['UoM'], ENT_QUOTES) ?>"
-                            data-date-needed="<?= htmlspecialchars($row['date_needed'], ENT_QUOTES) ?>"
-                            data-date-created="<?= htmlspecialchars($row['date_created'], ENT_QUOTES) ?>"
-                            data-remarks="<?= htmlspecialchars($row['remarks'] ?? '', ENT_QUOTES) ?>"
-                            data-purchaser-id="<?= (int)$row['purchaser_id'] ?>"
-                            data-purchaser-name="<?= htmlspecialchars($purchaser_name, ENT_QUOTES) ?>"
-                            data-requestor-name="<?= htmlspecialchars($requestor_name, ENT_QUOTES) ?>"
-                            style="cursor:pointer;"
-                        >
+                            <tr
+                                data-request-id="<?= (int)$row['request_id'] ?>"
+                                data-lmr-no="<?= htmlspecialchars($row['lmr_no'], ENT_QUOTES) ?>"
+                                data-status="<?= htmlspecialchars(strtolower(trim($row['status'])), ENT_QUOTES) ?>"
+                                data-order-status="<?= htmlspecialchars(strtolower(trim($row['order_status'] ?? 'N/A')), ENT_QUOTES) ?>"
+                                data-priority="<?= htmlspecialchars($row['priority'] ?? '', ENT_QUOTES) ?>"
+                                data-category="<?= htmlspecialchars($row['category_name'] ?? '', ENT_QUOTES) ?>"
+                                data-category-id="<?= (int)($row['category_id'] ?? 0) ?>"
+                                data-po="<?= htmlspecialchars($row['po_no'] ?? '', ENT_QUOTES) ?>"
+                                data-company="<?= htmlspecialchars($row['company'], ENT_QUOTES) ?>"
+                                data-department="<?= htmlspecialchars($row['department'], ENT_QUOTES) ?>"
+                                data-item="<?= htmlspecialchars($row['item'], ENT_QUOTES) ?>"
+                                data-description="<?= htmlspecialchars($row['description'] ?? '', ENT_QUOTES) ?>"
+                                data-quantity="<?= htmlspecialchars($row['quantity'], ENT_QUOTES) ?>"
+                                data-uom="<?= htmlspecialchars($row['UoM'], ENT_QUOTES) ?>"
+                                data-date-needed="<?= htmlspecialchars($row['date_needed'], ENT_QUOTES) ?>"
+                                data-date-created="<?= htmlspecialchars($row['date_created'], ENT_QUOTES) ?>"
+                                data-remarks="<?= htmlspecialchars($row['remarks'] ?? '', ENT_QUOTES) ?>"
+                                data-purchaser-id="<?= (int)$row['purchaser_id'] ?>"
+                                data-purchaser-name="<?= htmlspecialchars($purchaser_name, ENT_QUOTES) ?>"
+                                data-requestor-name="<?= htmlspecialchars($requestor_name, ENT_QUOTES) ?>"
+                                style="cursor:pointer;"
+                            >
                         <td onclick="event.stopPropagation();">
                             <input 
                                 type="checkbox"
@@ -561,9 +625,11 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
                             
                             <td><?= htmlspecialchars($row['department']) ?></td>
                             <td><?= htmlspecialchars($row['item']) ?></td>
-
-                            <td><?= $row['quantity'] ?></td>
-                            <td><?= htmlspecialchars($row['UoM']) ?></td>
+                            <td>
+                                <?= htmlspecialchars($row['category_name'] ?? 'N/A') ?>
+                            </td>
+                            <!-- <td><?= $row['quantity'] ?></td> -->
+                            <!-- <td><?= htmlspecialchars($row['UoM']) ?></td> -->
                             <td>
                                 <?php if ($purchaser_id == 1): ?>
                                     <span class="unassigned-purchaser">
@@ -639,9 +705,17 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
                                     <?= ucfirst($row['status']) ?>
                                 </span>
                             </td>
-                            
+                            <td>
+                                <?php
+                                $orderStatus = trim($row['order_status'] ?? 'N/A');
+                                ?>
+
+                                <span class="badge bg-secondary">
+                                    <?= htmlspecialchars($orderStatus) ?>
+                                </span>
+                            </td>
                             <td><?= date('m-d-Y', strtotime($row['date_created'])) ?></td>
-                            <td><?= date('m-d-Y', strtotime( $row['date_needed'])) ?></td>
+                            <!-- <td><?= date('m-d-Y', strtotime( $row['date_needed'])) ?></td> -->
                             <!-- <td><?= htmlspecialchars($row['remarks'] ?? '-') ?></td> -->
                             <td onclick="event.stopPropagation();">
 
@@ -754,6 +828,26 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
                                 id="modalDepartment"
                                 class="form-control"
                                 readonly>
+                        </div>
+
+                        <!-- CATEGORY -->
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Category</label>
+
+                            <select id="modalCategory"
+                                    class="form-select">
+
+                                <option value="">N/A</option>
+
+                                <?php foreach ($filterCategories as $category): ?>
+
+                                    <option value="<?= (int)$category['category_id'] ?>">
+                                        <?= htmlspecialchars($category['category_name']) ?>
+                                    </option>
+
+                                <?php endforeach; ?>
+
+                            </select>
                         </div>
 
                         <div class="col-md-4">
@@ -893,25 +987,51 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
                                 <select id="modalStatus"
                                         class="form-select">
 
-                                    <option value="pending"> Pending</option>
+                                    <option value="pending">Pending</option>
                                     <option value="checking requirements">Checking Requirements</option>
                                     <option value="canvassing">Canvassing</option>
                                     <option value="negotiation">Negotiation</option>
                                     <option value="draft po under discussion">Draft PO Under Discussion</option>
                                     <option value="draft po approved">Draft PO Approved</option>
                                     <option value="final po approved">Final PO Approved</option>
-                                    <option value="rejected">Rejected </option>
-                                    <!-- <option value="closed">Closed</option> -->
+                                    <option value="rejected">Rejected</option>
 
                                 </select>
                             </div>
 
-                            <div class="col-md-2">
-                                <label class="form-label fw-bold">PO Number</label>
+                            <!-- ORDER STATUS -->
+                            <div class="col-md-3">
+
+                                <label class="form-label fw-bold">
+                                    Order Status
+                                </label>
+
+                                <select id="modalOrderStatus"
+                                        class="form-select"
+                                        disabled>
+
+                                    <option value="n/a">N/A</option>
+                                    <option value="order acknowledged">Order Acknowledged</option>
+                                    <option value="goods received">Goods Received</option>
+                                    <option value="payment processing">Payment Processing</option>
+                                    <option value="payment issued">Payment Issued</option>
+                                    <option value="closed">Closed</option>
+
+                                </select>
+                            </div>
+
+                            <!-- PO NUMBER -->
+                            <div class="col-md-3">
+
+                                <label class="form-label fw-bold">
+                                    PO Number
+                                </label>
+
                                 <input type="text"
                                     id="modalPO"
                                     class="form-control"
-                                    >
+                                    disabled>
+
                             </div>
                             <div class="col-md-12">
                                 <label class="form-label fw-bold">Attachments</label>
@@ -1098,6 +1218,48 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
                         </div>
 
 
+                        <!-- ORDER STATUS -->
+                        <div class="col-md-6">
+
+                            <label class="form-label fw-bold">
+                                Order Status
+                            </label>
+
+                            <select id="bulkOrderStatus"
+                                    class="form-select"
+                                    disabled>
+
+                                <option value="">
+                                    No Change
+                                </option>
+
+                                <option value="n/a">
+                                    N/A
+                                </option>
+
+                                <option value="order acknowledged">
+                                    Order Acknowledged
+                                </option>
+
+                                <option value="goods received">
+                                    Goods Received
+                                </option>
+
+                                <option value="payment processing">
+                                    Payment Processing
+                                </option>
+
+                                <option value="payment issued">
+                                    Payment Issued
+                                </option>
+
+                                <option value="closed">
+                                    Closed
+                                </option>
+
+                            </select>
+
+                        </div>
                         <!-- PRIORITY -->
                         <div class="col-md-6">
 
@@ -1127,7 +1289,31 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
                             </select>
 
                         </div>
+                        <!-- CATEGORY -->
+                        <div class="col-md-6">
 
+                            <label class="form-label fw-bold">
+                                Category
+                            </label>
+
+                            <select id="bulkCategory"
+                                    class="form-select">
+
+                                <option value="">
+                                    No Change
+                                </option>
+
+                                <?php foreach ($filterCategories as $category): ?>
+
+                                    <option value="<?= (int)$category['category_id'] ?>">
+                                        <?= htmlspecialchars($category['category_name']) ?>
+                                    </option>
+
+                                <?php endforeach; ?>
+
+                            </select>
+
+                        </div>
 
                         <!-- PURCHASER -->
                         <div class="col-md-6">
@@ -1181,8 +1367,8 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
                             <input type="text"
                                 id="bulkPO"
                                 class="form-control"
-                                placeholder="Leave blank for no change">
-
+                                placeholder="Required when status is Final PO Approved"
+                                disabled>
                         </div>
 
                     </div>
@@ -1242,11 +1428,47 @@ $(document).ready(function () {
         columnDefs: [
             {
                 orderable: false,
-                targets: [0, 14]
+                targets: [0, 13]
             }
         ]
     });
+        // =====================================================
+        // BULK FINAL PO CONTROLS
+        // =====================================================
 
+        function updateBulkFinalPOControls() {
+
+            const status =
+                ($('#bulkStatus').val() || '')
+                    .toString()
+                    .toLowerCase()
+                    .trim();
+
+            const isFinalPO =
+                status === 'final po approved';
+
+            $('#bulkPO').prop(
+                'disabled',
+                !isFinalPO
+            );
+
+            $('#bulkOrderStatus').prop(
+                'disabled',
+                !isFinalPO
+            );
+
+            if (!isFinalPO) {
+
+                $('#bulkPO').val('');
+                $('#bulkOrderStatus').val('');
+            }
+        }
+
+        $('#bulkStatus').on('change', function () {
+
+            updateBulkFinalPOControls();
+
+        });
     // =====================================================
     // BULK SELECTION
     // =====================================================
@@ -1387,7 +1609,19 @@ $(document).ready(function () {
         const rowPriority = (
             $row.attr('data-priority') || ''
         ).toString().toLowerCase().trim();
+        const rowCategory = (
+            $row.attr('data-category') || ''
+        )
+        .toString()
+        .toLowerCase()
+        .trim();
 
+        const rowOrderStatus = (
+            $row.attr('data-order-status') || ''
+        )
+        .toString()
+        .toLowerCase()
+        .trim();
         const purchaserId = (
             $row.attr('data-purchaser-id') || ''
         ).toString().trim();
@@ -1421,7 +1655,19 @@ $(document).ready(function () {
             .toString()
             .toLowerCase()
             .trim();
+        const category = (
+            $('#categoryFilter').val() || ''
+        )
+        .toString()
+        .toLowerCase()
+        .trim();
 
+        const orderStatus = (
+            $('#orderStatusFilter').val() || ''
+        )
+        .toString()
+        .toLowerCase()
+        .trim();
         const urgency =
             ($('#statusUrgencyFilter').val() || '')
             .toString()
@@ -1485,7 +1731,22 @@ $(document).ready(function () {
             return false;
         }
 
+        // =====================================================
+        // CATEGORY
+        // =====================================================
 
+        if (category && rowCategory !== category) {
+            return false;
+        }
+
+
+        // =====================================================
+        // ORDER STATUS
+        // =====================================================
+
+        if (orderStatus && rowOrderStatus !== orderStatus) {
+            return false;
+        }
         // =====================================================
         // DATE CREATED
         // =====================================================
@@ -1530,7 +1791,7 @@ $(document).ready(function () {
     // PURCHASING FILTERS - ON CHANGE
     // =====================================================
 
-    $('#companyFilter, #requestViewFilter, #departmentFilter, #statusUrgencyFilter, #statusSelectFilter, #dateFrom, #dateTo')
+    $('#companyFilter, #requestViewFilter, #departmentFilter, #statusUrgencyFilter, #statusSelectFilter, #categoryFilter, #orderStatusFilter, #dateFrom, #dateTo')
         .on('change', function () {
             table.draw();
         });
@@ -1611,7 +1872,11 @@ $(document).ready(function () {
         $('#bulkStatus').val('');
         $('#bulkPriority').val('');
         $('#bulkPurchaser').val('');
+        $('#bulkCategory').val('');
+        $('#bulkOrderStatus').val('');
         $('#bulkPO').val('');
+
+        updateBulkFinalPOControls();
 
         const bulkModal =
             new bootstrap.Modal(
@@ -1903,6 +2168,8 @@ $(document).ready(function () {
     let originalPurchaserId = '';
     let originalPriority = '';
     let originalPO = '';
+    let originalCategoryId = '';
+    let originalOrderStatus = '';
 
 
     // =====================================================
@@ -1936,6 +2203,17 @@ $(document).ready(function () {
         const po = row.data('po');
         const priority = row.data('priority');
         const remarks = row.data('remarks');
+
+        const categoryId =
+            (row.data('category-id') || '')
+                .toString()
+                .trim();
+
+        const orderStatus =
+            (row.data('order-status') || 'n/a')
+                .toString()
+                .toLowerCase()
+                .trim();
 
         const status =
             (row.data('status') || '')
@@ -1988,11 +2266,18 @@ $(document).ready(function () {
             originalPurchaserId = purchaserId;
             originalPriority = (priority || '').toString().toLowerCase().trim();
             originalPO = (po || '').toString().trim();
+            originalCategoryId = categoryId;
+            originalOrderStatus = orderStatus || 'n/a';
 
             $('#modalStatus').val(status);
             $('#modalPurchaser').val(purchaserId);
             $('#modalPO').val(originalPO);
             $('#modalPriority').val(originalPriority);
+            $('#modalCategory').val(categoryId);
+            $('#modalOrderStatus').val(originalOrderStatus);
+
+            // Enable/disable PO and Order Status
+            updateFinalPOControls();
 
             resetSaveButton();
         } else {
@@ -2080,7 +2365,6 @@ $(document).ready(function () {
                 .toString()
                 .trim();
 
-
         const currentPriority =
             ($('#modalPriority').val() || '')
                 .toString()
@@ -2092,26 +2376,85 @@ $(document).ready(function () {
                 .toString()
                 .trim();
 
+        const currentCategoryId =
+            ($('#modalCategory').val() || '')
+                .toString()
+                .trim();
+
+        const currentOrderStatus =
+            ($('#modalOrderStatus').val() || 'n/a')
+                .toString()
+                .toLowerCase()
+                .trim();
+
+        const isFinalPO =
+            currentStatus === 'final po approved';
+
+        // PO is required when Final PO Approved
+        if (isFinalPO && currentPO === '') {
+
+            $('#saveRequestChanges').prop(
+                'disabled',
+                true
+            );
+
+            return;
+        }
+
         const hasChanges =
             currentStatus !== originalStatus ||
             currentPurchaser !== originalPurchaserId ||
             currentPriority !== originalPriority ||
-            currentPO !== originalPO;
+            currentPO !== originalPO ||
+            currentCategoryId !== originalCategoryId ||
+            currentOrderStatus !== originalOrderStatus;
 
-
-            $('#saveRequestChanges').prop(
-                'disabled',
-                !hasChanges
-            );
-
+        $('#saveRequestChanges').prop(
+            'disabled',
+            !hasChanges
+        );
     }
+    // =====================================================
+    // FINAL PO APPROVED CONTROLS
+    // PO NUMBER + ORDER STATUS ONLY EDITABLE WHEN
+    // STATUS = FINAL PO APPROVED
+    // =====================================================
 
+    function updateFinalPOControls() {
 
+        const status =
+            ($('#modalStatus').val() || '')
+                .toString()
+                .toLowerCase()
+                .trim();
+
+        const isFinalPO =
+            status === 'final po approved';
+
+        $('#modalPO').prop(
+            'disabled',
+            !isFinalPO
+        );
+
+        $('#modalOrderStatus').prop(
+            'disabled',
+            !isFinalPO
+        );
+
+        // If status is not Final PO Approved,
+        // force order status to N/A
+        if (!isFinalPO) {
+
+            $('#modalOrderStatus').val('n/a');
+
+        }
+    }
     // =====================================================
     // STATUS CHANGE
     // =====================================================
 
     $('#modalStatus').on('change', function () {
+        updateFinalPOControls();
         checkForChanges();
         });
 
@@ -2127,6 +2470,14 @@ $(document).ready(function () {
         $('#modalPriority').on('change', function () {
             checkForChanges();
         });
+        $('#modalCategory').on('change', function () {
+            checkForChanges();
+        });
+
+        $('#modalOrderStatus').on('change', function () {
+            checkForChanges();
+        });
+
         $('#modalPO').on('input', function () {
             checkForChanges();
         });
@@ -2187,12 +2538,32 @@ $(document).ready(function () {
             const poNumber =
             $('#modalPO').val().trim();
 
+            const categoryId =
+                $('#modalCategory').val() || '';
+
+            const orderStatus =
+                $('#modalOrderStatus').val() || 'n/a';
 
             if (!requestId) {
                 return;
             }
 
+            if (status === 'final po approved' && poNumber === '') {
 
+                showSaveError(
+                    'PO Number is required when Status is Final PO Approved.'
+                );
+
+                return;
+            }
+
+            if (status !== 'final po approved') {
+
+                // Force these values when status is not Final PO Approved
+                // so the server also receives the correct values.
+                $('#modalPO').val('');
+                
+            }
             // Prevent duplicate requests
             button.prop('disabled', true);
 
@@ -2211,6 +2582,8 @@ $(document).ready(function () {
                     status: status,
                     purchaser_id: purchaserId,
                     priority: priority,
+                    category_id: categoryId,
+                    order_status: orderStatus,
                     po_no: poNumber
                 },
 
@@ -2222,11 +2595,14 @@ $(document).ready(function () {
                         originalPurchaserId = purchaserId;
                         originalPriority = priority;
                         originalPO = poNumber;
+                        originalCategoryId = categoryId;
+                        originalOrderStatus = orderStatus;
 
                         const row =
                             $('#requestsTable tbody tr[data-request-id="' +
                             requestId +
                             '"]');
+
 
                         row.attr('data-status', status);
                         row.attr('data-purchaser-id', purchaserId);
@@ -2236,15 +2612,15 @@ $(document).ready(function () {
 
                         row.attr('data-priority', priority);
                         row.data('priority', priority);
-                        row.attr(
-                            'data-po',
-                            poNumber
-                        );
 
-                        row.data(
-                            'po',
-                            poNumber
-                        );
+                        row.attr('data-category-id', categoryId);
+                        row.data('category-id', categoryId);
+
+                        row.attr('data-order-status', orderStatus);
+                        row.data('order-status', orderStatus);
+
+                        row.attr('data-po', poNumber);
+                        row.data('po', poNumber);
 
                         row.find('td').eq(3).text(
                             poNumber
@@ -2255,14 +2631,23 @@ $(document).ready(function () {
                             medium: 'priority-medium'
                         };
 
-                        row.find('td').eq(10).html(
+                        row.find('td').eq().html(
                             `<span class="priority-badge ${priorityClass[priority] || 'priority-default'}">
                                 ${priority.charAt(0).toUpperCase() + priority.slice(1)}
                             </span>`
                         );
                         
+                        row.find('td').eq(7).text(
+                            response.category_name || 'N/A'
+                        );
+
+                        row.find('td').eq(11).html(
+                            '<span class="badge bg-secondary">' +
+                            formatStatus(orderStatus) +
+                            '</span>'
+                        );
                         const statusBadge =
-                            row.find('td').eq(11).find('.badge');
+                            row.find('td').eq(10).find('.badge');
 
                         statusBadge.removeClass(
                             'badge-proceed badge-checking badge-pending badge-closed badge-canceled'
@@ -2304,7 +2689,7 @@ $(document).ready(function () {
                                 response.purchaser_name
                             );
 
-                            row.find('td').eq(9).text(
+                            row.find('td').eq(8).text(
                                 response.purchaser_name
                             );
                         }
@@ -2479,17 +2864,32 @@ $(document).ready(function () {
             return;
         }
 
-        const status = $('#bulkStatus').val() || '';
-        const priority = $('#bulkPriority').val() || '';
-        const purchaserId = $('#bulkPurchaser').val() || '';
-        const poNumber = $('#bulkPO').val().trim();
+        const status =
+            $('#bulkStatus').val() || '';
+
+        const priority =
+            $('#bulkPriority').val() || '';
+
+        const purchaserId =
+            $('#bulkPurchaser').val() || '';
+
+        const categoryId =
+            $('#bulkCategory').val() || '';
+
+        const orderStatus =
+            $('#bulkOrderStatus').val() || '';
+
+        const poNumber =
+            $('#bulkPO').val().trim();
 
         if (
             status === '' &&
             priority === '' &&
             purchaserId === '' &&
+            categoryId === '' &&
+            orderStatus === '' &&
             poNumber === ''
-        ) {
+        ){
 
             alert(
                 'Please select or enter at least one field to update.'
@@ -2497,7 +2897,38 @@ $(document).ready(function () {
 
             return;
         }
+            if (status === 'final po approved' && poNumber === '') {
 
+                alert(
+                    'PO Number is required when Status is Final PO Approved.'
+                );
+
+                return;
+            }
+
+            if (
+                orderStatus !== '' &&
+                status !== 'final po approved'
+            ) {
+
+                alert(
+                    'Order Status can only be changed when Status is Final PO Approved.'
+                );
+
+                return;
+            }
+
+            if (
+                poNumber !== '' &&
+                status !== 'final po approved'
+            ) {
+
+                alert(
+                    'PO Number can only be changed when Status is Final PO Approved.'
+                );
+
+                return;
+            }
         if (!confirm(
             'Are you sure you want to update ' +
             selectedIds.length +
@@ -2529,13 +2960,15 @@ $(document).ready(function () {
 
             dataType: 'json',
 
-            data: {
-                request_ids: selectedIds,
-                status: status,
-                priority: priority,
-                purchaser_id: purchaserId,
-                po_no: poNumber
-            },
+        data: {
+            request_ids: selectedIds,
+            status: status,
+            priority: priority,
+            purchaser_id: purchaserId,
+            category_id: categoryId,
+            order_status: orderStatus,
+            po_no: poNumber
+        },
 
             success: function (response) {
 
@@ -2562,7 +2995,41 @@ $(document).ready(function () {
                         if (!row.length) {
                             return;
                         }
+                        // =====================================
+                        // CATEGORY
+                        // =====================================
 
+                        if (categoryId !== '') {
+
+                            const categoryName =
+                                $('#bulkCategory option:selected')
+                                    .text()
+                                    .trim();
+
+                            row.attr(
+                                'data-category-id',
+                                categoryId
+                            );
+
+                            row.data(
+                                'category-id',
+                                categoryId
+                            );
+
+                            row.attr(
+                                'data-category',
+                                categoryName
+                            );
+
+                            row.data(
+                                'category',
+                                categoryName
+                            );
+
+                            row.find('td').eq(7).text(
+                                categoryName || 'N/A'
+                            );
+                        }
 
                         // =====================================
                         // STATUS
@@ -2574,7 +3041,7 @@ $(document).ready(function () {
                             row.data('status', status);
 
                             const statusBadge =
-                                row.find('td').eq(11).find('.badge');
+                                row.find('td').eq(9).find('.badge');
 
                             statusBadge.removeClass(
                                 'badge-proceed ' +
@@ -2623,7 +3090,28 @@ $(document).ready(function () {
                                 .text(formatStatus(status));
                         }
 
+                        // =====================================
+                        // ORDER STATUS
+                        // =====================================
 
+                        if (orderStatus !== '') {
+
+                            row.attr(
+                                'data-order-status',
+                                orderStatus
+                            );
+
+                            row.data(
+                                'order-status',
+                                orderStatus
+                            );
+
+                            row.find('td').eq(11).html(
+                                '<span class="badge bg-secondary">' +
+                                formatStatus(orderStatus) +
+                                '</span>'
+                            );
+                        }
                         // =====================================
                         // PRIORITY
                         // =====================================
@@ -2648,7 +3136,7 @@ $(document).ready(function () {
 
                             };
 
-                            row.find('td').eq(10).html(
+                            row.find('td').eq(9).html(
 
                                 `<span class="priority-badge ${
                                     priorityClass[priority] ||
@@ -2712,7 +3200,7 @@ $(document).ready(function () {
                             );
 
                             // Display ONLY purchaser name in table
-                            row.find('td').eq(9).text(
+                            row.find('td').eq(8).text(
                                 purchaserName
                             );
                         }

@@ -23,6 +23,24 @@ include 'includes/db.php';
     $user = $result->fetch_assoc();
 
     // ==========================================
+    // GET REQUEST CATEGORIES
+    // ==========================================
+
+    $categoryQuery = $conn->query("
+        SELECT category_id, category_name
+        FROM request_category_tb
+        WHERE status = 1
+        ORDER BY category_name ASC
+    ");
+
+    $categories = [];
+
+    if ($categoryQuery) {
+        while ($category = $categoryQuery->fetch_assoc()) {
+            $categories[] = $category;
+        }
+    }
+    // ==========================================
     // GENERATE LMR NUMBER
     //
     // Mandaluyong:
@@ -203,6 +221,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // ==========================================
 
     $items = $_POST['item'] ?? [];
+    $categories_post = $_POST['category_id'] ?? [];
     $descriptions = $_POST['description'] ?? [];
     $quantities = $_POST['quantity'] ?? [];
     $uoms = $_POST['uom'] ?? [];
@@ -226,17 +245,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             continue;
         }
 
+        $category_id = (int)($categories_post[$i] ?? 0);
         $desc = trim($descriptions[$i] ?? '');
         $qty = (float)($quantities[$i] ?? 0);
         $uom = trim($uoms[$i] ?? '');
         $date_needed = trim($dates_needed[$i] ?? '');
         $remarks = trim($remarks_list[$i] ?? '');
+
         $status = 'Pending';
+        $order_status = 'N/A';
         $po_no = '';
         $priority = 'Medium';
 
         $itemHasError = false;
 
+        if ($category_id <= 0) {
+            $errors[] = "Category is required for item: {$item}";
+            $itemHasError = true;
+        }
         if ($desc === '') {
             $errors[] = "Description required for item: {$item}";
             $itemHasError = true;
@@ -261,12 +287,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             $validItems[] = [
                 'item' => $item,
+                'category_id' => $category_id,
                 'desc' => $desc,
                 'qty' => $qty,
                 'uom' => $uom,
                 'date_needed' => $date_needed,
                 'remarks' => $remarks,
                 'status' => $status,
+                'order_status' => $order_status,
                 'po_no' => $po_no,
                 'priority' => $priority
             ];
@@ -297,12 +325,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 requestor,
                 department,
                 item,
+                category_id,
                 description,
                 quantity,
                 UoM,
                 date_needed,
                 remarks,
                 status,
+                order_status,
                 date_created,
                 date_updated,
                 created_by,
@@ -312,7 +342,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             )
             VALUES
             (
-                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
                 NOW(),
                 NOW(),
                 ?, ?, ?, ?
@@ -336,18 +366,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             foreach ($validItems as $itemData) {
 
                 $stmt->bind_param(
-                    "sissssdssssiiss",
+                    "sisssisdsssssiiss",
                     $lmr_no,
                     $user_id,
                     $requestor,
                     $department,
                     $itemData['item'],
+                    $itemData['category_id'],
                     $itemData['desc'],
                     $itemData['qty'],
                     $itemData['uom'],
                     $itemData['date_needed'],
                     $itemData['remarks'],
                     $status,
+                    $itemData['order_status'],
                     $created_by,
                     $purchaser_id,
                     $po_no,
@@ -735,51 +767,136 @@ $('#user_id').on('change', function() {
     $('#requestor').val(fullname);
     $('#department').val(department);
 });
-function addItemRow() {
-    const container = document.getElementById('itemsContainer');
-    const row = document.createElement('div');
-    row.className = 'item-row';
-    row.innerHTML = `
-    <div class="row">
-        <div class="col-md-3">
-            <label class="form-label">Item *</label>
-            <input type="text" class="form-control" name="item[]" placeholder="" required>
-        </div>
-        <div class="col-md-3">
-            <label class="form-label">Description *</label>
-            <textarea class="form-control" name="description[]" rows="1" placeholder=""required></textarea>
-        </div>
-        <div class="col-md-2">
-            <label class="form-label">Qty *</label>
-            <input type="number" class="form-control" name="quantity[]" value="1" step="0.01" required>
-        </div>
-        <div class="col-md-2">
-            <label class="form-label">Unit of Measurement *</label>
-            <input type="text" class="form-control" name="uom[]" value="pc" required>
-        </div>
-        <div class="col-md-2">
-            <label class="form-label">Date Needed *</label>
-            <input type="date" class="form-control" name="date_needed[]" value="" required>
-        </div>
-    </div>
-    <div class="row mt-2">
-        <div class="col-md-10">
-            <label class="form-label">Remarks</label>
-            <textarea class="form-control" name="remarks[]" rows="5" placeholder=""></textarea>
+        function addItemRow() {
 
-        </div>
-          <div class="col-md-2"><br><br>
-            <button type="button" class="btn btn-sm btn-outline-danger" onclick="this.closest('.item-row').remove()">
-                <i class="fas fa-trash"></i> Remove
-            </button>
+            const container = document.getElementById('itemsContainer');
 
-        </div>
- 
-    </div>`;
-    container.appendChild(row);
-}
+            const row = document.createElement('div');
 
-window.onload = addItemRow;
+            row.className = 'item-row';
+
+            row.innerHTML = `
+                <div class="row">
+
+                    <div class="col-md-3">
+                        <label class="form-label">Item *</label>
+                        <input
+                            type="text"
+                            class="form-control"
+                            name="item[]"
+                            required
+                        >
+                    </div>
+
+                    <div class="col-md-3">
+                        <label class="form-label">Category *</label>
+
+                        <select
+                            class="form-select"
+                            name="category_id[]"
+                            required
+                        >
+                            <option value="">Select Category</option>
+
+                            <?php foreach ($categories as $category): ?>
+
+                                <option value="<?= (int)$category['category_id'] ?>">
+                                    <?= htmlspecialchars($category['category_name']) ?>
+                                </option>
+
+                            <?php endforeach; ?>
+
+                        </select>
+                    </div>
+
+                    <div class="col-md-2">
+                        <label class="form-label">Qty *</label>
+
+                        <input
+                            type="number"
+                            class="form-control"
+                            name="quantity[]"
+                            value="1"
+                            step="0.01"
+                            required
+                        >
+                    </div>
+
+                    <div class="col-md-2">
+                        <label class="form-label">
+                            Unit of Measurement *
+                        </label>
+
+                        <input
+                            type="text"
+                            class="form-control"
+                            name="uom[]"
+                            value="pc"
+                            required
+                        >
+                    </div>
+
+                    <div class="col-md-2">
+                        <label class="form-label">
+                            Date Needed *
+                        </label>
+
+                        <input
+                            type="date"
+                            class="form-control"
+                            name="date_needed[]"
+                            required
+                        >
+                    </div>
+
+                </div>
+
+                <div class="row mt-2">
+
+                    <div class="col-md-10">
+
+                        <label class="form-label">
+                            Description *
+                        </label>
+
+                        <textarea
+                            class="form-control"
+                            name="description[]"
+                            rows="2"
+                            required
+                        ></textarea>
+
+                        <label class="form-label mt-2">
+                            Remarks
+                        </label>
+
+                        <textarea
+                            class="form-control"
+                            name="remarks[]"
+                            rows="3"
+                        ></textarea>
+
+                    </div>
+
+                    <div class="col-md-2 d-flex align-items-end">
+
+                        <button
+                            type="button"
+                            class="btn btn-sm btn-outline-danger w-100"
+                            onclick="this.closest('.item-row').remove()"
+                        >
+                            <i class="fas fa-trash"></i>
+                            Remove
+                        </button>
+
+                    </div>
+
+                </div>
+            `;
+
+            container.appendChild(row);
+        }
+        window.onload = addItemRow;
 </script>
 <script>
 

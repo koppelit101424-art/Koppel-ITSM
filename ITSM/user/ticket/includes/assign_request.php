@@ -12,43 +12,49 @@ $response = [
 
 try {
 
-    // =====================================================
-    // CHECK LOGIN
-    // =====================================================
-
     if (!isset($_SESSION['user_id'])) {
         throw new Exception('You are not logged in.');
     }
 
-    $current_user_id = (int) $_SESSION['user_id'];
-
+    $current_user_id = (int)$_SESSION['user_id'];
 
     // =====================================================
-    // GET POST DATA
+    // POST DATA
     // =====================================================
 
-    $request_id = isset($_POST['request_id'])
-        ? (int) $_POST['request_id']
-        : 0;
+    $request_id = (int)($_POST['request_id'] ?? 0);
 
-    $status = strtolower(trim($_POST['status'] ?? ''));
+    $status = strtolower(
+        trim($_POST['status'] ?? '')
+    );
 
-    $purchaser_id = isset($_POST['purchaser_id'])
-        ? (int) $_POST['purchaser_id']
-        : 1;
-    $priority = strtolower(trim($_POST['priority'] ?? ''));
-    $po_no = trim($_POST['po_no'] ?? '');
+    $purchaser_id = (int)(
+        $_POST['purchaser_id'] ?? 1
+    );
+
+    $priority = strtolower(
+        trim($_POST['priority'] ?? '')
+    );
+
+    $category_id = (int)(
+        $_POST['category_id'] ?? 0
+    );
+
+    $order_status = strtolower(
+        trim($_POST['order_status'] ?? 'n/a')
+    );
+
+    $po_no = trim(
+        $_POST['po_no'] ?? ''
+    );
+
     // =====================================================
-    // VALIDATE REQUEST ID
+    // BASIC VALIDATION
     // =====================================================
 
     if ($request_id <= 0) {
         throw new Exception('Invalid request ID.');
     }
-
-    // =====================================================
-    // VALIDATE PRIORITY
-    // =====================================================
 
     $allowed_priorities = [
         'urgent',
@@ -59,10 +65,6 @@ try {
     if (!in_array($priority, $allowed_priorities, true)) {
         throw new Exception('Invalid priority.');
     }
-
-    // =====================================================
-    // VALIDATE STATUS
-    // =====================================================
 
     $allowed_statuses = [
         'pending',
@@ -80,9 +82,46 @@ try {
         throw new Exception('Invalid status.');
     }
 
+    $allowed_order_statuses = [
+        'n/a',
+        'order acknowledged',
+        'goods received',
+        'payment processing',
+        'payment issued',
+        'closed'
+    ];
 
     // =====================================================
-    // GET CURRENT USER DEPARTMENT
+    // FINAL PO APPROVED RULE
+    // =====================================================
+
+    if ($status === 'final po approved') {
+
+        if ($po_no === '') {
+            throw new Exception(
+                'PO Number is required when Status is Final PO Approved.'
+            );
+        }
+
+        if (!in_array(
+            $order_status,
+            $allowed_order_statuses,
+            true
+        )) {
+            throw new Exception(
+                'Invalid order status.'
+            );
+        }
+
+    } else {
+
+        // Not Final PO Approved
+        $po_no = '';
+        $order_status = 'n/a';
+    }
+
+    // =====================================================
+    // GET CURRENT USER
     // =====================================================
 
     $userQuery = $conn->prepare("
@@ -106,20 +145,15 @@ try {
     $userQuery->execute();
 
     $userResult = $userQuery->get_result();
-
     $currentUser = $userResult->fetch_assoc();
 
     $userQuery->close();
 
-
     if (!$currentUser) {
-        throw new Exception('User account not found.');
+        throw new Exception(
+            'User account not found.'
+        );
     }
-
-
-    // =====================================================
-    // CHECK PURCHASING / ADMIN
-    // =====================================================
 
     $department = trim(
         $currentUser['department'] ?? ''
@@ -130,17 +164,10 @@ try {
     );
 
     $isPurchasing =
-        strcasecmp(
-            $department,
-            'Purchasing'
-        ) === 0;
+        strcasecmp($department, 'Purchasing') === 0;
 
     $isAdmin =
-        strcasecmp(
-            $sessionUserType,
-            'admin'
-        ) === 0;
-
+        strcasecmp($sessionUserType, 'admin') === 0;
 
     if (!$isPurchasing && !$isAdmin) {
         throw new Exception(
@@ -148,9 +175,8 @@ try {
         );
     }
 
-
     // =====================================================
-    // CHECK REQUEST EXISTS
+    // CHECK REQUEST
     // =====================================================
 
     $check = $conn->prepare("
@@ -159,12 +185,6 @@ try {
         WHERE request_id = ?
         LIMIT 1
     ");
-
-    if (!$check) {
-        throw new Exception(
-            'Request check failed: ' . $conn->error
-        );
-    }
 
     $check->bind_param(
         "i",
@@ -176,7 +196,6 @@ try {
     $result = $check->get_result();
 
     if ($result->num_rows === 0) {
-
         $check->close();
 
         throw new Exception(
@@ -186,12 +205,53 @@ try {
 
     $check->close();
 
+    // =====================================================
+    // VALIDATE CATEGORY
+    // =====================================================
+
+    if ($category_id > 0) {
+
+        $categoryCheck = $conn->prepare("
+            SELECT category_id
+            FROM request_category_tb
+            WHERE category_id = ?
+              AND status = 1
+            LIMIT 1
+        ");
+
+        if (!$categoryCheck) {
+            throw new Exception(
+                'Category validation failed: ' .
+                $conn->error
+            );
+        }
+
+        $categoryCheck->bind_param(
+            "i",
+            $category_id
+        );
+
+        $categoryCheck->execute();
+
+        $categoryResult =
+            $categoryCheck->get_result();
+
+        if ($categoryResult->num_rows === 0) {
+
+            $categoryCheck->close();
+
+            throw new Exception(
+                'Invalid category.'
+            );
+        }
+
+        $categoryCheck->close();
+    }
 
     // =====================================================
     // VALIDATE PURCHASER
     // =====================================================
 
-    // 1 = Unassigned
     if ($purchaser_id > 1) {
 
         $purchaserCheck = $conn->prepare("
@@ -202,13 +262,6 @@ try {
             LIMIT 1
         ");
 
-        if (!$purchaserCheck) {
-            throw new Exception(
-                'Purchaser validation failed: ' .
-                $conn->error
-            );
-        }
-
         $purchaserCheck->bind_param(
             "i",
             $purchaser_id
@@ -216,9 +269,11 @@ try {
 
         $purchaserCheck->execute();
 
-        $purchaserResult = $purchaserCheck->get_result();
+        $purchaserResult =
+            $purchaserCheck->get_result();
 
         if ($purchaserResult->num_rows === 0) {
+
             $purchaserCheck->close();
 
             throw new Exception(
@@ -229,9 +284,8 @@ try {
         $purchaserCheck->close();
     }
 
-
     // =====================================================
-    // UPDATE REQUEST
+    // UPDATE
     // =====================================================
 
     $update = $conn->prepare("
@@ -240,6 +294,8 @@ try {
             status = ?,
             purchaser_id = ?,
             priority = ?,
+            category_id = ?,
+            order_status = ?,
             po_no = ?
         WHERE request_id = ?
     ");
@@ -252,10 +308,12 @@ try {
     }
 
     $update->bind_param(
-    "sissi",
+        "sisissi",
         $status,
         $purchaser_id,
         $priority,
+        $category_id,
+        $order_status,
         $po_no,
         $request_id
     );
@@ -269,7 +327,6 @@ try {
     }
 
     $update->close();
-
 
     // =====================================================
     // GET PURCHASER NAME
@@ -285,13 +342,6 @@ try {
             WHERE user_id = ?
             LIMIT 1
         ");
-
-        if (!$purchaserQuery) {
-            throw new Exception(
-                'Purchaser query failed: ' .
-                $conn->error
-            );
-        }
 
         $purchaserQuery->bind_param(
             "i",
@@ -314,49 +364,71 @@ try {
         }
     }
 
+    // =====================================================
+    // GET CATEGORY NAME
+    // =====================================================
+
+    $category_name = 'N/A';
+
+    if ($category_id > 0) {
+
+        $categoryQuery = $conn->prepare("
+            SELECT category_name
+            FROM request_category_tb
+            WHERE category_id = ?
+            LIMIT 1
+        ");
+
+        $categoryQuery->bind_param(
+            "i",
+            $category_id
+        );
+
+        $categoryQuery->execute();
+
+        $categoryResult =
+            $categoryQuery->get_result();
+
+        $category =
+            $categoryResult->fetch_assoc();
+
+        $categoryQuery->close();
+
+        if ($category) {
+            $category_name =
+                $category['category_name'];
+        }
+    }
 
     // =====================================================
-    // SUCCESS
+    // RESPONSE
     // =====================================================
 
     $response['success'] = true;
-
     $response['message'] =
         'Request updated successfully.';
 
-    $response['request_id'] =
-        $request_id;
-
-    $response['status'] =
-        $status;
-
-    $response['purchaser_id'] =
-        $purchaser_id;
-
-    $response['priority'] =
-        $priority;
-
-    $response['po_no'] =
-        $po_no;
-
-    $response['purchaser_name'] =
-        $purchaser_name;
+    $response['request_id'] = $request_id;
+    $response['status'] = $status;
+    $response['purchaser_id'] = $purchaser_id;
+    $response['priority'] = $priority;
+    $response['category_id'] = $category_id;
+    $response['category_name'] = $category_name;
+    $response['order_status'] = $order_status;
+    $response['po_no'] = $po_no;
+    $response['purchaser_name'] = $purchaser_name;
 
 } catch (Throwable $e) {
 
     http_response_code(400);
 
     $response['success'] = false;
-
-    $response['message'] =
-        $e->getMessage();
+    $response['message'] = $e->getMessage();
 }
 
-
-// =========================================================
-// RETURN JSON
-// =========================================================
-
-echo json_encode($response);
+echo json_encode(
+    $response,
+    JSON_UNESCAPED_UNICODE
+);
 
 $conn->close();

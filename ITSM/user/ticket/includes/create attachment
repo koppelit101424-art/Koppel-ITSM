@@ -38,3 +38,45 @@ INSERT INTO `purch_request_attachments` (`attachment_id`, `request_id`, `file_na
 (21, 303, '1775117985_0.png', 'uploads/purchasing/lmr_6abe6110113eb4.16720440_5.png', '2026-10-01 21:33:04'),
 (22, 305, 'Create new user account.docx', 'uploads/purchasing/lmr_6abe6422355650.04764954_0.docx', '2026-10-01 21:46:10'),
 (23, 305, 'UPDATE CONTACT IN THUNDERBIRD.docx', 'uploads/purchasing/lmr_6abe6422359c45.78703447_1.docx', '2026-10-01 21:46:10');
+
+
+ALTER TABLE purch_request_tb
+ADD COLUMN category_id INT NULL AFTER item;
+
+ALTER TABLE purch_request_tb
+MODIFY COLUMN category_id INT NOT NULL;
+
+ALTER TABLE purch_request_tb
+ADD CONSTRAINT fk_purch_request_category
+FOREIGN KEY (category_id)
+REFERENCES request_category_tb(category_id)
+ON UPDATE CASCADE
+ON DELETE RESTRICT;
+
+ALTER TABLE purch_request_tb
+ADD COLUMN order_status VARCHAR(30) NOT NULL DEFAULT 'Pending' AFTER status;
+
+
+CREATE TABLE request_category_tb (
+    category_id INT AUTO_INCREMENT PRIMARY KEY,
+    category_name VARCHAR(150) NOT NULL UNIQUE,
+    status TINYINT(1) NOT NULL DEFAULT 1,
+    date_created DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+INSERT INTO request_category_tb (category_name) VALUES
+('Office Supplies'),
+('IT Equipment'),
+('Facilities and Maintenance'),
+('Safety Equipment'),
+('Furniture and Fixtures'),
+('Transportation and Logistics'),
+('Professional Services'),
+('Spare Parts RAC/LCP'),
+('Spare Parts VRF'),
+('Applied Infrastructure Projects'),
+('Marketing Materials/Items'),
+('Testing/License'),
+('OEM');
+
+

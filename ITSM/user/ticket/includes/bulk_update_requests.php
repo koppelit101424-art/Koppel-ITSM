@@ -7,14 +7,8 @@ require_once __DIR__ . '/../../includes/db.php';
 
 header('Content-Type: application/json; charset=utf-8');
 
-$response = [
-    'success' => false,
-    'message' => ''
-];
-
 function returnJson($response, $statusCode = 200)
 {
-    // Remove anything accidentally output by included PHP files
     if (ob_get_length()) {
         ob_clean();
     }
@@ -32,7 +26,7 @@ function returnJson($response, $statusCode = 200)
 try {
 
     // =====================================================
-    // CHECK LOGIN
+    // LOGIN
     // =====================================================
 
     if (!isset($_SESSION['user_id'])) {
@@ -43,11 +37,10 @@ try {
         ], 401);
     }
 
-    $userId = (int) $_SESSION['user_id'];
-
+    $userId = (int)$_SESSION['user_id'];
 
     // =====================================================
-    // CHECK PURCHASING / ADMIN
+    // CHECK USER
     // =====================================================
 
     $userQuery = $conn->prepare("
@@ -57,27 +50,29 @@ try {
         LIMIT 1
     ");
 
-    if (!$userQuery) {
-        throw new Exception(
-            'Failed to check user: ' . $conn->error
-        );
-    }
+    $userQuery->bind_param(
+        "i",
+        $userId
+    );
 
-    $userQuery->bind_param("i", $userId);
     $userQuery->execute();
 
-    $userResult = $userQuery->get_result();
-    $user = $userResult->fetch_assoc();
+    $userResult =
+        $userQuery->get_result();
+
+    $user =
+        $userResult->fetch_assoc();
 
     $userQuery->close();
 
     if (!$user) {
-        throw new Exception('User account not found.');
+        throw new Exception(
+            'User account not found.'
+        );
     }
 
-    $department = trim(
-        $user['department'] ?? ''
-    );
+    $department =
+        trim($user['department'] ?? '');
 
     $isPurchasing =
         strcasecmp(
@@ -98,9 +93,8 @@ try {
         );
     }
 
-
     // =====================================================
-    // GET POST DATA
+    // POST DATA
     // =====================================================
 
     $requestIds =
@@ -119,12 +113,19 @@ try {
     $purchaserId =
         trim($_POST['purchaser_id'] ?? '');
 
+    $categoryId =
+        trim($_POST['category_id'] ?? '');
+
+    $orderStatus =
+        strtolower(
+            trim($_POST['order_status'] ?? '')
+        );
+
     $poNo =
         trim($_POST['po_no'] ?? '');
 
-
     // =====================================================
-    // VALIDATE REQUEST IDS
+    // REQUEST IDS
     // =====================================================
 
     if (
@@ -156,9 +157,8 @@ try {
         );
     }
 
-
     // =====================================================
-    // VALIDATE STATUS
+    // STATUS
     // =====================================================
 
     $allowedStatuses = [
@@ -166,10 +166,10 @@ try {
         'checking requirements',
         'canvassing',
         'negotiation',
-        'under discussion',
-        'draft',
-        'final',
-        'end',
+        'draft po under discussion',
+        'draft po approved',
+        'final po approved',
+        'rejected',
         'closed'
     ];
 
@@ -186,9 +186,8 @@ try {
         );
     }
 
-
     // =====================================================
-    // VALIDATE PRIORITY
+    // PRIORITY
     // =====================================================
 
     $allowedPriorities = [
@@ -210,9 +209,52 @@ try {
         );
     }
 
+    // =====================================================
+    // CATEGORY
+    // =====================================================
+
+    if ($categoryId !== '') {
+
+        if (!ctype_digit($categoryId)) {
+            throw new Exception(
+                'Invalid category.'
+            );
+        }
+
+        $categoryId = (int)$categoryId;
+
+        $categoryCheck = $conn->prepare("
+            SELECT category_id
+            FROM request_category_tb
+            WHERE category_id = ?
+              AND status = 1
+            LIMIT 1
+        ");
+
+        $categoryCheck->bind_param(
+            "i",
+            $categoryId
+        );
+
+        $categoryCheck->execute();
+
+        $categoryResult =
+            $categoryCheck->get_result();
+
+        if ($categoryResult->num_rows === 0) {
+
+            $categoryCheck->close();
+
+            throw new Exception(
+                'Selected category is invalid.'
+            );
+        }
+
+        $categoryCheck->close();
+    }
 
     // =====================================================
-    // VALIDATE PURCHASER
+    // PURCHASER
     // =====================================================
 
     if ($purchaserId !== '') {
@@ -223,9 +265,8 @@ try {
             );
         }
 
-        $purchaserId = (int) $purchaserId;
+        $purchaserId = (int)$purchaserId;
 
-        // 1 = Unassigned
         if ($purchaserId > 1) {
 
             $purchaserCheck = $conn->prepare("
@@ -235,13 +276,6 @@ try {
                   AND LOWER(TRIM(department)) = 'purchasing'
                 LIMIT 1
             ");
-
-            if (!$purchaserCheck) {
-                throw new Exception(
-                    'Purchaser validation failed: ' .
-                    $conn->error
-                );
-            }
 
             $purchaserCheck->bind_param(
                 "i",
@@ -258,7 +292,7 @@ try {
                 $purchaserCheck->close();
 
                 throw new Exception(
-                    'Selected purchaser is not a valid Purchasing user.'
+                    'Selected purchaser is not valid.'
                 );
             }
 
@@ -266,6 +300,62 @@ try {
         }
     }
 
+    // =====================================================
+    // ORDER STATUS
+    // =====================================================
+
+    $allowedOrderStatuses = [
+        'n/a',
+        'order acknowledged',
+        'goods received',
+        'payment processing',
+        'payment issued',
+        'closed'
+    ];
+
+    if (
+        $orderStatus !== '' &&
+        !in_array(
+            $orderStatus,
+            $allowedOrderStatuses,
+            true
+        )
+    ) {
+        throw new Exception(
+            'Invalid order status.'
+        );
+    }
+
+    // =====================================================
+    // FINAL PO RULE
+    // =====================================================
+
+    if ($status === 'final po approved') {
+
+        if ($poNo === '') {
+            throw new Exception(
+                'PO Number is required when Status is Final PO Approved.'
+            );
+        }
+
+        if ($orderStatus === '') {
+            $orderStatus = 'n/a';
+        }
+
+    } else {
+
+        if ($poNo !== '') {
+            throw new Exception(
+                'PO Number can only be changed when Status is Final PO Approved.'
+            );
+        }
+
+        if ($orderStatus !== '') {
+            throw new Exception(
+                'Order Status can only be changed when Status is Final PO Approved.'
+            );
+        }
+    }
 
     // =====================================================
     // BUILD UPDATE
@@ -275,7 +365,6 @@ try {
     $types = '';
     $values = [];
 
-
     // STATUS
     if ($status !== '') {
 
@@ -283,7 +372,6 @@ try {
         $types .= "s";
         $values[] = $status;
     }
-
 
     // PRIORITY
     if ($priority !== '') {
@@ -293,7 +381,6 @@ try {
         $values[] = $priority;
     }
 
-
     // PURCHASER
     if ($purchaserId !== '') {
 
@@ -302,6 +389,21 @@ try {
         $values[] = $purchaserId;
     }
 
+    // CATEGORY
+    if ($categoryId !== '') {
+
+        $fields[] = "category_id = ?";
+        $types .= "i";
+        $values[] = $categoryId;
+    }
+
+    // ORDER STATUS
+    if ($orderStatus !== '') {
+
+        $fields[] = "order_status = ?";
+        $types .= "s";
+        $values[] = $orderStatus;
+    }
 
     // PO NUMBER
     if ($poNo !== '') {
@@ -310,7 +412,6 @@ try {
         $types .= "s";
         $values[] = $poNo;
     }
-
 
     // =====================================================
     // NOTHING TO UPDATE
@@ -323,9 +424,8 @@ try {
         );
     }
 
-
     // =====================================================
-    // REQUEST ID PLACEHOLDERS
+    // IDS
     // =====================================================
 
     $placeholders = implode(
@@ -337,13 +437,11 @@ try {
         )
     );
 
-
     foreach ($requestIds as $id) {
 
         $types .= "i";
         $values[] = $id;
     }
-
 
     // =====================================================
     // SQL
@@ -355,11 +453,6 @@ try {
         WHERE request_id IN ($placeholders)
     ";
 
-
-    // =====================================================
-    // PREPARE
-    // =====================================================
-
     $stmt = $conn->prepare($sql);
 
     if (!$stmt) {
@@ -370,20 +463,10 @@ try {
         );
     }
 
-
-    // =====================================================
-    // BIND
-    // =====================================================
-
     $stmt->bind_param(
         $types,
         ...$values
     );
-
-
-    // =====================================================
-    // EXECUTE
-    // =====================================================
 
     if (!$stmt->execute()) {
 
@@ -396,27 +479,18 @@ try {
         );
     }
 
-
     $affectedRows =
         $stmt->affected_rows;
 
     $stmt->close();
 
-
-    // =====================================================
-    // SUCCESS
-    // =====================================================
-
-    $response = [
+    returnJson([
         'success' => true,
         'message' =>
             count($requestIds) .
             ' request(s) updated successfully.',
         'affected_rows' => $affectedRows
-    ];
-
-    returnJson($response, 200);
-
+    ]);
 
 } catch (Throwable $e) {
 
