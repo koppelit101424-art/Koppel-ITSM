@@ -339,7 +339,7 @@ try {
         }
 
         if ($orderStatus === '') {
-            $orderStatus = 'n/a';
+            $orderStatus = 'N/A';
         }
 
     } else {

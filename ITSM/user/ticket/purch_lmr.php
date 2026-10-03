@@ -830,26 +830,6 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
                                 readonly>
                         </div>
 
-                        <!-- CATEGORY -->
-                        <div class="col-md-4">
-                            <label class="form-label fw-bold">Category</label>
-
-                            <select id="modalCategory"
-                                    class="form-select">
-
-                                <option value="">N/A</option>
-
-                                <?php foreach ($filterCategories as $category): ?>
-
-                                    <option value="<?= (int)$category['category_id'] ?>">
-                                        <?= htmlspecialchars($category['category_name']) ?>
-                                    </option>
-
-                                <?php endforeach; ?>
-
-                            </select>
-                        </div>
-
                         <div class="col-md-4">
                             <label class="form-label fw-bold">Item</label>
                             <input type="text"
@@ -964,7 +944,26 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
 
                                 </div>
                             </div>
-                            <div class="col-md-2">
+                                                    <!-- CATEGORY -->
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Category</label>
+
+                            <select id="modalCategory"
+                                    class="form-select">
+
+                                <option value="">N/A</option>
+
+                                <?php foreach ($filterCategories as $category): ?>
+
+                                    <option value="<?= (int)$category['category_id'] ?>">
+                                        <?= htmlspecialchars($category['category_name']) ?>
+                                    </option>
+
+                                <?php endforeach; ?>
+
+                            </select>
+                        </div>
+                            <div class="col-md-3">
 
                                 <label class="form-label fw-bold">
                                     Urgency
@@ -978,7 +977,7 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
 
                                 </select>
                             </div>
-                            <div class="col-md-3">
+                            <div class="col-md-4">
 
                                 <label class="form-label fw-bold">
                                     Status
@@ -1000,7 +999,7 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
                             </div>
 
                             <!-- ORDER STATUS -->
-                            <div class="col-md-3">
+                            <div class="col-md-4">
 
                                 <label class="form-label fw-bold">
                                     Order Status
@@ -1021,7 +1020,7 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
                             </div>
 
                             <!-- PO NUMBER -->
-                            <div class="col-md-3">
+                            <div class="col-md-4">
 
                                 <label class="form-label fw-bold">
                                     PO Number
@@ -1033,10 +1032,7 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
                                     disabled>
 
                             </div>
-                            <div class="col-md-12">
-                                <label class="form-label fw-bold">Attachments</label>
-        
-                            </div>
+
 
 
                         <?php else: ?>
@@ -1162,9 +1158,103 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
                     </div>
 
                     <div class="row g-3">
+                        <!-- PURCHASER -->
+                        <div class="col-md-4">
 
+                            <label class="form-label fw-bold">
+                                Assigned Purchaser
+                            </label>
+
+                            <select id="bulkPurchaser"
+                                    class="form-select">
+
+                                <option value="">
+                                    No Change
+                                </option>
+
+                                <option value="1">
+                                    Unassigned
+                                </option>
+
+                                <?php
+                                $bulkPurchaserQuery = $conn->query("
+                                    SELECT user_id, fullname, company
+                                    FROM user_tb
+                                    WHERE department = 'Purchasing'
+                                    AND is_active = 1
+                                    ORDER BY company ASC, fullname ASC
+                                ");
+
+                                while ($bulkPurchaser = $bulkPurchaserQuery->fetch_assoc()):
+                                ?>
+
+                                    <option value="<?= (int)$bulkPurchaser['user_id'] ?>">
+                                        <?= htmlspecialchars($bulkPurchaser['company']) ?> -
+                                        <?= htmlspecialchars($bulkPurchaser['fullname']) ?>
+                                    </option>
+
+                                <?php endwhile; ?>
+
+                            </select>
+
+                        </div>
+
+                         <!-- CATEGORY -->
+                        <div class="col-md-4">
+
+                            <label class="form-label fw-bold">
+                                Category
+                            </label>
+
+                            <select id="bulkCategory"
+                                    class="form-select">
+
+                                <option value="">
+                                    No Change
+                                </option>
+
+                                <?php foreach ($filterCategories as $category): ?>
+
+                                    <option value="<?= (int)$category['category_id'] ?>">
+                                        <?= htmlspecialchars($category['category_name']) ?>
+                                    </option>
+
+                                <?php endforeach; ?>
+
+                            </select>
+
+                        </div>
+                        <!-- PRIORITY -->
+                        <div class="col-md-4">
+
+                            <label class="form-label fw-bold">
+                                Priority
+                            </label>
+
+                            <select id="bulkPriority"
+                                    class="form-select">
+
+                                <option value="">
+                                    No Change
+                                </option>
+
+                                <option value="urgent">
+                                    Urgent
+                                </option>
+
+                                <option value="high">
+                                    High
+                                </option>
+
+                                <option value="medium">
+                                    Medium
+                                </option>
+
+                            </select>
+
+                        </div>
                         <!-- STATUS -->
-                        <div class="col-md-6">
+                        <div class="col-md-4">
 
                             <label class="form-label fw-bold">
                                 Status
@@ -1216,10 +1306,8 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
                             </select>
 
                         </div>
-
-
                         <!-- ORDER STATUS -->
-                        <div class="col-md-6">
+                        <div class="col-md-4">
 
                             <label class="form-label fw-bold">
                                 Order Status
@@ -1260,105 +1348,9 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
                             </select>
 
                         </div>
-                        <!-- PRIORITY -->
-                        <div class="col-md-6">
-
-                            <label class="form-label fw-bold">
-                                Priority
-                            </label>
-
-                            <select id="bulkPriority"
-                                    class="form-select">
-
-                                <option value="">
-                                    No Change
-                                </option>
-
-                                <option value="urgent">
-                                    Urgent
-                                </option>
-
-                                <option value="high">
-                                    High
-                                </option>
-
-                                <option value="medium">
-                                    Medium
-                                </option>
-
-                            </select>
-
-                        </div>
-                        <!-- CATEGORY -->
-                        <div class="col-md-6">
-
-                            <label class="form-label fw-bold">
-                                Category
-                            </label>
-
-                            <select id="bulkCategory"
-                                    class="form-select">
-
-                                <option value="">
-                                    No Change
-                                </option>
-
-                                <?php foreach ($filterCategories as $category): ?>
-
-                                    <option value="<?= (int)$category['category_id'] ?>">
-                                        <?= htmlspecialchars($category['category_name']) ?>
-                                    </option>
-
-                                <?php endforeach; ?>
-
-                            </select>
-
-                        </div>
-
-                        <!-- PURCHASER -->
-                        <div class="col-md-6">
-
-                            <label class="form-label fw-bold">
-                                Assigned Purchaser
-                            </label>
-
-                            <select id="bulkPurchaser"
-                                    class="form-select">
-
-                                <option value="">
-                                    No Change
-                                </option>
-
-                                <option value="1">
-                                    Unassigned
-                                </option>
-
-                                <?php
-                                $bulkPurchaserQuery = $conn->query("
-                                    SELECT user_id, fullname, company
-                                    FROM user_tb
-                                    WHERE department = 'Purchasing'
-                                    AND is_active = 1
-                                    ORDER BY company ASC, fullname ASC
-                                ");
-
-                                while ($bulkPurchaser = $bulkPurchaserQuery->fetch_assoc()):
-                                ?>
-
-                                    <option value="<?= (int)$bulkPurchaser['user_id'] ?>">
-                                        <?= htmlspecialchars($bulkPurchaser['company']) ?> -
-                                        <?= htmlspecialchars($bulkPurchaser['fullname']) ?>
-                                    </option>
-
-                                <?php endwhile; ?>
-
-                            </select>
-
-                        </div>
-
 
                         <!-- PO NUMBER -->
-                        <div class="col-md-6">
+                        <div class="col-md-4">
 
                             <label class="form-label fw-bold">
                                 PO Number
@@ -1432,6 +1424,16 @@ $(document).ready(function () {
             }
         ]
     });
+
+        // =====================================================
+        // UPDATE ROW IN DATATABLES
+        // =====================================================
+
+        function refreshDataTableRow(row) {
+            if (row && row.length) {
+                table.row(row).invalidate('dom');
+            }
+        }
         // =====================================================
         // BULK FINAL PO CONTROLS
         // =====================================================
@@ -2335,18 +2337,31 @@ $(document).ready(function () {
     // FORMAT STATUS
     // =====================================================
 
-    function formatStatus(status) {
+function formatStatus(status) {
 
-        if (!status) {
-            return '-';
-        }
-
-        return status
-            .replace(/\b\w/g, function (letter) {
-                return letter.toUpperCase();
-            });
+    if (!status) {
+        return '-';
     }
 
+    status = status.toString().trim();
+
+    // N/A
+    if (
+        status.toLowerCase() === 'n/a' ||
+        status.toLowerCase() === 'na'
+    ) {
+        return 'N/A';
+    }
+
+    // Sentence case
+    status = status.toLowerCase();
+    status = status.charAt(0).toUpperCase() + status.slice(1);
+
+    // Always keep PO uppercase
+    status = status.replace(/\bpo\b/gi, 'PO');
+
+    return status;
+}
 
     // =====================================================
     // CHECK FOR CHANGES
@@ -2631,7 +2646,7 @@ $(document).ready(function () {
                             medium: 'priority-medium'
                         };
 
-                        row.find('td').eq().html(
+                        row.find('td').eq(9).html(
                             `<span class="priority-badge ${priorityClass[priority] || 'priority-default'}">
                                 ${priority.charAt(0).toUpperCase() + priority.slice(1)}
                             </span>`
@@ -3041,7 +3056,7 @@ $(document).ready(function () {
                             row.data('status', status);
 
                             const statusBadge =
-                                row.find('td').eq(9).find('.badge');
+                                row.find('td').eq(10).find('.badge');
 
                             statusBadge.removeClass(
                                 'badge-proceed ' +
@@ -3094,21 +3109,42 @@ $(document).ready(function () {
                         // ORDER STATUS
                         // =====================================
 
-                        if (orderStatus !== '') {
+                        // If a new status is provided and it is NOT
+                        // Final PO Approved, force Order Status to N/A.
+
+                        let updatedOrderStatus = orderStatus;
+
+                        if (
+                            status !== '' &&
+                            status !== 'final po approved'
+                        ) {
+                            updatedOrderStatus = 'n/a';
+                        }
+
+                        // If Order Status was explicitly selected
+                        // or Status changed away from Final PO Approved
+                        if (
+                            updatedOrderStatus !== '' ||
+                            (status !== '' && status !== 'final po approved')
+                        ) {
+
+                            if (!updatedOrderStatus) {
+                                updatedOrderStatus = 'n/a';
+                            }
 
                             row.attr(
                                 'data-order-status',
-                                orderStatus
+                                updatedOrderStatus
                             );
 
                             row.data(
                                 'order-status',
-                                orderStatus
+                                updatedOrderStatus
                             );
 
                             row.find('td').eq(11).html(
                                 '<span class="badge bg-secondary">' +
-                                formatStatus(orderStatus) +
+                                formatStatus(updatedOrderStatus) +
                                 '</span>'
                             );
                         }
@@ -3225,7 +3261,11 @@ $(document).ready(function () {
                             );
                         }
 
+                        // =====================================
+                        // SYNC DATATABLES INTERNAL DATA
+                        // =====================================
 
+                        refreshDataTableRow(row);
                         // =====================================
                         // UNCHECK
                         // =====================================
