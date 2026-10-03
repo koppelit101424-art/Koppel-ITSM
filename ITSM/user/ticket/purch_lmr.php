@@ -438,7 +438,7 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
 
                     <option value="n/a">N/A</option>
                     <option value="order acknowledged">Order Acknowledged</option>
-                    <option value="goods delivered">Goods Delivered</option>
+                    <!-- <option value="goods delivered">Goods Delivered</option> -->
                     <option value="goods received">Goods Received</option>
                     <option value="payment processing">Payment Processing</option>
                     <option value="payment issued">Payment Issued</option>
@@ -1012,7 +1012,7 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
 
                                     <option value="n/a">N/A</option>
                                     <option value="order acknowledged">Order Acknowledged</option>
-                                    <option value="goods delivered">Goods Delivered</option>
+                                    <!-- <option value="goods delivered">Goods Delivered</option> -->
                                     <option value="goods received">Goods Received</option>
                                     <option value="payment processing">Payment Processing</option>
                                     <option value="payment issued">Payment Issued</option>
@@ -1331,10 +1331,10 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
                                     Order Acknowledged
                                 </option>
 
-                                <option value="goods delivered">
+                                <!-- <option value="goods delivered">
                                     Goods Delivered
-                                </option>
-                                
+                                </option> -->
+
                                 <option value="goods received">
                                     Goods Received
                                 </option>
