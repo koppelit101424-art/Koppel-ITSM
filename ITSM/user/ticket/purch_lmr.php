@@ -1847,46 +1847,255 @@ $(document).ready(function () {
 
         return rowStatus === selectedStatus;
     });
+// =====================================================
+// GET BULK SELECTED ROWS
+// =====================================================
 
-    // =====================================================
-    // OPEN BULK UPDATE MODAL
-    // =====================================================
+function getBulkSelectedRows() {
 
-    $('#bulkUpdateBtn').on('click', function () {
+    const selectedRows = [];
 
-        const selectedCount =
-            $('#requestsTable tbody .request-checkbox:checked').length;
+    table.rows().every(function () {
 
-        if (selectedCount === 0) {
+        const row = $(this.node());
 
-            alert('Please select at least one request.');
+        const checkbox =
+            row.find('.request-checkbox');
 
-            return;
+        if (checkbox.prop('checked')) {
+            selectedRows.push(row);
         }
 
-        $('#bulkSelectedCount').text(selectedCount);
-
-        $('#bulkUpdateMessage')
-            .addClass('d-none')
-            .removeClass('alert-success alert-danger')
-            .text('');
-
-        $('#bulkStatus').val('');
-        $('#bulkPriority').val('');
-        $('#bulkPurchaser').val('');
-        $('#bulkCategory').val('');
-        $('#bulkOrderStatus').val('');
-        $('#bulkPO').val('');
-
-        updateBulkFinalPOControls();
-
-        const bulkModal =
-            new bootstrap.Modal(
-                document.getElementById('bulkUpdateModal')
-            );
-
-        bulkModal.show();
     });
+
+    return selectedRows;
+}
+
+
+// =====================================================
+// CHECK BULK SELECTED DETAILS
+// =====================================================
+
+function getBulkRowDetails(row) {
+
+    return {
+
+        purchaserId:
+            (row.attr('data-purchaser-id') || '')
+                .toString()
+                .trim(),
+
+        categoryId:
+            (row.attr('data-category-id') || '')
+                .toString()
+                .trim(),
+
+        priority:
+            (row.attr('data-priority') || '')
+                .toString()
+                .toLowerCase()
+                .trim(),
+
+        status:
+            (row.attr('data-status') || '')
+                .toString()
+                .toLowerCase()
+                .trim(),
+
+        orderStatus:
+            (row.attr('data-order-status') || 'n/a')
+                .toString()
+                .toLowerCase()
+                .trim(),
+
+        po:
+            (row.attr('data-po') || '')
+                .toString()
+                .trim()
+    };
+}
+
+
+        // =====================================================
+        // OPEN BULK UPDATE MODAL
+        // =====================================================
+
+        $('#bulkUpdateBtn').on('click', function () {
+
+            const selectedRows =
+                getBulkSelectedRows();
+
+            const selectedCount =
+                selectedRows.length;
+
+            if (selectedCount === 0) {
+
+                alert(
+                    'Please select at least one request.'
+                );
+
+                return;
+            }
+
+            $('#bulkSelectedCount')
+                .text(selectedCount);
+
+            // =================================================
+            // RESET MESSAGE
+            // =================================================
+
+            $('#bulkUpdateMessage')
+                .addClass('d-none')
+                .removeClass(
+                    'alert-success alert-danger alert-warning'
+                )
+                .text('');
+
+            // =================================================
+            // GET FIRST SELECTED REQUEST
+            // =================================================
+
+            const firstRow =
+                selectedRows[0];
+
+            const firstData =
+                getBulkRowDetails(firstRow);
+
+            // =================================================
+            // CHECK WHETHER SELECTED REQUESTS HAVE
+            // DIFFERENT DETAILS
+            // =================================================
+
+            let hasDifferentDetails = false;
+
+            selectedRows.forEach(function (row) {
+
+                const currentData =
+                    getBulkRowDetails(row);
+
+                if (
+                    currentData.purchaserId !==
+                        firstData.purchaserId ||
+
+                    currentData.categoryId !==
+                        firstData.categoryId ||
+
+                    currentData.priority !==
+                        firstData.priority ||
+
+                    currentData.status !==
+                        firstData.status ||
+
+                    currentData.orderStatus !==
+                        firstData.orderStatus ||
+
+                    currentData.po !==
+                        firstData.po
+                ) {
+
+                    hasDifferentDetails = true;
+
+                }
+
+            });
+
+            // =================================================
+            // POPULATE FROM FIRST SELECTED REQUEST
+            // =================================================
+
+            $('#bulkPurchaser')
+                .val(firstData.purchaserId);
+
+            $('#bulkCategory')
+                .val(firstData.categoryId);
+
+            $('#bulkPriority')
+                .val(firstData.priority);
+
+            $('#bulkStatus')
+                .val(firstData.status);
+
+            $('#bulkOrderStatus')
+                .val(firstData.orderStatus);
+
+            $('#bulkPO')
+                .val(firstData.po);
+
+            // =================================================
+            // UPDATE FINAL PO CONTROLS
+            // =================================================
+
+            updateBulkFinalPOControls();
+
+            // =================================================
+            // WARNING FOR DIFFERENT DETAILS
+            // =================================================
+
+            if (hasDifferentDetails) {
+
+                $('#bulkUpdateMessage')
+                    .removeClass(
+                        'd-none alert-success alert-danger'
+                    )
+                    .addClass('alert-warning')
+                    .text(
+                        'Trying to edit request with different details.'
+                    );
+            }
+
+            // =================================================
+            // SHOW MODAL
+            // =================================================
+
+            const bulkModal =
+                new bootstrap.Modal(
+                    document.getElementById(
+                        'bulkUpdateModal'
+                    )
+                );
+
+            bulkModal.show();
+
+        });
+        
+        // =====================================================
+        // OPEN BULK UPDATE MODAL
+        // =====================================================
+        // $('#bulkUpdateBtn').on('click', function () {
+
+        //     const selectedCount =
+        //         $('#requestsTable tbody .request-checkbox:checked').length;
+
+        //     if (selectedCount === 0) {
+
+        //         alert('Please select at least one request.');
+
+        //         return;
+        //     }
+
+        //     $('#bulkSelectedCount').text(selectedCount);
+
+        //     $('#bulkUpdateMessage')
+        //         .addClass('d-none')
+        //         .removeClass('alert-success alert-danger')
+        //         .text('');
+
+        //     $('#bulkStatus').val('');
+        //     $('#bulkPriority').val('');
+        //     $('#bulkPurchaser').val('');
+        //     $('#bulkCategory').val('');
+        //     $('#bulkOrderStatus').val('');
+        //     $('#bulkPO').val('');
+
+        //     updateBulkFinalPOControls();
+
+        //     const bulkModal =
+        //         new bootstrap.Modal(
+        //             document.getElementById('bulkUpdateModal')
+        //         );
+
+        //     bulkModal.show();
+        // });
 
 
     // =====================================================
