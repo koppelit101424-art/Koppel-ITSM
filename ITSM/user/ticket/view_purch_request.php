@@ -39,7 +39,33 @@ if (!$selectedRequest) {
 
 $lmr_no = trim($selectedRequest['lmr_no']);
 
+function formatStatus($status)
+{
+    $status = trim((string)$status);
 
+    if ($status === '') {
+        return 'N/A';
+    }
+
+    if (
+        strtolower($status) === 'n/a' ||
+        strtolower($status) === 'na'
+    ) {
+        return 'N/A';
+    }
+
+    $status = strtolower($status);
+
+    $status = ucfirst($status);
+
+    $status = preg_replace(
+        '/\bpo\b/i',
+        'PO',
+        $status
+    );
+
+    return $status;
+}
 /*
 |--------------------------------------------------------------------------
 | STEP 2: GET ALL REQUESTS WITH THE SAME LMR NO
@@ -59,12 +85,15 @@ $stmt = $conn->prepare("
         u.company,
         r.department,
         r.item,
+        r.category_id,
+        rc.category_name,
         r.description,
         r.quantity,
         r.UoM,
         r.date_needed,
         r.remarks,
         r.status,
+        r.order_status,
         r.priority,
         r.po_no,
         r.date_created,
@@ -78,6 +107,9 @@ $stmt = $conn->prepare("
 
     LEFT JOIN user_tb p
         ON r.purchaser_id = p.user_id
+
+    LEFT JOIN request_category_tb rc
+        ON r.category_id = rc.category_id
 
     WHERE r.lmr_no = ?
 
@@ -268,6 +300,10 @@ if (!empty($requestIds)) {
     color: #adb5bd;
     text-align: center;
 }
+.bg-purple {
+    background-color: #6f42c1 !important;
+    color: #fff !important;
+}
 
 </style>
 
@@ -425,32 +461,48 @@ if (!empty($requestIds)) {
                                 <div class="request-value">
 
                                     <?php
-                                    $status =
-                                        strtolower(
-                                            trim(
-                                                $request['status'] ?? ''
-                                            )
-                                        );
+                                    $status = strtolower(
+                                        trim($request['status'] ?? '')
+                                    );
+
+                                    $statusClass = match ($status) {
+
+                                        'pending' =>
+                                            'bg-warning text-dark',
+
+                                        'checking requirements' =>
+                                            'bg-info text-dark',
+
+                                        'canvassing' =>
+                                            'bg-primary',
+
+                                        'negotiation' =>
+                                            'bg-purple',
+
+                                        'draft po under discussion' =>
+                                            'bg-warning text-dark',
+
+                                        'draft po approved' =>
+                                            'bg-success',
+
+                                        'final po approved' =>
+                                            'bg-success',
+
+                                        'rejected' =>
+                                            'bg-danger',
+
+                                        'closed' =>
+                                            'bg-secondary',
+
+                                        default =>
+                                            'bg-secondary'
+                                    };
                                     ?>
 
-                                    <span class="badge
-                                        <?php
-                                        if ($status === 'approved') {
-                                            echo 'bg-success';
-                                        } elseif ($status === 'rejected') {
-                                            echo 'bg-danger';
-                                        } elseif ($status === 'pending') {
-                                            echo 'bg-warning text-dark';
-                                        } else {
-                                            echo 'bg-secondary';
-                                        }
-                                        ?>
-                                    ">
-
+                                    <span class="badge <?= $statusClass ?>">
                                         <?= htmlspecialchars(
-                                            ucfirst($status)
+                                            formatStatus($status)
                                         ) ?>
-
                                     </span>
 
                                 </div>
@@ -537,10 +589,7 @@ if (!empty($requestIds)) {
 
                         </div>
 
-
                         <hr>
-
-
                         <!-- =====================================
                              ITEMS
                         ====================================== -->
@@ -570,321 +619,562 @@ if (!empty($requestIds)) {
                                             $isHidden = $index >= 4;
                                             ?>
 
-                                            <div class="col-md-6 item-wrapper <?= $isHidden ? 'd-none extra-item' : '' ?>">
+                        <div class="col-md-6 item-wrapper <?= $isHidden ? 'd-none extra-item' : '' ?>">
+                            <div class="card item-card h-100">
+                                <div class="card-body">
 
-                                                <div class="card item-card h-100">
+                                    <?php
+                                    $status = strtolower(trim($item['status'] ?? ''));
+                                    $orderStatus = strtolower(trim($item['order_status'] ?? ''));
+                                    $priority = strtolower(trim($item['priority'] ?? ''));
 
-                                                    <div class="card-body">
+                                    /*
+                                    |--------------------------------------------------------------------------
+                                    | STATUS CLASS
+                                    |--------------------------------------------------------------------------
+                                    */
+                                    $statusClass = match ($status) {
+                                        'pending' =>
+                                            'bg-warning text-dark',
 
-                                                        <!-- Item Header -->
-                                                        <div class="d-flex justify-content-between align-items-start mb-2">
+                                        'checking requirements' =>
+                                            'bg-info text-dark',
 
-                                                            <div class="fw-semibold text-dark">
-                                                                <?= htmlspecialchars($item['item']) ?>
-                                                            </div>
+                                        'canvassing' =>
+                                            'bg-primary',
 
-                                                            <span class="badge bg-light text-secondary">
-                                                                #<?= $index + 1 ?>
-                                                            </span>
+                                        'negotiation' =>
+                                            'bg-purple',
 
-                                                        </div>
+                                        'draft po under discussion' =>
+                                            'bg-warning text-dark',
 
-                                                        <!-- Quantity / UoM -->
-                                                        <div class="row">
+                                        'draft po approved' =>
+                                            'bg-success',
 
-                                                            <div class="col-6">
-                                                                <div class="request-label">Quantity</div>
-                                                                <div class="request-value">
-                                                                    <?= htmlspecialchars($item['quantity']) ?>
-                                                                </div>
-                                                            </div>
+                                        'final po approved' =>
+                                            'bg-success',
 
-                                                            <div class="col-6">
-                                                                <div class="request-label">UoM</div>
-                                                                <div class="request-value">
-                                                                    <?= htmlspecialchars($item['UoM']) ?>
-                                                                </div>
-                                                            </div>
+                                        'rejected' =>
+                                            'bg-danger',
 
-                                                        </div>
+                                        'closed' =>
+                                            'bg-secondary',
 
-                                                        <!-- Description -->
-                                                        <?php if (!empty($item['description'])): ?>
+                                        default =>
+                                            'bg-secondary'
+                                    };
 
-                                                            <div class="request-label">
-                                                                Description
-                                                            </div>
+                                    /*
+                                    |--------------------------------------------------------------------------
+                                    | ORDER STATUS CLASS
+                                    |--------------------------------------------------------------------------
+                                    */
+                                    $orderStatusClass = match ($orderStatus) {
+                                        'order acknowledged' =>
+                                            'bg-info text-dark',
 
-                                                            <div class="request-value">
-                                                                <?= nl2br(htmlspecialchars($item['description'])) ?>
-                                                            </div>
+                                        'goods received' =>
+                                            'bg-success',
 
-                                                        <?php endif; ?>
+                                        'payment processing' =>
+                                            'bg-warning text-dark',
 
-                                                        <!-- Date Needed -->
-                                                        <div class="request-label">
-                                                            Date Needed
-                                                        </div>
+                                        'payment issued' =>
+                                            'bg-success',
 
-                                                        <div class="request-value">
-                                                            <?= !empty($item['date_needed'])
-                                                                ? date('M d, Y', strtotime($item['date_needed']))
-                                                                : '-'
-                                                            ?>
-                                                        </div>
+                                        'closed' =>
+                                            'bg-secondary',
 
-                                                        <!-- Remarks -->
-                                                        <?php if (!empty($item['remarks'])): ?>
+                                        'n/a',
+                                        'na',
+                                        '' =>
+                                            'bg-secondary',
 
-                                                            <div class="request-label">
-                                                                Remarks
-                                                            </div>
+                                        default =>
+                                            'bg-secondary'
+                                    };
 
-                                                            <div class="request-value">
-                                                                <?= nl2br(htmlspecialchars($item['remarks'])) ?>
-                                                            </div>
+                                    /*
+                                    |--------------------------------------------------------------------------
+                                    | PRIORITY CLASS
+                                    |--------------------------------------------------------------------------
+                                    */
+                                    $priorityClass = match ($priority) {
+                                        'urgent' =>
+                                            'bg-danger',
 
-                                                        <?php endif; ?>
+                                        'high' =>
+                                            'bg-warning text-dark',
 
-                                                        <!-- Status / Priority -->
-                                                        <div class="d-flex gap-2 flex-wrap">
+                                        'medium' =>
+                                            'bg-info text-dark',
 
-                                                            <?php
-                                                            $status = strtolower(trim($item['status'] ?? ''));
-                                                            $priority = strtolower(trim($item['priority'] ?? ''));
+                                        default =>
+                                            'bg-secondary'
+                                    };
+                                    ?>
 
-                                                            $statusClass = match ($status) {
-                                                                'pending' => 'bg-warning text-dark',
-                                                                'approved' => 'bg-success',
-                                                                'rejected' => 'bg-danger',
-                                                                'completed' => 'bg-primary',
-                                                                default => 'bg-secondary'
-                                                            };
+                                    <!-- ITEM HEADER -->
+                                    <div class="d-flex justify-content-between align-items-start mb-3">
 
-                                                            $priorityClass = match ($priority) {
-                                                                'urgent' => 'bg-danger',
-                                                                'high' => 'bg-warning text-dark',
-                                                                'medium' => 'bg-info text-dark',
-                                                                default => 'bg-secondary'
-                                                            };
-                                                            ?>
+                                        <div class="fw-semibold text-dark">
+                                            <?= htmlspecialchars($item['item']) ?>
+                                        </div>
 
-                                                            <span class="badge <?= $statusClass ?>">
-                                                                <?= htmlspecialchars(ucfirst($status ?: 'N/A')) ?>
-                                                            </span>
-
-                                                            <span class="badge <?= $priorityClass ?>">
-                                                                <?= htmlspecialchars(ucfirst($priority ?: 'N/A')) ?>
-                                                            </span>
-
-                                                        </div>
-
-                                                    </div>
-
-                                                </div>
-
-                                            </div>
-
-                                        <?php endforeach; ?>
+                                        <span class="badge bg-light text-secondary">
+                                            #<?= $index + 1 ?>
+                                        </span>
 
                                     </div>
 
-                                    <?php if (count($requests) > 4): ?>
 
-                                        <div class="text-center mt-3">
+                                    <!-- QUANTITY / UOM -->
+                                    <div class="row g-3 mb-2">
 
-                                            <button
-                                                type="button"
-                                                class="btn btn-outline-primary btn-sm"
-                                                id="showAllItemsBtn"
-                                            >
-                                                <i class="fas fa-chevron-down me-1"></i>
-                                                Show All Items
-                                            </button>
+                                        <div class="col-6">
+                                            <div class="request-label">
+                                                Quantity
+                                            </div>
+
+                                            <div class="request-value">
+                                                <?= htmlspecialchars($item['quantity']) ?>
+                                            </div>
+                                        </div>
+
+                                        <div class="col-6">
+                                            <div class="request-label">
+                                                UoM
+                                            </div>
+
+                                            <div class="request-value">
+                                                <?= htmlspecialchars($item['UoM']) ?>
+                                            </div>
+                                        </div>
+
+                                    </div>
+
+
+                                    <!-- CATEGORY / PO NUMBER -->
+                                    <div class="row g-3 mb-2">
+
+                                        <div class="col-6">
+
+                                            <div class="request-label">
+                                                Category
+                                            </div>
+
+                                            <div class="request-value">
+                                                <?= htmlspecialchars(
+                                                    $item['category_name'] ?? 'N/A'
+                                                ) ?>
+                                            </div>
 
                                         </div>
 
-                                    <?php endif; ?>
+                                        <div class="col-6">
 
-                                <?php else: ?>
+                                            <div class="request-label">
+                                                PO Number
+                                            </div>
 
-                                    <div class="text-muted text-center py-4">
-                                        No requested items found.
+                                            <div class="request-value">
+
+                                                <?php if (!empty($item['po_no'])): ?>
+
+                                                    <?= htmlspecialchars($item['po_no']) ?>
+
+                                                <?php else: ?>
+
+                                                    <span class="text-muted">
+                                                        Not yet assigned
+                                                    </span>
+
+                                                <?php endif; ?>
+
+                                            </div>
+
+                                        </div>
+
                                     </div>
 
-                                <?php endif; ?>
 
+                                    <!-- DATE NEEDED / PRIORITY -->
+                                    <div class="row g-3 mb-2">
+
+                                        <div class="col-6">
+
+                                            <div class="request-label">
+                                                Date Needed
+                                            </div>
+
+                                            <div class="request-value">
+
+                                                <?= !empty($item['date_needed'])
+                                                    ? date('M d, Y', strtotime($item['date_needed']))
+                                                    : '-'
+                                                ?>
+
+                                            </div>
+
+                                        </div>
+
+                                        <div class="col-6">
+
+                                            <div class="request-label">
+                                                Priority
+                                            </div>
+
+                                            <div class="request-value">
+
+                                                <span class="badge <?= $priorityClass ?>">
+                                                    <?= htmlspecialchars(
+                                                        ucfirst($priority ?: 'N/A')
+                                                    ) ?>
+                                                </span>
+
+                                            </div>
+
+                                        </div>
+
+                                    </div>
+
+
+                                    <!-- STATUS / ORDER STATUS -->
+                                    <div class="row g-3 mb-3">
+
+                                        <div class="col-6">
+
+                                            <div class="request-label">
+                                                Status
+                                            </div>
+
+                                            <div class="request-value">
+
+                                                <span class="badge <?= $statusClass ?>">
+                                                    <?= htmlspecialchars(
+                                                        formatStatus($status ?: 'n/a')
+                                                    ) ?>
+                                                </span>
+
+                                            </div>
+
+                                        </div>
+
+                                        <div class="col-6">
+
+                                            <div class="request-label">
+                                                Order Status
+                                            </div>
+
+                                            <div class="request-value">
+
+                                                <span class="badge <?= $orderStatusClass ?>">
+                                                    <?= htmlspecialchars(
+                                                        formatStatus($orderStatus ?: 'n/a')
+                                                    ) ?>
+                                                </span>
+
+                                            </div>
+
+                                        </div>
+
+                                    </div>
+                                    <div class="row g-3 mb-3">
+                                        <div class="col-6">
+                                        <!-- DESCRIPTION -->
+                                        <?php if (!empty($item['description'])): ?>
+
+                                            <div class="request-label">
+                                                Description
+                                            </div>
+
+                                            <div class="request-value mb-3">
+                                                <?= nl2br(htmlspecialchars($item['description'])) ?>
+                                            </div>
+
+                                        <?php endif; ?>
+                                        </div>
+                                        <div class="col-6">
+                                        <!-- REMARKS -->
+                                        <?php if (!empty($item['remarks'])): ?>
+
+                                            <div class="request-label">
+                                                Remarks
+                                            </div>
+
+                                            <div class="request-value">
+                                                <?= nl2br(htmlspecialchars($item['remarks'])) ?>
+                                            </div>
+
+                                        <?php endif; ?>
+                                        </div>
+                                     </div>
+                                </div>
                             </div>
                         </div>
 
-
-                        <!-- =====================================
-                             ATTACHMENTS
-                        ====================================== -->
-
-                        <hr class="mt-4">
-
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-
-                        <h6 class="mb-0 fw-bold">
-                            <i class="fas fa-paperclip me-2"></i>
-                            Attachments
-                        </h6>
-
-                        <div class="d-flex align-items-center gap-2">
-
-                            <span class="badge bg-secondary">
-                                <?= count($attachments) ?>
-                            </span>
-
-                            <?php if (!empty($attachments)): ?>
-
-                                <button
-                                    type="button"
-                                    class="btn btn-sm btn-outline-success"
-                                    id="downloadAllAttachments"
-                                >
-                                    <i class="fas fa-download me-1"></i>
-                                    Download All
-                                </button>
-
-                            <?php endif; ?>
-
-                        </div>
-
-                    </div>
-
-
-
-                        <?php if (empty($attachments)): ?>
-
-                            <div class="text-muted small">
-
-                                <i class="fas fa-info-circle me-1"></i>
-
-                                No attachments for this LMR.
-
-                            </div>
-
-                        <?php else: ?>
-
-                            <div class="row">
-
-                                <?php foreach ($attachments as $attachment): ?>
-
-                                    <?php
-
-                                    $fileName =
-                                        $attachment['file_name'];
-
-                                    $extension =
-                                        strtolower(
-                                            pathinfo(
-                                                $fileName,
-                                                PATHINFO_EXTENSION
-                                            )
-                                        );
-
-                                    switch ($extension) {
-
-                                        case 'jpg':
-                                        case 'jpeg':
-                                        case 'png':
-
-                                            $icon =
-                                                'fa-file-image';
-
-                                            $iconClass =
-                                                'text-success';
-
-                                            break;
-
-                                        case 'pdf':
-
-                                            $icon =
-                                                'fa-file-pdf';
-
-                                            $iconClass =
-                                                'text-danger';
-
-                                            break;
-
-                                        case 'doc':
-                                        case 'docx':
-
-                                            $icon =
-                                                'fa-file-word';
-
-                                            $iconClass =
-                                                'text-primary';
-
-                                            break;
-
-                                        default:
-
-                                            $icon =
-                                                'fa-file';
-
-                                            $iconClass =
-                                                'text-secondary';
-                                    }
-
-                                    ?>
-
-                                    <div class="col-md-6 mb-2">
-                                            <a
-                                                href="ticket/preview_purch_attachment.php?attachment_id=<?= (int)$attachment['attachment_id'] ?>"
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                class="text-decoration-none"
-                                            >
-                                            <div class="card attachment-card">
-
-                                                <div class="card-body py-2">
-
-                                                    <div class="d-flex align-items-center">
-
-                                                        <i class="
-                                                            fas
-                                                            <?= $icon ?>
-                                                            fa-lg
-                                                            <?= $iconClass ?>
-                                                            me-3
-                                                        "></i>
-
-                                                        <div
-                                                            class="flex-grow-1"
-                                                            style="min-width:0;"
-                                                        >
-
-                                                            <div
-                                                                class="fw-semibold text-dark"
-                                                                style="word-break:break-word;"
-                                                            >
-
-                                                                <?= htmlspecialchars(
-                                                                    $fileName
-                                                                ) ?>
+                                                                <?php endforeach; ?>
 
                                                             </div>
 
-                                                            <small class="text-muted">
+                                                            <?php if (count($requests) > 4): ?>
 
-                                                                <?= strtoupper(
-                                                                    $extension
-                                                                ) ?>
+                                                                <div class="text-center mt-3">
 
-                                                                · Click to preview
+                                                                    <button
+                                                                        type="button"
+                                                                        class="btn btn-outline-primary btn-sm"
+                                                                        id="showAllItemsBtn"
+                                                                    >
+                                                                        <i class="fas fa-chevron-down me-1"></i>
+                                                                        Show All Items
+                                                                    </button>
 
-                                                            </small>
+                                                                </div>
 
+                                                            <?php endif; ?>
+
+                                                        <?php else: ?>
+
+                                                            <div class="text-muted text-center py-4">
+                                                                No requested items found.
+                                                            </div>
+
+                                                        <?php endif; ?>
+
+                                                    </div>
+                                                </div>
+
+
+                                                <!-- =====================================
+                                                    ATTACHMENTS
+                                                ====================================== -->
+
+                                                <hr class="mt-4">
+
+                                            <div class="d-flex justify-content-between align-items-center mb-3">
+
+                                                <h6 class="mb-0 fw-bold">
+                                                    <i class="fas fa-paperclip me-2"></i>
+                                                    Attachments
+                                                </h6>
+
+                                                <div class="d-flex align-items-center gap-2">
+
+                                                    <span class="badge bg-secondary">
+                                                        <?= count($attachments) ?>
+                                                    </span>
+
+                                                    <?php if (!empty($attachments)): ?>
+
+                                                        <button
+                                                            type="button"
+                                                            class="btn btn-sm btn-outline-success"
+                                                            id="downloadAllAttachments"
+                                                        >
+                                                            <i class="fas fa-download me-1"></i>
+                                                            Download All
+                                                        </button>
+
+                                                    <?php endif; ?>
+
+                                                </div>
+
+                                            </div>
+
+
+
+                                                <?php if (empty($attachments)): ?>
+
+                                                    <div class="text-muted small">
+
+                                                        <i class="fas fa-info-circle me-1"></i>
+
+                                                        No attachments for this LMR.
+
+                                                    </div>
+
+                                                <?php else: ?>
+
+                                                    <div class="row">
+
+                                                        <?php foreach ($attachments as $attachment): ?>
+
+                                                            <?php
+
+                                                            $fileName =
+                                                                $attachment['file_name'];
+
+                                                            $extension =
+                                                                strtolower(
+                                                                    pathinfo(
+                                                                        $fileName,
+                                                                        PATHINFO_EXTENSION
+                                                                    )
+                                                                );
+
+                                                            switch ($extension) {
+
+                                                                case 'jpg':
+                                                                case 'jpeg':
+                                                                case 'png':
+
+                                                                    $icon =
+                                                                        'fa-file-image';
+
+                                                                    $iconClass =
+                                                                        'text-success';
+
+                                                                    break;
+
+                                                                case 'pdf':
+
+                                                                    $icon =
+                                                                        'fa-file-pdf';
+
+                                                                    $iconClass =
+                                                                        'text-danger';
+
+                                                                    break;
+
+                                                                case 'doc':
+                                                                case 'docx':
+
+                                                                    $icon =
+                                                                        'fa-file-word';
+
+                                                                    $iconClass =
+                                                                        'text-primary';
+
+                                                                    break;
+
+                                                                default:
+
+                                                                    $icon =
+                                                                        'fa-file';
+
+                                                                    $iconClass =
+                                                                        'text-secondary';
+                                                            }
+
+                                                            ?>
+
+                                                            <div class="col-md-6 mb-2">
+                                                                    <a
+                                                                        href="ticket/preview_purch_attachment.php?attachment_id=<?= (int)$attachment['attachment_id'] ?>"
+                                                                        target="_blank"
+                                                                        rel="noopener noreferrer"
+                                                                        class="text-decoration-none"
+                                                                    >
+                                                                    <div class="card attachment-card">
+
+                                                                        <div class="card-body py-2">
+
+                                                                            <div class="d-flex align-items-center">
+
+                                                                                <i class="
+                                                                                    fas
+                                                                                    <?= $icon ?>
+                                                                                    fa-lg
+                                                                                    <?= $iconClass ?>
+                                                                                    me-3
+                                                                                "></i>
+
+                                                                                <div
+                                                                                    class="flex-grow-1"
+                                                                                    style="min-width:0;"
+                                                                                >
+
+                                                                                    <div
+                                                                                        class="fw-semibold text-dark"
+                                                                                        style="word-break:break-word;"
+                                                                                    >
+
+                                                                                        <?= htmlspecialchars(
+                                                                                            $fileName
+                                                                                        ) ?>
+
+                                                                                    </div>
+
+                                                                                    <small class="text-muted">
+
+                                                                                        <?= strtoupper(
+                                                                                            $extension
+                                                                                        ) ?>
+
+                                                                                        · Click to preview
+
+                                                                                    </small>
+
+                                                                                </div>
+
+                                                                                <i class="
+                                                                                    fas
+                                                                                    fa-chevron-right
+                                                                                    text-muted
+                                                                                "></i>
+
+                                                                            </div>
+
+                                                                        </div>
+
+                                                                    </div>
+
+                                                                </a>
+
+                                                            </div>
+
+                                                        <?php endforeach; ?>
+
+                                                    </div>
+
+                                                <?php endif; ?>
+
+                                            </div>
+
+                                        </div>
+
+                                    </div>
+
+
+                                    <!-- =================================================
+                                        RIGHT CARD
+                                    ================================================== -->
+
+                                    <div class="col-lg-5">
+
+                                        <div class="card h-100 shadow-sm">
+
+                                            <div class="card-header bg-light">
+
+                                                <strong>
+
+                                                    <i class="fas fa-history me-2"></i>
+
+                                                    Activity / Comments
+
+                                                </strong>
+
+                                            </div>
+
+
+                                            <div class="card-body">
+
+                                                <div class="activity-empty">
+
+                                                    <div>
+
+                                                        <i class="fas fa-comments fa-2x mb-3"></i>
+
+                                                        <div class="fw-semibold">
+                                                            No activity yet
                                                         </div>
 
-                                                        <i class="
-                                                            fas
-                                                            fa-chevron-right
-                                                            text-muted
-                                                        "></i>
+                                                        <small>
+                                                            Comments, status updates and activity logs
+                                                            can be displayed here.
+                                                        </small>
 
                                                     </div>
 
@@ -892,76 +1182,15 @@ if (!empty($requestIds)) {
 
                                             </div>
 
-                                        </a>
+                                        </div>
 
                                     </div>
 
-                                <?php endforeach; ?>
-
-                            </div>
-
-                        <?php endif; ?>
-
-                    </div>
-
-                </div>
-
-            </div>
-
-
-            <!-- =================================================
-                 RIGHT CARD
-            ================================================== -->
-
-            <div class="col-lg-5">
-
-                <div class="card h-100 shadow-sm">
-
-                    <div class="card-header bg-light">
-
-                        <strong>
-
-                            <i class="fas fa-history me-2"></i>
-
-                            Activity / Comments
-
-                        </strong>
-
-                    </div>
-
-
-                    <div class="card-body">
-
-                        <div class="activity-empty">
-
-                            <div>
-
-                                <i class="fas fa-comments fa-2x mb-3"></i>
-
-                                <div class="fw-semibold">
-                                    No activity yet
                                 </div>
 
-                                <small>
-                                    Comments, status updates and activity logs
-                                    can be displayed here.
-                                </small>
-
                             </div>
 
-                        </div>
-
-                    </div>
-
                 </div>
-
-            </div>
-
-        </div>
-
-    </div>
-
-</div>
 <script>
 $(document).on('click', '#showAllItemsBtn', function () {
 
