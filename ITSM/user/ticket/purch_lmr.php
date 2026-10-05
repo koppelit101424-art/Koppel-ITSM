@@ -1032,9 +1032,28 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
                                     id="modalPO"
                                     class="form-control"
                                     disabled>
-
                             </div>
 
+                            <!-- CHANGE COMMENT -->
+                            <div class="col-12">
+
+                                <label class="form-label fw-bold">
+                                    Comment
+                                    <span class="text-muted fw-normal">(Optional)</span>
+                                </label>
+
+                                <textarea
+                                    id="modalChangeComment"
+                                    class="form-control"
+                                    rows="3"
+                                    placeholder="Add a comment about this change..."
+                                    maxlength="2000"></textarea>
+
+                                <small class="text-muted">
+                                    This comment will be included in the request history.
+                                </small>
+
+                            </div>
 
 
                         <?php else: ?>
@@ -2472,6 +2491,7 @@ function getBulkRowDetails(row) {
 
         $('#modalRequestor').val(requestorName);
 
+        $('#modalChangeComment').val('');
 
         // =================================================
         // PURCHASING
@@ -2807,15 +2827,17 @@ function formatStatus(status) {
                 type: 'POST',
                 dataType: 'json',
 
-                data: {
-                    request_id: requestId,
-                    status: status,
-                    purchaser_id: purchaserId,
-                    priority: priority,
-                    category_id: categoryId,
-                    order_status: orderStatus,
-                    po_no: poNumber
-                },
+                    data: {
+                        request_id: requestId,
+                        status: status,
+                        purchaser_id: purchaserId,
+                        priority: priority,
+                        category_id: categoryId,
+                        order_status: orderStatus,
+                        po_no: poNumber,
+                        comment: $('#modalChangeComment').val().trim()
+                    },
+
 
                 success: function (response) {
 

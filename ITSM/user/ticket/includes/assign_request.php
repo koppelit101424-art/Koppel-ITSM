@@ -48,13 +48,28 @@ try {
         $_POST['po_no'] ?? ''
     );
 
+    // COMMENT IS OPTIONAL
+    $comment = trim(
+        $_POST['comment'] ?? ''
+    );
+
+    if (mb_strlen($comment) > 1000) {
+        throw new Exception(
+            'Comment cannot exceed 1000 characters.'
+        );
+    }
+
+
     // =====================================================
     // BASIC VALIDATION
     // =====================================================
 
     if ($request_id <= 0) {
-        throw new Exception('Invalid request ID.');
+        throw new Exception(
+            'Invalid request ID.'
+        );
     }
+
 
     $allowed_priorities = [
         'urgent',
@@ -62,9 +77,16 @@ try {
         'medium'
     ];
 
-    if (!in_array($priority, $allowed_priorities, true)) {
-        throw new Exception('Invalid priority.');
+    if (!in_array(
+        $priority,
+        $allowed_priorities,
+        true
+    )) {
+        throw new Exception(
+            'Invalid priority.'
+        );
     }
+
 
     $allowed_statuses = [
         'pending',
@@ -78,9 +100,16 @@ try {
         'closed'
     ];
 
-    if (!in_array($status, $allowed_statuses, true)) {
-        throw new Exception('Invalid status.');
+    if (!in_array(
+        $status,
+        $allowed_statuses,
+        true
+    )) {
+        throw new Exception(
+            'Invalid status.'
+        );
     }
+
 
     $allowed_order_statuses = [
         'n/a',
@@ -90,6 +119,7 @@ try {
         'payment issued',
         'closed'
     ];
+
 
     // =====================================================
     // FINAL PO APPROVED RULE
@@ -115,10 +145,10 @@ try {
 
     } else {
 
-        // Not Final PO Approved
         $po_no = '';
         $order_status = 'n/a';
     }
+
 
     // =====================================================
     // GET CURRENT USER
@@ -133,7 +163,8 @@ try {
 
     if (!$userQuery) {
         throw new Exception(
-            'User query failed: ' . $conn->error
+            'User query failed: ' .
+            $conn->error
         );
     }
 
@@ -144,16 +175,21 @@ try {
 
     $userQuery->execute();
 
-    $userResult = $userQuery->get_result();
-    $currentUser = $userResult->fetch_assoc();
+    $userResult =
+        $userQuery->get_result();
+
+    $currentUser =
+        $userResult->fetch_assoc();
 
     $userQuery->close();
+
 
     if (!$currentUser) {
         throw new Exception(
             'User account not found.'
         );
     }
+
 
     $department = trim(
         $currentUser['department'] ?? ''
@@ -163,11 +199,19 @@ try {
         $_SESSION['user_type'] ?? ''
     );
 
+
     $isPurchasing =
-        strcasecmp($department, 'Purchasing') === 0;
+        strcasecmp(
+            $department,
+            'Purchasing'
+        ) === 0;
 
     $isAdmin =
-        strcasecmp($sessionUserType, 'admin') === 0;
+        strcasecmp(
+            $sessionUserType,
+            'admin'
+        ) === 0;
+
 
     if (!$isPurchasing && !$isAdmin) {
         throw new Exception(
@@ -175,16 +219,31 @@ try {
         );
     }
 
+
     // =====================================================
-    // CHECK REQUEST
+    // GET CURRENT REQUEST
     // =====================================================
 
     $check = $conn->prepare("
-        SELECT request_id
+        SELECT
+            request_id,
+            status,
+            purchaser_id,
+            priority,
+            category_id,
+            order_status,
+            po_no
         FROM purch_request_tb
         WHERE request_id = ?
         LIMIT 1
     ");
+
+    if (!$check) {
+        throw new Exception(
+            'Request query failed: ' .
+            $conn->error
+        );
+    }
 
     $check->bind_param(
         "i",
@@ -193,17 +252,32 @@ try {
 
     $check->execute();
 
-    $result = $check->get_result();
+    $result =
+        $check->get_result();
 
-    if ($result->num_rows === 0) {
-        $check->close();
+    $currentRequest =
+        $result->fetch_assoc();
 
+    $check->close();
+
+
+    if (!$currentRequest) {
         throw new Exception(
             'Request not found.'
         );
     }
 
-    $check->close();
+
+    // =====================================================
+    // OLD VALUES
+    // =====================================================
+
+    $oldPurchaserId =
+        (int)$currentRequest['purchaser_id'];
+
+    $oldCategoryId =
+        (int)$currentRequest['category_id'];
+
 
     // =====================================================
     // VALIDATE CATEGORY
@@ -248,6 +322,7 @@ try {
         $categoryCheck->close();
     }
 
+
     // =====================================================
     // VALIDATE PURCHASER
     // =====================================================
@@ -261,6 +336,13 @@ try {
               AND LOWER(TRIM(department)) = 'purchasing'
             LIMIT 1
         ");
+
+        if (!$purchaserCheck) {
+            throw new Exception(
+                'Purchaser validation failed: ' .
+                $conn->error
+            );
+        }
 
         $purchaserCheck->bind_param(
             "i",
@@ -284,147 +366,425 @@ try {
         $purchaserCheck->close();
     }
 
-    // =====================================================
-    // UPDATE
-    // =====================================================
-
-    $update = $conn->prepare("
-        UPDATE purch_request_tb
-        SET
-            status = ?,
-            purchaser_id = ?,
-            priority = ?,
-            category_id = ?,
-            order_status = ?,
-            po_no = ?
-        WHERE request_id = ?
-    ");
-
-    if (!$update) {
-        throw new Exception(
-            'Update prepare failed: ' .
-            $conn->error
-        );
-    }
-
-    $update->bind_param(
-        "sisissi",
-        $status,
-        $purchaser_id,
-        $priority,
-        $category_id,
-        $order_status,
-        $po_no,
-        $request_id
-    );
-
-    if (!$update->execute()) {
-
-        throw new Exception(
-            'Database update failed: ' .
-            $update->error
-        );
-    }
-
-    $update->close();
 
     // =====================================================
-    // GET PURCHASER NAME
+    // GET OLD PURCHASER NAME
     // =====================================================
 
-    $purchaser_name = 'Unassigned';
+    $oldPurchaserName = 'Unassigned';
 
-    if ($purchaser_id > 1) {
+    if ($oldPurchaserId > 1) {
 
-        $purchaserQuery = $conn->prepare("
+        $query = $conn->prepare("
             SELECT fullname
             FROM user_tb
             WHERE user_id = ?
             LIMIT 1
         ");
 
-        $purchaserQuery->bind_param(
+        $query->bind_param(
+            "i",
+            $oldPurchaserId
+        );
+
+        $query->execute();
+
+        $result =
+            $query->get_result();
+
+        $row =
+            $result->fetch_assoc();
+
+        $query->close();
+
+        if ($row) {
+            $oldPurchaserName =
+                $row['fullname'];
+        }
+    }
+
+
+    // =====================================================
+    // GET NEW PURCHASER NAME
+    // =====================================================
+
+    $newPurchaserName = 'Unassigned';
+
+    if ($purchaser_id > 1) {
+
+        $query = $conn->prepare("
+            SELECT fullname
+            FROM user_tb
+            WHERE user_id = ?
+            LIMIT 1
+        ");
+
+        $query->bind_param(
             "i",
             $purchaser_id
         );
 
-        $purchaserQuery->execute();
+        $query->execute();
 
-        $purchaserResult =
-            $purchaserQuery->get_result();
+        $result =
+            $query->get_result();
 
-        $purchaser =
-            $purchaserResult->fetch_assoc();
+        $row =
+            $result->fetch_assoc();
 
-        $purchaserQuery->close();
+        $query->close();
 
-        if ($purchaser) {
-            $purchaser_name =
-                $purchaser['fullname'];
+        if ($row) {
+            $newPurchaserName =
+                $row['fullname'];
         }
     }
 
+
     // =====================================================
-    // GET CATEGORY NAME
+    // GET OLD CATEGORY NAME
     // =====================================================
 
-    $category_name = 'N/A';
+    $oldCategoryName = 'N/A';
 
-    if ($category_id > 0) {
+    if ($oldCategoryId > 0) {
 
-        $categoryQuery = $conn->prepare("
+        $query = $conn->prepare("
             SELECT category_name
             FROM request_category_tb
             WHERE category_id = ?
             LIMIT 1
         ");
 
-        $categoryQuery->bind_param(
+        $query->bind_param(
+            "i",
+            $oldCategoryId
+        );
+
+        $query->execute();
+
+        $result =
+            $query->get_result();
+
+        $row =
+            $result->fetch_assoc();
+
+        $query->close();
+
+        if ($row) {
+            $oldCategoryName =
+                $row['category_name'];
+        }
+    }
+
+
+    // =====================================================
+    // GET NEW CATEGORY NAME
+    // =====================================================
+
+    $newCategoryName = 'N/A';
+
+    if ($category_id > 0) {
+
+        $query = $conn->prepare("
+            SELECT category_name
+            FROM request_category_tb
+            WHERE category_id = ?
+            LIMIT 1
+        ");
+
+        $query->bind_param(
             "i",
             $category_id
         );
 
-        $categoryQuery->execute();
+        $query->execute();
 
-        $categoryResult =
-            $categoryQuery->get_result();
+        $result =
+            $query->get_result();
 
-        $category =
-            $categoryResult->fetch_assoc();
+        $row =
+            $result->fetch_assoc();
 
-        $categoryQuery->close();
+        $query->close();
 
-        if ($category) {
-            $category_name =
-                $category['category_name'];
+        if ($row) {
+            $newCategoryName =
+                $row['category_name'];
         }
     }
+
+
+    // =====================================================
+    // BUILD CHANGE HISTORY
+    // =====================================================
+
+    $changes = [];
+
+
+    // STATUS
+    if (
+        strtolower(trim(
+            $currentRequest['status']
+        )) !== $status
+    ) {
+
+        $changes['status'] = [
+            'old' => $currentRequest['status'],
+            'new' => $status
+        ];
+    }
+
+
+    // PURCHASER / REASSIGNMENT
+    if (
+        $oldPurchaserId !== $purchaser_id
+    ) {
+
+        $changes['purchaser'] = [
+            'old' => $oldPurchaserName,
+            'new' => $newPurchaserName
+        ];
+    }
+
+
+    // PRIORITY
+    if (
+        strtolower(trim(
+            $currentRequest['priority']
+        )) !== $priority
+    ) {
+
+        $changes['priority'] = [
+            'old' => $currentRequest['priority'],
+            'new' => $priority
+        ];
+    }
+
+
+    // CATEGORY
+    if (
+        $oldCategoryId !== $category_id
+    ) {
+
+        $changes['category'] = [
+            'old' => $oldCategoryName,
+            'new' => $newCategoryName
+        ];
+    }
+
+
+    // ORDER STATUS
+    if (
+        strtolower(trim(
+            $currentRequest['order_status']
+        )) !== $order_status
+    ) {
+
+        $changes['order_status'] = [
+            'old' => $currentRequest['order_status'],
+            'new' => $order_status
+        ];
+    }
+
+
+    // PO NUMBER
+    if (
+        trim(
+            $currentRequest['po_no'] ?? ''
+        ) !== $po_no
+    ) {
+
+        $changes['po_no'] = [
+            'old' => $currentRequest['po_no'] ?? '',
+            'new' => $po_no
+        ];
+    }
+
+
+    // =====================================================
+    // NOTHING CHANGED?
+    // =====================================================
+
+    if (
+        empty($changes) &&
+        $comment === ''
+    ) {
+
+        throw new Exception(
+            'No changes or comment were provided.'
+        );
+    }
+
+
+    // =====================================================
+    // UPDATE + HISTORY
+    // =====================================================
+
+    $conn->begin_transaction();
+
+    try {
+
+        // ---------------------------------------------
+        // UPDATE REQUEST
+        // ---------------------------------------------
+
+        $update = $conn->prepare("
+            UPDATE purch_request_tb
+            SET
+                status = ?,
+                purchaser_id = ?,
+                priority = ?,
+                category_id = ?,
+                order_status = ?,
+                po_no = ?
+            WHERE request_id = ?
+        ");
+
+        if (!$update) {
+            throw new Exception(
+                'Update prepare failed: ' .
+                $conn->error
+            );
+        }
+
+        $update->bind_param(
+            "sisissi",
+            $status,
+            $purchaser_id,
+            $priority,
+            $category_id,
+            $order_status,
+            $po_no,
+            $request_id
+        );
+
+        if (!$update->execute()) {
+            throw new Exception(
+                'Database update failed: ' .
+                $update->error
+            );
+        }
+
+        $update->close();
+
+
+        // ---------------------------------------------
+        // SAVE HISTORY
+        // ---------------------------------------------
+
+        $changesJson = json_encode(
+            $changes,
+            JSON_UNESCAPED_UNICODE
+        );
+
+        if ($changesJson === false) {
+            throw new Exception(
+                'Failed to encode change history.'
+            );
+        }
+
+
+        $history = $conn->prepare("
+            INSERT INTO purch_request_history_tb
+            (
+                request_id,
+                changed_by,
+                comment,
+                changes_json
+            )
+            VALUES (?, ?, ?, ?)
+        ");
+
+        if (!$history) {
+            throw new Exception(
+                'History prepare failed: ' .
+                $conn->error
+            );
+        }
+
+        $history->bind_param(
+            "iiss",
+            $request_id,
+            $current_user_id,
+            $comment,
+            $changesJson
+        );
+
+        if (!$history->execute()) {
+            throw new Exception(
+                'Failed to save request history: ' .
+                $history->error
+            );
+        }
+
+        $history->close();
+
+
+        // ---------------------------------------------
+        // COMMIT
+        // ---------------------------------------------
+
+        $conn->commit();
+
+    } catch (Throwable $e) {
+
+        $conn->rollback();
+
+        throw $e;
+    }
+
 
     // =====================================================
     // RESPONSE
     // =====================================================
 
     $response['success'] = true;
+
     $response['message'] =
         'Request updated successfully.';
 
-    $response['request_id'] = $request_id;
-    $response['status'] = $status;
-    $response['purchaser_id'] = $purchaser_id;
-    $response['priority'] = $priority;
-    $response['category_id'] = $category_id;
-    $response['category_name'] = $category_name;
-    $response['order_status'] = $order_status;
-    $response['po_no'] = $po_no;
-    $response['purchaser_name'] = $purchaser_name;
+    $response['request_id'] =
+        $request_id;
+
+    $response['status'] =
+        $status;
+
+    $response['purchaser_id'] =
+        $purchaser_id;
+
+    $response['priority'] =
+        $priority;
+
+    $response['category_id'] =
+        $category_id;
+
+    $response['category_name'] =
+        $newCategoryName;
+
+    $response['order_status'] =
+        $order_status;
+
+    $response['po_no'] =
+        $po_no;
+
+    $response['purchaser_name'] =
+        $newPurchaserName;
+
+    $response['changes'] =
+        $changes;
+
 
 } catch (Throwable $e) {
 
     http_response_code(400);
 
     $response['success'] = false;
-    $response['message'] = $e->getMessage();
+
+    $response['message'] =
+        $e->getMessage();
 }
+
 
 echo json_encode(
     $response,
