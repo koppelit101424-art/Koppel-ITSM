@@ -149,11 +149,15 @@ $historyStmt = $conn->prepare("
         h.comment,
         h.changes_json,
         h.date_created,
-        u.fullname
+        u.fullname,
+        r.item
     FROM purch_request_history_tb h
 
     LEFT JOIN user_tb u
         ON h.changed_by = u.user_id
+
+    LEFT JOIN purch_request_tb r
+        ON h.request_id = r.request_id
 
     WHERE h.request_id IN (
         SELECT request_id
@@ -163,6 +167,7 @@ $historyStmt = $conn->prepare("
 
     ORDER BY h.date_created DESC, h.history_id DESC
 ");
+
 
 if (!$historyStmt) {
     die(
@@ -441,7 +446,18 @@ if (!empty($requestIds)) {
                         ====================================== -->
 
                         <div class="row">
+                            <!-- REQUEST ID -->
+                            <!-- <div class="col-md-6">
 
+                                <div class="request-label">
+                                    Request ID
+                                </div>
+
+                                <div class="request-value fw-bold">
+                                    <?= (int)$request['request_id'] ?>
+                                </div>
+
+                            </div> -->
                             <!-- LMR -->
                             <div class="col-md-6">
 
@@ -1320,8 +1336,41 @@ if (!empty($requestIds)) {
 
                                                     </div>
 
-                                                </div>
+                                                </div> <br>
 
+                                                <div class="small text-muted mt-1">
+
+                                                    <span class="me-3">
+
+                                                        <i class="fas fa-hashtag me-1"></i>
+
+                                                        Request ID:
+
+                                                        <strong>
+                                                            <?= (int)$activity['request_id'] ?>
+                                                        </strong>
+
+                                                    </span>
+
+
+                                                    <!-- ITEM -->
+
+                                                    <span>
+
+                                                        <i class="fas fa-box me-1"></i>
+
+                                                        Item:
+
+                                                        <strong>
+                                                            <?= htmlspecialchars(
+                                                                $activity['item']
+                                                                ?: 'N/A'
+                                                            ) ?>
+                                                        </strong>
+
+                                                    </span>
+
+                                                </div>
 
                                                 <!-- CHANGES -->
 
