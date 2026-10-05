@@ -133,6 +133,58 @@ if (empty($requests)) {
     echo '<div class="alert alert-danger">Request not found.</div>';
     exit;
 }
+/*
+|--------------------------------------------------------------------------
+| GET REQUEST HISTORY / ACTIVITY
+|--------------------------------------------------------------------------
+*/
+
+$history = [];
+
+$historyStmt = $conn->prepare("
+    SELECT
+        h.history_id,
+        h.request_id,
+        h.changed_by,
+        h.comment,
+        h.changes_json,
+        h.date_created,
+        u.fullname
+    FROM purch_request_history_tb h
+
+    LEFT JOIN user_tb u
+        ON h.changed_by = u.user_id
+
+    WHERE h.request_id IN (
+        SELECT request_id
+        FROM purch_request_tb
+        WHERE lmr_no = ?
+    )
+
+    ORDER BY h.date_created DESC, h.history_id DESC
+");
+
+if (!$historyStmt) {
+    die(
+        'History query failed: ' .
+        $conn->error
+    );
+}
+
+$historyStmt->bind_param(
+    "s",
+    $lmr_no
+);
+
+$historyStmt->execute();
+
+$historyResult = $historyStmt->get_result();
+
+while ($historyRow = $historyResult->fetch_assoc()) {
+    $history[] = $historyRow;
+}
+
+$historyStmt->close();
 
 
 /*
@@ -300,6 +352,28 @@ if (!empty($requestIds)) {
     color: #adb5bd;
     text-align: center;
 }
+.activity-list {
+    max-height: 750px;
+    overflow-y: auto;
+    padding-right: 5px;
+}
+
+.activity-item {
+    font-size: 0.88rem;
+}
+
+.activity-item .border-start {
+    border-width: 3px !important;
+}
+
+.activity-item hr {
+    border-color: #e9ecef;
+}
+
+.activity-item .bg-light {
+    background-color: #f8f9fa !important;
+}
+
 .bg-purple {
     background-color: #6f42c1 !important;
     color: #fff !important;
@@ -914,37 +988,37 @@ if (!empty($requestIds)) {
                             </div>
                         </div>
 
-                                                                <?php endforeach; ?>
+                                <?php endforeach; ?>
 
-                                                            </div>
+                            </div>
 
-                                                            <?php if (count($requests) > 4): ?>
+                            <?php if (count($requests) > 4): ?>
 
-                                                                <div class="text-center mt-3">
+                                <div class="text-center mt-3">
 
-                                                                    <button
-                                                                        type="button"
-                                                                        class="btn btn-outline-primary btn-sm"
-                                                                        id="showAllItemsBtn"
-                                                                    >
-                                                                        <i class="fas fa-chevron-down me-1"></i>
-                                                                        Show All Items
-                                                                    </button>
+                                    <button
+                                        type="button"
+                                        class="btn btn-outline-primary btn-sm"
+                                        id="showAllItemsBtn"
+                                    >
+                                        <i class="fas fa-chevron-down me-1"></i>
+                                        Show All Items
+                                    </button>
 
-                                                                </div>
+                                </div>
 
-                                                            <?php endif; ?>
+                            <?php endif; ?>
 
-                                                        <?php else: ?>
+                                    <?php else: ?>
 
-                                                            <div class="text-muted text-center py-4">
-                                                                No requested items found.
-                                                            </div>
+                                        <div class="text-muted text-center py-4">
+                                            No requested items found.
+                                        </div>
 
-                                                        <?php endif; ?>
+                                    <?php endif; ?>
 
-                                                    </div>
-                                                </div>
+                                </div>
+                            </div>
 
 
                                                 <!-- =====================================
@@ -1138,57 +1212,255 @@ if (!empty($requestIds)) {
                                     </div>
 
 
-                                    <!-- =================================================
-                                        RIGHT CARD
-                                    ================================================== -->
+                    <!-- =================================================
+                        RIGHT CARD
+                    ================================================== -->
 
-                                    <div class="col-lg-5">
+                    <div class="col-lg-5">
 
-                                        <div class="card h-100 shadow-sm">
+                        <div class="card h-100 shadow-sm">
 
-                                            <div class="card-header bg-light">
+                            <div class="card-header bg-light">
 
-                                                <strong>
+                                <strong>
 
-                                                    <i class="fas fa-history me-2"></i>
+                                    <i class="fas fa-history me-2"></i>
 
-                                                    Activity / Comments
+                                    Activity / Comments
 
-                                                </strong>
+                                </strong>
 
+                            </div>
+
+
+                            <div class="card-body">
+
+                                <?php if (empty($history)): ?>
+
+                                    <div class="activity-empty">
+
+                                        <div>
+
+                                            <i class="fas fa-comments fa-2x mb-3"></i>
+
+                                            <div class="fw-semibold">
+                                                No activity yet
                                             </div>
 
+                                            <small>
+                                                Comments, status updates and activity logs
+                                                will appear here.
+                                            </small>
 
-                                            <div class="card-body">
+                                        </div>
 
-                                                <div class="activity-empty">
+                                    </div>
 
-                                                    <div>
+                                <?php else: ?>
 
-                                                        <i class="fas fa-comments fa-2x mb-3"></i>
+                                    <div class="activity-list">
+
+                                        <?php foreach ($history as $activity): ?>
+
+                                            <?php
+
+                                            $changes = [];
+
+                                            if (!empty($activity['changes_json'])) {
+
+                                                $decodedChanges = json_decode(
+                                                    $activity['changes_json'],
+                                                    true
+                                                );
+
+                                                if (is_array($decodedChanges)) {
+                                                    $changes = $decodedChanges;
+                                                }
+                                            }
+
+                                            ?>
+
+                                            <div class="activity-item mb-4">
+
+                                                <!-- USER / DATE -->
+
+                                                <div class="d-flex align-items-start">
+
+                                                    <div
+                                                        class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center me-2"
+                                                        style="width:36px;height:36px;flex-shrink:0;"
+                                                    >
+
+                                                        <i class="fas fa-user"></i>
+
+                                                    </div>
+
+                                                    <div class="flex-grow-1">
 
                                                         <div class="fw-semibold">
-                                                            No activity yet
+
+                                                            <?= htmlspecialchars(
+                                                                $activity['fullname']
+                                                                ?: 'Unknown User'
+                                                            ) ?>
+
                                                         </div>
 
-                                                        <small>
-                                                            Comments, status updates and activity logs
-                                                            can be displayed here.
+                                                        <small class="text-muted">
+
+                                                            <?= !empty($activity['date_created'])
+                                                                ? date(
+                                                                    'M d, Y h:i A',
+                                                                    strtotime($activity['date_created'])
+                                                                )
+                                                                : ''
+                                                            ?>
+
                                                         </small>
 
                                                     </div>
 
                                                 </div>
 
+
+                                                <!-- CHANGES -->
+
+                                                <?php if (!empty($changes)): ?>
+
+                                                    <div class="mt-3">
+
+                                                        <?php foreach ($changes as $field => $change): ?>
+
+                                                            <?php
+
+                                                            $fieldLabel = match ($field) {
+
+                                                                'status' =>
+                                                                    'Status',
+
+                                                                'purchaser' =>
+                                                                    'Assigned Purchaser',
+
+                                                                'priority' =>
+                                                                    'Priority',
+
+                                                                'category' =>
+                                                                    'Category',
+
+                                                                'order_status' =>
+                                                                    'Order Status',
+
+                                                                'po_no' =>
+                                                                    'PO Number',
+
+                                                                default =>
+                                                                    ucwords(
+                                                                        str_replace(
+                                                                            '_',
+                                                                            ' ',
+                                                                            $field
+                                                                        )
+                                                                    )
+                                                            };
+
+                                                            $oldValue =
+                                                                $change['old'] ?? '';
+
+                                                            $newValue =
+                                                                $change['new'] ?? '';
+
+                                                            ?>
+
+                                                            <div class="border-start border-3 border-primary ps-3 mb-3">
+
+                                                                <div class="small text-muted mb-1">
+
+                                                                    <?= htmlspecialchars(
+                                                                        $fieldLabel
+                                                                    ) ?>
+
+                                                                </div>
+
+                                                                <div>
+
+                                                                    <span class="text-muted">
+                                                                        <?= htmlspecialchars(
+                                                                            $oldValue ?: 'N/A'
+                                                                        ) ?>
+                                                                    </span>
+
+                                                                    <i class="fas fa-arrow-right mx-2 text-primary"></i>
+
+                                                                    <strong>
+                                                                        <?= htmlspecialchars(
+                                                                            $newValue ?: 'N/A'
+                                                                        ) ?>
+                                                                    </strong>
+
+                                                                </div>
+
+                                                            </div>
+
+                                                        <?php endforeach; ?>
+
+                                                    </div>
+
+                                                <?php endif; ?>
+
+
+                                                <!-- COMMENT -->
+
+                                                <?php if (!empty(trim($activity['comment'] ?? ''))): ?>
+
+                                                    <div class="mt-2 p-3 bg-light rounded">
+
+                                                        <div class="small text-muted mb-1">
+
+                                                            <i class="fas fa-comment me-1"></i>
+                                                            Comment
+
+                                                        </div>
+
+                                                        <div>
+
+                                                            <?= nl2br(
+                                                                htmlspecialchars(
+                                                                    $activity['comment']
+                                                                )
+                                                            ) ?>
+
+                                                        </div>
+
+                                                    </div>
+
+                                                <?php endif; ?>
+
                                             </div>
 
-                                        </div>
+                                            <?php if (
+                                                $activity !== end($history)
+                                            ): ?>
+
+                                                <hr>
+
+                                            <?php endif; ?>
+
+                                        <?php endforeach; ?>
 
                                     </div>
 
-                                </div>
+                                <?php endif; ?>
 
                             </div>
+
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
 
                 </div>
 <script>
