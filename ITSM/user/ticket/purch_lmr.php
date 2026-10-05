@@ -1070,7 +1070,7 @@ include 'includes/db.php';
 
                                 <label class="form-label fw-bold">
                                     Comment
-                                    <span class="text-muted fw-normal">(Optional)</span>
+                                    <span class="text-muted fw-normal">(Required)</span>
                                 </label>
 
                                 <textarea
@@ -1080,9 +1080,9 @@ include 'includes/db.php';
                                     placeholder="Add a comment about this change..."
                                     maxlength="2000"></textarea>
 
-                                <small class="text-muted">
+                                <!-- <small class="text-muted">
                                     This comment will be included in the request history.
-                                </small>
+                                </small> -->
 
                             </div>
 
@@ -1423,7 +1423,7 @@ include 'includes/db.php';
 
                         <label class="form-label fw-bold">
                             Comment
-                            <span class="text-muted fw-normal">(Optional)</span>
+                            <span class="text-muted fw-normal">(Required)</span>
                         </label>
 
                         <textarea
@@ -1432,11 +1432,11 @@ include 'includes/db.php';
                             rows="3"
                             maxlength="2000"
                             placeholder="Add a comment about this bulk update..."
-                        ></textarea>
-
+                        required></textarea>
+<!-- 
                         <small class="text-muted">
                             This comment will be added to the request history of every selected request.
-                        </small>
+                        </small> -->
 
                     </div>
 
