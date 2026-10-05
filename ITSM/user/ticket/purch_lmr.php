@@ -742,14 +742,14 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
                                     </a>
                                 <?php endif; ?>
 
-                                <!-- <button
+                                <button
                                     type="button"
                                     class="btn btn-sm btn-success btn-print"
                                     data-lmr="<?= htmlspecialchars($row['lmr_no']) ?>"
                                     data-status="<?= htmlspecialchars(strtolower(trim($row['status']))) ?>"
                                     title="Print">
                                     <i class="fas fa-print"></i>
-                                </button> -->
+                                </button>
 
                             </td>
 
@@ -2149,246 +2149,326 @@ function getBulkRowDetails(row) {
     // Exports only the currently filtered/visible requests
     // =====================================================
 
-    function exportPurchasingCSV() {
+        // =====================================================
+        // EXPORT PURCHASING REQUESTS TO CSV
+        // Exports only the currently filtered requests
+        // =====================================================
 
-        const rows = [];
+        function exportPurchasingCSV() {
 
-        // CSV Headers
-        const headers = [
-            "LMR No.",
-            "Company",
-            "Requested By",
-            "Department",
-            "Item",
-            "Description",
-            "Quantity",
-            "UoM",
-            "Assigned To",
-            "Status",
-            "Date Created",
-            "Date Needed",
-            "Remarks"
-        ];
+            const rows = [];
 
-        rows.push(headers);
+            // -------------------------------------------------
+            // CSV HEADERS
+            // -------------------------------------------------
 
-        // -------------------------------------------------
-        // Get rows currently displayed by DataTables
-        // -------------------------------------------------
+            const headers = [
+                "Request ID",
+                "LMR No.",
+                "PO No.",
+                "Company",
+                "Requested By",
+                "Department",
+                "Item",
+                "Category",
+                "Description",
+                "Quantity",
+                "UoM",
+                "Assigned To",
+                "Urgency",
+                "Status",
+                "Order Status",
+                "Date Created",
+                "Date Needed",
+                "Remarks"
+            ];
 
-        table.rows({
-            search: 'applied',
-            order: 'applied'
-        }).every(function () {
+            rows.push(headers);
 
-            const row = this.node();
+            // -------------------------------------------------
+            // GET FILTERED DATATABLE ROWS
+            // -------------------------------------------------
 
-            if (!row) {
+            table.rows({
+                search: 'applied',
+                order: 'applied'
+            }).every(function () {
+
+                const row = this.node();
+
+                if (!row) {
+                    return;
+                }
+
+                const $row = $(row);
+
+                // -------------------------------------------------
+                // GET DATA FROM DATA-* ATTRIBUTES
+                // -------------------------------------------------
+
+                const requestId =
+                    $row.attr('data-request-id') || '';
+
+                const lmrNo =
+                    $row.attr('data-lmr-no') || '';
+
+                const poNo =
+                    $row.attr('data-po') || '';
+
+                const company =
+                    $row.attr('data-company') || '';
+
+                const requestor =
+                    $row.attr('data-requestor-name') || '';
+
+                const department =
+                    $row.attr('data-department') || '';
+
+                const item =
+                    $row.attr('data-item') || '';
+
+                const category =
+                    $row.attr('data-category') || '';
+
+                const description =
+                    $row.attr('data-description') || '';
+
+                const quantity =
+                    $row.attr('data-quantity') || '';
+
+                const uom =
+                    $row.attr('data-uom') || '';
+
+                const purchaser =
+                    $row.attr('data-purchaser-name') || 'Unassigned';
+
+                const priority =
+                    $row.attr('data-priority') || '';
+
+                const status =
+                    $row.attr('data-status') || '';
+
+                const orderStatus =
+                    $row.attr('data-order-status') || 'N/A';
+
+                const dateCreated =
+                    $row.attr('data-date-created') || '';
+
+                const dateNeeded =
+                    $row.attr('data-date-needed') || '';
+
+                const remarks =
+                    $row.attr('data-remarks') || '';
+
+                // -------------------------------------------------
+                // FORMAT TEXT
+                // -------------------------------------------------
+
+                function formatText(value) {
+
+                    if (!value) {
+                        return '';
+                    }
+
+                    return String(value)
+                        .replace(/\b\w/g, function (letter) {
+                            return letter.toUpperCase();
+                        });
+                }
+
+                // -------------------------------------------------
+                // FORMAT DATE
+                // -------------------------------------------------
+
+                function formatCSVDate(value) {
+
+                    if (!value) {
+                        return '';
+                    }
+
+                    // Get only YYYY-MM-DD portion when possible
+                    const datePart = String(value).substring(0, 10);
+
+                    // Handle YYYY-MM-DD directly
+                    const match = datePart.match(
+                        /^(\d{4})-(\d{2})-(\d{2})$/
+                    );
+
+                    if (match) {
+
+                        return (
+                            match[2] +
+                            '-' +
+                            match[3] +
+                            '-' +
+                            match[1]
+                        );
+                    }
+
+                    // Fallback
+                    const date = new Date(value);
+
+                    if (isNaN(date.getTime())) {
+                        return value;
+                    }
+
+                    const month = String(
+                        date.getMonth() + 1
+                    ).padStart(2, '0');
+
+                    const day = String(
+                        date.getDate()
+                    ).padStart(2, '0');
+
+                    const year =
+                        date.getFullYear();
+
+                    return (
+                        month +
+                        '-' +
+                        day +
+                        '-' +
+                        year
+                    );
+                }
+
+                // -------------------------------------------------
+                // ADD ROW
+                // -------------------------------------------------
+
+                rows.push([
+                    requestId,
+                    lmrNo,
+                    poNo,
+                    company,
+                    requestor,
+                    department,
+                    item,
+                    category,
+                    description,
+                    quantity,
+                    uom,
+                    purchaser,
+                    formatText(priority),
+                    formatText(status),
+                    formatText(orderStatus),
+                    formatCSVDate(dateCreated),
+                    formatCSVDate(dateNeeded),
+                    remarks
+                ]);
+
+            });
+
+            // -------------------------------------------------
+            // CHECK IF THERE ARE RECORDS
+            // -------------------------------------------------
+
+            if (rows.length === 1) {
+
+                alert(
+                    'There are no purchasing requests to export.'
+                );
+
                 return;
             }
 
-            const $row = $(row);
-
             // -------------------------------------------------
-            // Get data from data-* attributes
+            // CSV ESCAPE
             // -------------------------------------------------
 
-            const lmrNo =
-                $row.attr('data-lmr-no') || '';
+            function escapeCSV(value) {
 
-            const company =
-                $row.attr('data-company') || '';
-
-            const requestor =
-                $row.attr('data-requestor-name') || '';
-
-            const department =
-                $row.attr('data-department') || '';
-
-            const item =
-                $row.attr('data-item') || '';
-
-            const description =
-                $row.attr('data-description') || '';
-
-            const quantity =
-                $row.attr('data-quantity') || '';
-
-            const uom =
-                $row.attr('data-uom') || '';
-
-            const purchaser =
-                $row.attr('data-purchaser-name') || 'Unassigned';
-
-            const status =
-                $row.attr('data-status') || '';
-
-            const dateCreated =
-                $row.attr('data-date-created') || '';
-
-            const dateNeeded =
-                $row.attr('data-date-needed') || '';
-
-            const remarks =
-                $row.attr('data-remarks') || '';
-
-            // -------------------------------------------------
-            // Format status
-            // -------------------------------------------------
-
-            const formattedStatus = status
-                ? status.replace(/\b\w/g, function (letter) {
-                    return letter.toUpperCase();
-                })
-                : '';
-
-            // -------------------------------------------------
-            // Format dates
-            // -------------------------------------------------
-
-            function formatCSVDate(value) {
-
-                if (!value) {
-                    return '';
+                if (
+                    value === null ||
+                    value === undefined
+                ) {
+                    return '""';
                 }
 
-                const date = new Date(value);
+                value = String(value);
 
-                if (isNaN(date.getTime())) {
-                    return value;
-                }
+                // Escape double quotes
+                value = value.replace(/"/g, '""');
 
-                const month = String(
-                    date.getMonth() + 1
-                ).padStart(2, '0');
-
-                const day = String(
-                    date.getDate()
-                ).padStart(2, '0');
-
-                const year = date.getFullYear();
-
-                return month + '-' + day + '-' + year;
+                // Wrap value in quotes
+                return '"' + value + '"';
             }
 
             // -------------------------------------------------
-            // Add row
+            // CREATE CSV CONTENT
             // -------------------------------------------------
 
-            rows.push([
-                lmrNo,
-                company,
-                requestor,
-                department,
-                item,
-                description,
-                quantity,
-                uom,
-                purchaser,
-                formattedStatus,
-                formatCSVDate(dateCreated),
-                formatCSVDate(dateNeeded),
-                remarks
-            ]);
+            const csvContent = rows
+                .map(function (row) {
 
-        });
+                    return row
+                        .map(escapeCSV)
+                        .join(',');
 
-        // -------------------------------------------------
-        // Check if there are records
-        // -------------------------------------------------
+                })
+                .join('\r\n');
 
-        if (rows.length === 1) {
+            // -------------------------------------------------
+            // UTF-8 BOM
+            // -------------------------------------------------
 
-            alert(
-                'There are no purchasing requests to export.'
+            const BOM = '\uFEFF';
+
+            const blob = new Blob(
+                [BOM + csvContent],
+                {
+                    type: 'text/csv;charset=utf-8;'
+                }
             );
 
-            return;
+            // -------------------------------------------------
+            // CREATE FILENAME
+            // -------------------------------------------------
+
+            const today = new Date();
+
+            const year =
+                today.getFullYear();
+
+            const month =
+                String(today.getMonth() + 1)
+                    .padStart(2, '0');
+
+            const day =
+                String(today.getDate())
+                    .padStart(2, '0');
+
+            const filename =
+                'purchasing_requests_' +
+                year + '-' +
+                month + '-' +
+                day +
+                '.csv';
+
+            // -------------------------------------------------
+            // DOWNLOAD
+            // -------------------------------------------------
+
+            const link =
+                document.createElement('a');
+
+            const url =
+                URL.createObjectURL(blob);
+
+            link.href = url;
+            link.download = filename;
+
+            document.body.appendChild(link);
+
+            link.click();
+
+            document.body.removeChild(link);
+
+            // Revoke after download
+            setTimeout(function () {
+                URL.revokeObjectURL(url);
+            }, 100);
         }
-
-        // -------------------------------------------------
-        // Convert values to CSV-safe format
-        // -------------------------------------------------
-
-        function escapeCSV(value) {
-
-            if (value === null || value === undefined) {
-                return '""';
-            }
-
-            value = String(value);
-
-            // Escape double quotes
-            value = value.replace(/"/g, '""');
-
-            // Wrap every value in quotes
-            return '"' + value + '"';
-        }
-
-        const csvContent = rows
-            .map(function (row) {
-
-                return row
-                    .map(escapeCSV)
-                    .join(',');
-
-            })
-            .join('\r\n');
-
-        // -------------------------------------------------
-        // Add UTF-8 BOM
-        // Helps Excel display special characters correctly
-        // -------------------------------------------------
-
-        const BOM = '\uFEFF';
-
-        const blob = new Blob(
-            [BOM + csvContent],
-            {
-                type: 'text/csv;charset=utf-8;'
-            }
-        );
-
-        // -------------------------------------------------
-        // Create filename
-        // -------------------------------------------------
-
-        const today = new Date();
-
-        const year = today.getFullYear();
-
-        const month = String(
-            today.getMonth() + 1
-        ).padStart(2, '0');
-
-        const day = String(
-            today.getDate()
-        ).padStart(2, '0');
-
-        const filename =
-            'purchasing_requests_' +
-            year + '-' +
-            month + '-' +
-            day +
-            '.csv';
-
-        // -------------------------------------------------
-        // Download
-        // -------------------------------------------------
-
-        const link = document.createElement('a');
-
-        link.href = URL.createObjectURL(blob);
-        link.download = filename;
-
-        document.body.appendChild(link);
-
-        link.click();
-
-        document.body.removeChild(link);
-
-        URL.revokeObjectURL(link.href);
-    }
 
 
     // =====================================================
@@ -3063,42 +3143,6 @@ function formatStatus(status) {
                     }
 
 
-                    // =====================================================
-                    // PRINT
-                    // =====================================================
-
-                    $('.btn-print').on('click', function (e) {
-
-                        e.preventDefault();
-                        e.stopPropagation();
-
-                        const status =
-                            ($(this).data('status') || '')
-                                .toString()
-                                .toLowerCase()
-                                .trim();
-
-                        const lmr =
-                            $(this).data('lmr');
-
-
-                        if (status !== 'final') {
-
-                            alert(
-                                'Printing is only available when the request status is "Proceed Request".'
-                            );
-
-                            return;
-                        }
-
-
-                        window.open(
-                            '?page=ticket/includes/print_request&lmr_no=' +
-                            encodeURIComponent(lmr),
-                            '_blank'
-                        );
-
-                });
 
     // =====================================================
     // PRINT
@@ -3116,16 +3160,14 @@ function formatStatus(status) {
 
         const lmr = $(this).data('lmr');
 
-        if (status !== 'proceed request') {
-            alert('Printing is only available when the request status is "Proceed Request".');
-            return;
-        }
+
+
 
         window.open(
-            '?page=ticket/includes/print_request&lmr_no=' +
-            encodeURIComponent(lmr),
+            'ticket/includes/print_purch_request.php?lmr_no=' + encodeURIComponent(lmr),
             '_blank'
         );
+
     });
     
     // =====================================================

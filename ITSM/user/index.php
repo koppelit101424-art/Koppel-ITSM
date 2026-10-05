@@ -133,6 +133,9 @@ $isPrintPage = in_array($page, $print_pages);
                     case 'ticket/includes/print_request':
                         include 'ticket/includes/print_request.php';
                         break;
+                    case 'ticket/includes/print_purch_request':
+                        include 'ticket/includes/print_purch_request.php';
+                        break;
                     case "ticket/includes/add_request":
                         include "ticket/includes/add_request.php";
                         break;
