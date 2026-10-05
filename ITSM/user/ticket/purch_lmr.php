@@ -3,119 +3,118 @@
 include 'includes/auth.php';
 include 'includes/db.php';
 
-$created_by = $_SESSION['user_id'];
+    $created_by = $_SESSION['user_id'];
 
-// Get logged-in user's department
-$userQuery = $conn->prepare("
-    SELECT department, company
-    FROM user_tb
-    WHERE user_id = ?
-");
+    // Get logged-in user's department
+    $userQuery = $conn->prepare("
+        SELECT department, company
+        FROM user_tb
+        WHERE user_id = ?
+    ");
 
-$userQuery->bind_param("i", $created_by);
-$userQuery->execute();
+    $userQuery->bind_param("i", $created_by);
+    $userQuery->execute();
 
-$userResult = $userQuery->get_result();
-$currentUser = $userResult->fetch_assoc();
+    $userResult = $userQuery->get_result();
+    $currentUser = $userResult->fetch_assoc();
 
-$currentDepartment = trim($currentUser['department'] ?? '');
-$currentCompany = trim($currentUser['company'] ?? '');
+    $currentDepartment = trim($currentUser['department'] ?? '');
+    $currentCompany = trim($currentUser['company'] ?? '');
 
-$userQuery->close();
-
-
-// ==========================================
-// PURCHASING → SHOW ALL
-// OTHER DEPARTMENTS → SHOW ASSIGNED ONLY
-// ==========================================
-
-if (
-    strcasecmp(trim($currentDepartment), 'Purchasing') === 0
-    || (
-        isset($_SESSION['user_type'])
-        && strcasecmp(trim($_SESSION['user_type']), 'admin') === 0
-    )
-) {
-
-// Purchasing users and admins can see all requests
-$sql = "
-    SELECT 
-        r.request_id,
-        r.user_id,
-        r.lmr_no,
-        u.fullname,
-        u.company,
-        r.department,
-        r.item,
-        r.category_id,
-        rc.category_name,
-        r.description,
-        r.quantity,
-        r.UoM,
-        r.date_needed,
-        r.remarks,
-        r.date_created,
-        r.status,
-        r.order_status,
-        r.priority,
-        r.po_no,
-        r.created_by,
-        r.purchaser_id
-    FROM purch_request_tb r
-    LEFT JOIN user_tb u 
-        ON r.created_by = u.user_id
-    LEFT JOIN request_category_tb rc
-        ON r.category_id = rc.category_id
-    ORDER BY r.date_created ASC
-";
-
-$stmt = $conn->prepare($sql);
+    $userQuery->close();
 
 
-}else {
+    // ==========================================
+    // PURCHASING → SHOW ALL
+    // OTHER DEPARTMENTS → SHOW ASSIGNED ONLY
+    // ==========================================
 
-    // Non-Purchasing users can only see requests
-    // assigned to them
-$sql = "
-    SELECT 
-        r.request_id,
-        r.user_id,
-        u.fullname,
-        r.lmr_no,
-        u.company AS company,
-        r.department,
-        r.item,
-        r.category_id,
-        rc.category_name,
-        r.description,
-        r.quantity,
-        r.UoM,
-        r.date_needed,
-        r.remarks,
-        r.date_created,
-        r.status,
-        r.order_status,
-        r.priority,
-        r.po_no,
-        r.created_by,
-        r.purchaser_id
-    FROM purch_request_tb r
-    LEFT JOIN user_tb u 
-        ON r.created_by = u.user_id
-    LEFT JOIN request_category_tb rc
-        ON r.category_id = rc.category_id
-    WHERE TRIM(r.department) = TRIM(?)
-    ORDER BY r.date_created ASC
-";
+    if (
+        strcasecmp(trim($currentDepartment), 'Purchasing') === 0
+        || (
+            isset($_SESSION['user_type'])
+            && strcasecmp(trim($_SESSION['user_type']), 'admin') === 0
+        )
+        ) {
 
-    $stmt = $conn->prepare($sql);
-    $stmt->bind_param("s", $currentDepartment);
-}
+        // Purchasing users and admins can see all requests
+        $sql = "
+            SELECT 
+                r.request_id,
+                r.user_id,
+                r.lmr_no,
+                u.fullname,
+                u.company,
+                r.department,
+                r.item,
+                r.category_id,
+                rc.category_name,
+                r.description,
+                r.quantity,
+                r.UoM,
+                r.date_needed,
+                r.remarks,
+                r.date_created,
+                r.status,
+                r.order_status,
+                r.priority,
+                r.po_no,
+                r.created_by,
+                r.purchaser_id
+            FROM purch_request_tb r
+            LEFT JOIN user_tb u 
+                ON r.created_by = u.user_id
+            LEFT JOIN request_category_tb rc
+                ON r.category_id = rc.category_id
+            ORDER BY r.date_created ASC
+        ";
 
-$stmt->execute();
-$requests = $stmt->get_result();
+        $stmt = $conn->prepare($sql);
+
+
+    }else {
+
+        // Non-Purchasing users can only see requests
+        // assigned to them
+        $sql = "
+            SELECT 
+                r.request_id,
+                r.user_id,
+                u.fullname,
+                r.lmr_no,
+                u.company AS company,
+                r.department,
+                r.item,
+                r.category_id,
+                rc.category_name,
+                r.description,
+                r.quantity,
+                r.UoM,
+                r.date_needed,
+                r.remarks,
+                r.date_created,
+                r.status,
+                r.order_status,
+                r.priority,
+                r.po_no,
+                r.created_by,
+                r.purchaser_id
+            FROM purch_request_tb r
+            LEFT JOIN user_tb u 
+                ON r.created_by = u.user_id
+            LEFT JOIN request_category_tb rc
+                ON r.category_id = rc.category_id
+            WHERE TRIM(r.department) = TRIM(?)
+            ORDER BY r.date_created ASC
+        ";
+
+            $stmt = $conn->prepare($sql);
+            $stmt->bind_param("s", $currentDepartment);
+        }
+
+        $stmt->execute();
+        $requests = $stmt->get_result();
 ?>
-
 
 <style>
     .table-hover tbody tr:hover { background-color: #f1f1f1; }
@@ -222,268 +221,286 @@ $requests = $stmt->get_result();
 </style>
 
 <div class="card ">
-<?php
-$isPurchasing =
-    strcasecmp(trim($currentDepartment), 'Purchasing') === 0
-    || (
-        isset($_SESSION['user_type'])
-        && strcasecmp(trim($_SESSION['user_type']), 'admin') === 0
-    );
-?>
+        <?php
+        $isPurchasing =
+            strcasecmp(trim($currentDepartment), 'Purchasing') === 0
+            || (
+                isset($_SESSION['user_type'])
+                && strcasecmp(trim($_SESSION['user_type']), 'admin') === 0
+            );
+        ?>
 
-<div class="card-header d-flex justify-content-between align-items-center text-white">
-    <span>Purchasing LMR</span>
+        <div class="card-header d-flex justify-content-between align-items-center text-white">
+            <span>Purchasing LMR</span>
 
-    <div class="d-flex gap-2">
-        <a href="?page=ticket/includes/add_purch_request"
-           class="btn btn-sm btn-primary">
-            <i class="fas fa-plus me-1"></i>
-            Create LMR
-        </a>
+            <div class="d-flex gap-2">
+                <a href="?page=ticket/includes/add_purch_request"
+                class="btn btn-sm btn-primary">
+                    <i class="fas fa-plus me-1"></i>
+                    Create LMR
+                </a>
 
-        <?php if ($isPurchasing): ?>
+                <?php if ($isPurchasing): ?>
 
-            <button type="button"
-                    class="btn btn-warning btn-sm"
-                    id="bulkUpdateBtn"
-                    disabled>
-                <i class="fas fa-edit me-1"></i>
-                Bulk Update
-                <span id="selectedCount" class="badge bg-dark ms-1">0</span>
-            </button>
+                    <button type="button"
+                            class="btn btn-warning btn-sm"
+                            id="bulkUpdateBtn"
+                            disabled>
+                        <i class="fas fa-edit me-1"></i>
+                        Bulk Update
+                        <span id="selectedCount" class="badge bg-dark ms-1">0</span>
+                    </button>
 
-            <button type="button"
-                    class="btn btn-info btn-sm"
-                    id="exportPurchasingCSV">
-                <i class="fas fa-file-csv me-1"></i>
-                Export CSV
-            </button>
+                    <button type="button"
+                            class="btn btn-info btn-sm"
+                            id="exportPurchasingCSV">
+                        <i class="fas fa-file-csv me-1"></i>
+                        Export CSV
+                    </button>
 
-        <?php endif; ?>
-    </div>
-</div>
-
- <div class="card-body">
-
-<div class="card-body">
-<?php
-    $created_by = $_SESSION['user_id'];
-
-    // Get logged-in user's department
-    $userQuery = $conn->prepare("
-        SELECT fullname, department 
-        FROM user_tb 
-        WHERE user_id = ?
-    ");
-
-    $userQuery->bind_param("i", $created_by);
-    $userQuery->execute();
-
-    $userResult = $userQuery->get_result();
-    $currentUser = $userResult->fetch_assoc();
-
-    $currentDepartment = trim($currentUser['department'] ?? '');
-
-    $userQuery->close();
-
-
-    $categoryQuery = $conn->query("
-    SELECT category_id, category_name
-    FROM request_category_tb
-    WHERE status = 1
-    ORDER BY category_name ASC
-    ");
-
-    $filterCategories = [];
-
-    while ($categoryRow = $categoryQuery->fetch_assoc()) {
-        $filterCategories[] = $categoryRow;
-    }
-
-$departmentQuery = $conn->query("
-    SELECT DISTINCT department
-    FROM purch_request_tb
-    WHERE department IS NOT NULL
-      AND TRIM(department) != ''
-    ORDER BY department ASC
-");
-
-$departments = [];
-
-while ($departmentRow = $departmentQuery->fetch_assoc()) {
-    $departments[] = $departmentRow['department'];
-}
-
-$companyQuery = $conn->query("
-    SELECT DISTINCT company
-    FROM user_tb
-    WHERE company IS NOT NULL
-      AND TRIM(company) != ''
-    ORDER BY company ASC
-");
-
-$companies = [];
-
-while ($companyRow = $companyQuery->fetch_assoc()) {
-    $companies[] = $companyRow['company'];
-}
-
-?>
-
-    <?php if (strcasecmp($currentDepartment, 'Purchasing') === 0): ?>
-
-        <!-- ==========================================
-             PURCHASING FILTERS
-        =========================================== -->
-
-        <div class="row g-3 align-items-end">
-
-            <!-- Request Scope -->
-            <div class="col-md-2">
-                <label class="form-label">Request View</label>
-                <select id="requestViewFilter" class="form-select">
-                    <option value="">All Requests</option>
-                    <option value="assigned">Assigned to Me</option>
-                </select>
+                <?php endif; ?>
             </div>
-            <div class="col-md-2">
-                <label class="form-label">Company</label>
-
-                <select id="companyFilter" class="form-select">
-
-                    <option value="">All Companies</option>
-
-                    <?php foreach ($companies as $company): ?>
-
-                        <option
-                            value="<?= htmlspecialchars(strtolower(trim($company))) ?>"
-                            <?= strcasecmp(trim($company), $currentCompany) === 0 ? 'selected' : '' ?>
-                        >
-                            <?= htmlspecialchars($company) ?>
-                        </option>
-
-                    <?php endforeach; ?>
-
-                </select>
-            </div>
-
-            <!-- Department -->
-            <div class="col-md-3">
-                  <label class="form-label">Departments</label>
-                <select id="departmentFilter" class="form-select">
-                    <option value="">All Departments</option>
-
-                    <?php foreach ($departments as $department): ?>
-                        <option value="<?= htmlspecialchars(strtolower(trim($department))) ?>">
-                            <?= htmlspecialchars($department) ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
-
-
-            </div>
-
-            <!-- Urgency -->
-            <div class="col-md-2">
-                <label class="form-label">Urgency</label>
-                <select id="statusUrgencyFilter" class="form-select">
-                    <option value="">All </option>
-                    <option value="urgent">Urgent</option>
-                    <option value="high">High</option>
-                    <option value="medium">Medium</option>
-                </select>
-            </div>
-            <!-- Category -->
-            <div class="col-md-3">
-                <label class="form-label">Category</label>
-
-                <select id="categoryFilter" class="form-select">
-                    <option value="">All Categories</option>
-
-                    <?php foreach ($filterCategories as $category): ?>
-
-                        <option value="<?= htmlspecialchars(
-                            strtolower(trim($category['category_name']))
-                        ) ?>">
-                            <?= htmlspecialchars($category['category_name']) ?>
-                        </option>
-
-                    <?php endforeach; ?>
-
-                </select>
-            </div>
-            <!-- Status -->
-            <div class="col-md-3">
-                <label class="form-label">Status</label>
-                <select id="statusSelectFilter" class="form-select">
-                    <option value="">All Status</option>
-                    <option value="pending">Pending</option>
-                    <option value="checking requirements">Checking Requirements</option>
-                    <option value="canvassing">Canvassing</option>
-                    <option value="negotiation">Negotiation</option>
-                    <option value="draft po under discussion">Draft PO Under Discussion</option>
-                    <option value="draft po approved">Draft PO Approved</option>
-                    <option value="final po approved">Final PO Approved</option>
-                    <option value="rejected">Rejected </option>
-                    <!-- <option value="closed">Closed</option> -->
-                </select>
-            </div>
-            <!-- Order Status -->
-            <div class="col-md-3">
-                <label class="form-label">Order Status</label>
-
-                <select id="orderStatusFilter" class="form-select">
-
-                    <option value="">All Order Status</option>
-
-                    <option value="n/a">N/A</option>
-                    <option value="order acknowledged">Order Acknowledged</option>
-                    <!-- <option value="goods delivered">Goods Delivered</option> -->
-                    <option value="goods received">Goods Received</option>
-                    <option value="payment processing">Payment Processing</option>
-                    <option value="payment issued">Payment Issued</option>
-                    <option value="closed">Closed</option>
-
-                </select>
-            </div>
-            <!-- Date From -->
-            <div class="col-md-3">
-                <label class="form-label">Date From</label>
-                <input type="date" id="dateFrom" class="form-control">
-            </div>
-
-            <!-- Date To -->
-            <div class="col-md-3">
-                <label class="form-label">Date To</label>
-                <input type="date" id="dateTo" class="form-control">
-            </div>
-
         </div>
 
-            <?php else: ?>
+        <div class="card-body">
+        <div class="card-body">
+            <?php
+                $created_by = $_SESSION['user_id'];
 
-                <!-- ==========================================
-                    NON-PURCHASING USERS
-                =========================================== -->
+                // Get logged-in user's department
+                $userQuery = $conn->prepare("
+                    SELECT fullname, department 
+                    FROM user_tb 
+                    WHERE user_id = ?
+                ");
 
-            
-                <div class="row g-3 align-items-end">
-                    <!-- Urgency -->
-                    <div class="col-md-2">
-                        <label class="form-label">Urgency</label>
-                        <select id="statusUrgencyFilter" class="form-select">
-                            <option value="">All </option>
-                            <option value="Urgent">Urgent</option>
-                            <option value="High">High</option>
-                            <option value="Medium">Medium </option>
-                        </select>
-                    </div>
-                    <!-- Status -->
-                    <div class="col-md-2">
-                        <label class="form-label">Status</label>
-                        <select id="statusSelectFilter" class="form-select">
-                            <option value="">All Status</option>
-                            <option value="pending">Pending</option>
+                $userQuery->bind_param("i", $created_by);
+                $userQuery->execute();
+
+                $userResult = $userQuery->get_result();
+                $currentUser = $userResult->fetch_assoc();
+
+                $currentDepartment = trim($currentUser['department'] ?? '');
+
+                $userQuery->close();
+
+
+                $categoryQuery = $conn->query("
+                SELECT category_id, category_name
+                FROM request_category_tb
+                WHERE status = 1
+                ORDER BY category_name ASC
+                ");
+
+                $filterCategories = [];
+
+                while ($categoryRow = $categoryQuery->fetch_assoc()) {
+                    $filterCategories[] = $categoryRow;
+                }
+
+                $departmentQuery = $conn->query("
+                    SELECT DISTINCT department
+                    FROM purch_request_tb
+                    WHERE department IS NOT NULL
+                    AND TRIM(department) != ''
+                    ORDER BY department ASC
+                ");
+
+                $departments = [];
+
+                while ($departmentRow = $departmentQuery->fetch_assoc()) {
+                    $departments[] = $departmentRow['department'];
+                }
+
+                $companyQuery = $conn->query("
+                    SELECT DISTINCT company
+                    FROM user_tb
+                    WHERE company IS NOT NULL
+                    AND TRIM(company) != ''
+                    ORDER BY company ASC
+                ");
+
+                $companies = [];
+
+                while ($companyRow = $companyQuery->fetch_assoc()) {
+                    $companies[] = $companyRow['company'];
+                }
+
+            ?>
+
+            <?php if (strcasecmp($currentDepartment, 'Purchasing') === 0): ?>
+
+            <!-- ==========================================
+                PURCHASING FILTERS
+            =========================================== -->
+
+            <div class="row g-3 align-items-end">
+
+                <!-- Request Scope -->
+                <div class="col-md-2">
+                    <label class="form-label">Request View</label>
+                    <select id="requestViewFilter" class="form-select">
+                        <option value="">All Requests</option>
+                        <option value="assigned">Assigned to Me</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Company</label>
+
+                    <select id="companyFilter" class="form-select">
+
+                        <option value="">All Companies</option>
+
+                        <?php foreach ($companies as $company): ?>
+
+                            <option
+                                value="<?= htmlspecialchars(strtolower(trim($company))) ?>"
+                                <?= strcasecmp(trim($company), $currentCompany) === 0 ? 'selected' : '' ?>
+                            >
+                                <?= htmlspecialchars($company) ?>
+                            </option>
+
+                        <?php endforeach; ?>
+
+                    </select>
+                </div>
+
+                <!-- Department -->
+                <div class="col-md-3">
+                    <label class="form-label">Departments</label>
+                    <select id="departmentFilter" class="form-select">
+                        <option value="">All Departments</option>
+
+                        <?php foreach ($departments as $department): ?>
+                            <option value="<?= htmlspecialchars(strtolower(trim($department))) ?>">
+                                <?= htmlspecialchars($department) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+
+
+                </div>
+
+                <!-- Urgency -->
+                <div class="col-md-2">
+                    <label class="form-label">Urgency</label>
+                    <select id="statusUrgencyFilter" class="form-select">
+                        <option value="">All </option>
+                        <option value="urgent">Urgent</option>
+                        <option value="high">High</option>
+                        <option value="medium">Medium</option>
+                    </select>
+                </div>
+                <!-- Category -->
+                <div class="col-md-3">
+                    <label class="form-label">Category</label>
+
+                    <select id="categoryFilter" class="form-select">
+                        <option value="">All Categories</option>
+
+                        <?php foreach ($filterCategories as $category): ?>
+
+                            <option value="<?= htmlspecialchars(
+                                strtolower(trim($category['category_name']))
+                            ) ?>">
+                                <?= htmlspecialchars($category['category_name']) ?>
+                            </option>
+
+                        <?php endforeach; ?>
+
+                    </select>
+                </div>
+                <!-- Status -->
+                <div class="col-md-3">
+                    <label class="form-label">Status</label>
+                    <select id="statusSelectFilter" class="form-select">
+                        <option value="">All Status</option>
+                        <option value="pending">Pending</option>
+                        <option value="checking requirements">Checking Requirements</option>
+                        <option value="canvassing">Canvassing</option>
+                        <option value="negotiation">Negotiation</option>
+                        <option value="draft po under discussion">Draft PO Under Discussion</option>
+                        <option value="draft po approved">Draft PO Approved</option>
+                        <option value="final po approved">Final PO Approved</option>
+                        <option value="rejected">Rejected </option>
+                        <!-- <option value="closed">Closed</option> -->
+                    </select>
+                </div>
+                <!-- Order Status -->
+                <div class="col-md-3">
+                    <label class="form-label">Order Status</label>
+
+                    <select id="orderStatusFilter" class="form-select">
+
+                        <option value="">All Order Status</option>
+
+                        <option value="n/a">N/A</option>
+                        <option value="order acknowledged">Order Acknowledged</option>
+                        <!-- <option value="goods delivered">Goods Delivered</option> -->
+                        <option value="goods received">Goods Received</option>
+                        <option value="payment processing">Payment Processing</option>
+                        <option value="payment issued">Payment Issued</option>
+                        <option value="closed">Closed</option>
+
+                    </select>
+                </div>
+                <!-- Date From -->
+                <div class="col-md-3">
+                    <label class="form-label">Date From</label>
+                    <input type="date" id="dateFrom" class="form-control">
+                </div>
+
+                <!-- Date To -->
+                <div class="col-md-3">
+                    <label class="form-label">Date To</label>
+                    <input type="date" id="dateTo" class="form-control">
+                </div>
+
+            </div>
+
+                <?php else: ?>
+
+                    <!-- ==========================================
+                        NON-PURCHASING USERS
+                    =========================================== -->
+
+                
+                    <div class="row g-3 align-items-end">
+                        <!-- Urgency -->
+                        <div class="col-md-2">
+                            <label class="form-label">Urgency</label>
+                            <select id="statusUrgencyFilter" class="form-select">
+                                <option value="">All </option>
+                                <option value="Urgent">Urgent</option>
+                                <option value="High">High</option>
+                                <option value="Medium">Medium </option>
+                            </select>
+                        </div>
+                        <!-- Category -->
+                        <div class="col-md-2">
+                            <label class="form-label">Category</label>
+
+                            <select id="categoryFilter" class="form-select">
+                                <option value="">All Categories</option>
+
+                                <?php foreach ($filterCategories as $category): ?>
+
+                                    <option value="<?= htmlspecialchars(
+                                        strtolower(trim($category['category_name']))
+                                    ) ?>">
+                                        <?= htmlspecialchars($category['category_name']) ?>
+                                    </option>
+
+                                <?php endforeach; ?>
+
+                            </select>
+                        </div>
+                        <!-- Status -->
+                        <div class="col-md-2">
+                            <label class="form-label">Status</label>
+                            <select id="statusSelectFilter" class="form-select">
+                                <option value="">All Status</option>
+                                <option value="pending">Pending</option>
                                 <option value="checking requirements">Checking Requirements</option>
                                 <option value="canvassing">Canvassing</option>
                                 <option value="negotiation">Negotiation</option>
@@ -491,282 +508,296 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
                                 <option value="draft po approved">Draft PO Approved</option>
                                 <option value="final po approved">Final PO Approved</option>
                                 <option value="rejected">Rejected </option>
-                            <!-- <option value="closed">Closed</option> -->
-                        </select>
+                                <!-- <option value="closed">Closed</option> -->
+                            </select>
+                        </div>
+                        <!-- Order Status -->
+                        <div class="col-md-2">
+                            <label class="form-label">Order Status</label>
+
+                            <select id="orderStatusFilter" class="form-select">
+
+                                <option value="">All Order Status</option>
+
+                                <option value="n/a">N/A</option>
+                                <option value="order acknowledged">Order Acknowledged</option>
+                                <!-- <option value="goods delivered">Goods Delivered</option> -->
+                                <option value="goods received">Goods Received</option>
+                                <option value="payment processing">Payment Processing</option>
+                                <option value="payment issued">Payment Issued</option>
+                                <option value="closed">Closed</option>
+
+                            </select>
+                        </div>
+
+                        <!-- Date From -->
+                        <div class="col-md-2">
+                            <label class="form-label">Date From</label>
+                            <input type="date" id="dateFrom" class="form-control">
+                        </div>
+
+                        <!-- Date To -->
+                        <div class="col-md-2">
+                            <label class="form-label">Date To</label>
+                            <input type="date" id="dateTo" class="form-control">
+                        </div>
+
                     </div>
 
-                    <!-- Date From -->
-                    <div class="col-md-2">
-                        <label class="form-label">Date From</label>
-                        <input type="date" id="dateFrom" class="form-control">
-                    </div>
-
-                    <!-- Date To -->
-                    <div class="col-md-2">
-                        <label class="form-label">Date To</label>
-                        <input type="date" id="dateTo" class="form-control">
-                    </div>
-
-                </div>
-
-            <?php endif; ?>
+                <?php endif; ?>
 
         </div>
 
 
-            <div class="table-responsive">
-                <table id="requestsTable" class="table table-hover align-middle">
-                    <thead>
-                        <tr>
-                            <th>
-                                <input type="checkbox" id="selectAllRequests">
-                            </th>
+        <div class="table-responsive">
+            <table id="requestsTable" class="table table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>
+                            <input type="checkbox" id="selectAllRequests">
+                        </th>
 
-                            <th>ID</th>
-                            <th>LMR No.</th>
-                            <th>PO No.</th>
-                            <th>Requester</th>
-                            <th>Department</th>
-                            <th>Item</th>
-                            <th>Category</th>
-                            <!-- <th>Qty</th> -->
-                            <!-- <th>UoM</th> -->
-                            <th>Assigned to</th>
-                            <th>Urgency</th>
-                            <th>Status</th>
-                            <th>Order Status</th>
-                            <th>Date Created</th>
-                            <!-- <th>Date Needed</th> -->
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php
-                            
-                            ?>
-                        <?php if ($requests->num_rows > 0): ?>
-                            <?php $i = 1; while ($row = $requests->fetch_assoc()): 
-                                $purchaser_id = (int)$row['purchaser_id'];
+                        <th>ID</th>
+                        <th>LMR No.</th>
+                        <th>PO No.</th>
+                        <th>Requester</th>
+                        <th>Department</th>
+                        <th>Item</th>
+                        <th>Category</th>
+                        <!-- <th>Qty</th> -->
+                        <!-- <th>UoM</th> -->
+                        <th>Assigned to</th>
+                        <th>Urgency</th>
+                        <th>Status</th>
+                        <th>Order Status</th>
+                        <th>Date Created</th>
+                        <!-- <th>Date Needed</th> -->
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php
+                        
+                        ?>
+                    <?php if ($requests->num_rows > 0): ?>
+                        <?php $i = 1; while ($row = $requests->fetch_assoc()): 
+                            $purchaser_id = (int)$row['purchaser_id'];
 
-                            if ($purchaser_id == 1) {
-                                $purchaser_name = 'Unassigned';
-                            } else {
-                                $stmtPurchaser = $conn->prepare("
-                                    SELECT fullname
-                                    FROM user_tb
-                                    WHERE user_id = ?
-                                    LIMIT 1
-                                ");
-
-                                $stmtPurchaser->bind_param("i", $purchaser_id);
-                                $stmtPurchaser->execute();
-
-                                $purchaserResult = $stmtPurchaser->get_result();
-                                $purchaser = $purchaserResult->fetch_assoc();
-
-                                $purchaser_name = $purchaser['fullname'] ?? 'Unknown';
-
-                                $stmtPurchaser->close();
-                            }
-
-                            $createdById = (int)$row['created_by'];
-
-                            $stmtRequestor = $conn->prepare("
+                        if ($purchaser_id == 1) {
+                            $purchaser_name = 'Unassigned';
+                        } else {
+                            $stmtPurchaser = $conn->prepare("
                                 SELECT fullname
                                 FROM user_tb
                                 WHERE user_id = ?
                                 LIMIT 1
                             ");
 
-                            $stmtRequestor->bind_param("i", $createdById);
-                            $stmtRequestor->execute();
+                            $stmtPurchaser->bind_param("i", $purchaser_id);
+                            $stmtPurchaser->execute();
 
-                            $requestorResult = $stmtRequestor->get_result();
-                            $requestor = $requestorResult->fetch_assoc();
+                            $purchaserResult = $stmtPurchaser->get_result();
+                            $purchaser = $purchaserResult->fetch_assoc();
 
-                            $requestor_name = $requestor['fullname'] ?? 'Unknown';
+                            $purchaser_name = $purchaser['fullname'] ?? 'Unknown';
 
-                            $stmtRequestor->close();
-                                ?>
- 
-                            <tr
-                                data-request-id="<?= (int)$row['request_id'] ?>"
-                                data-lmr-no="<?= htmlspecialchars($row['lmr_no'], ENT_QUOTES) ?>"
-                                data-status="<?= htmlspecialchars(strtolower(trim($row['status'])), ENT_QUOTES) ?>"
-                                data-order-status="<?= htmlspecialchars(strtolower(trim($row['order_status'] ?? 'N/A')), ENT_QUOTES) ?>"
-                                data-priority="<?= htmlspecialchars($row['priority'] ?? '', ENT_QUOTES) ?>"
-                                data-category="<?= htmlspecialchars($row['category_name'] ?? '', ENT_QUOTES) ?>"
-                                data-category-id="<?= (int)($row['category_id'] ?? 0) ?>"
-                                data-po="<?= htmlspecialchars($row['po_no'] ?? '', ENT_QUOTES) ?>"
-                                data-company="<?= htmlspecialchars($row['company'], ENT_QUOTES) ?>"
-                                data-department="<?= htmlspecialchars($row['department'], ENT_QUOTES) ?>"
-                                data-item="<?= htmlspecialchars($row['item'], ENT_QUOTES) ?>"
-                                data-description="<?= htmlspecialchars($row['description'] ?? '', ENT_QUOTES) ?>"
-                                data-quantity="<?= htmlspecialchars($row['quantity'], ENT_QUOTES) ?>"
-                                data-uom="<?= htmlspecialchars($row['UoM'], ENT_QUOTES) ?>"
-                                data-date-needed="<?= htmlspecialchars($row['date_needed'], ENT_QUOTES) ?>"
-                                data-date-created="<?= htmlspecialchars($row['date_created'], ENT_QUOTES) ?>"
-                                data-remarks="<?= htmlspecialchars($row['remarks'] ?? '', ENT_QUOTES) ?>"
-                                data-purchaser-id="<?= (int)$row['purchaser_id'] ?>"
-                                data-purchaser-name="<?= htmlspecialchars($purchaser_name, ENT_QUOTES) ?>"
-                                data-requestor-name="<?= htmlspecialchars($requestor_name, ENT_QUOTES) ?>"
-                                style="cursor:pointer;"
-                            >
-                        <td onclick="event.stopPropagation();">
-                            <input 
-                                type="checkbox"
-                                class="request-checkbox"
-                                value="<?= (int)$row['request_id'] ?>"
-                            >
-                        </td>
-                            <td><?= htmlspecialchars($row['request_id']) ?></td>
-                            <td><?= htmlspecialchars($row['lmr_no']) ?></td>
-                            <td><?= htmlspecialchars($row['po_no']) ?></td>
-                            <td><?= htmlspecialchars($requestor_name) ?></td>
-                            
-                            <td><?= htmlspecialchars($row['department']) ?></td>
-                            <td><?= htmlspecialchars($row['item']) ?></td>
-                            <td>
-                                <?= htmlspecialchars($row['category_name'] ?? 'N/A') ?>
-                            </td>
-                            <!-- <td><?= $row['quantity'] ?></td> -->
-                            <!-- <td><?= htmlspecialchars($row['UoM']) ?></td> -->
-                            <td>
-                                <?php if ($purchaser_id == 1): ?>
-                                    <span class="unassigned-purchaser">
-                                        Unassigned
-                                    </span>
-                                <?php else: ?>
-                                    <?= htmlspecialchars($purchaser_name) ?>
-                                <?php endif; ?>
-                            </td>
-                            <td class="priority-cell">
-                                <?php
-                                    $priority = strtolower(trim($row['priority'] ?? ''));
+                            $stmtPurchaser->close();
+                        }
 
-                                    $priorityClass = match ($priority) {
-                                        'urgent' => 'priority-urgent',
-                                        'high'   => 'priority-high',
-                                        'medium' => 'priority-medium',
-                                        default  => 'priority-default'
-                                    };
+                        $createdById = (int)$row['created_by'];
 
-                                    echo '<span class="priority-badge ' . $priorityClass . '">' .
-                                        htmlspecialchars(ucfirst($priority)) .
-                                        '</span>';
-                                ?>
-                            </td>
-                            <td>
-                                <?php 
-                                    $status = strtolower(trim($row['status']));
+                        $stmtRequestor = $conn->prepare("
+                            SELECT fullname
+                            FROM user_tb
+                            WHERE user_id = ?
+                            LIMIT 1
+                        ");
 
-                                    switch ($status) {
-                                        case 'proceed request':
-                                            $statusClass = 'badge-proceed';
-                                            break;
+                        $stmtRequestor->bind_param("i", $createdById);
+                        $stmtRequestor->execute();
 
-                                        case 'checking requirements':
-                                        case 'canvassing':
-                                            $statusClass = 'badge-checking';
-                                            break;
+                        $requestorResult = $stmtRequestor->get_result();
+                        $requestor = $requestorResult->fetch_assoc();
 
-                                        case 'negotiation':
-                                        case 'draft po under discussion':
-                                            $statusClass = 'badge-negotiation';
-                                            break;
+                        $requestor_name = $requestor['fullname'] ?? 'Unknown';
 
-                                        case 'draft po approved':
-                                            $statusClass = 'badge-draft';
-                                            break;
+                        $stmtRequestor->close();
+                            ?>
 
-                                        case 'final po approved':
-                                            $statusClass = 'badge-proceed';
-                                            break;
-
-                                        case 'pending':
-                                            $statusClass = 'badge-pending';
-                                            break;
-
-                                        case 'end':
-                                        case 'closed':
-                                            $statusClass = 'badge-closed';
-                                            break;
-
-                                        case 'rejected':
-                                            $statusClass = 'badge-canceled';
-                                            break;
-
-                                        default:
-                                            $statusClass = 'badge-pending';
-                                            break;
-                                    }
-                                ?>
-
-                                <span class="badge <?= $statusClass ?>" style="width: 100%;">
-                                    <?= ucfirst($row['status']) ?>
-                                </span>
-                            </td>
-                            <td>
-                                <?php
-                                $orderStatus = trim($row['order_status'] ?? 'N/A');
-                                ?>
-
-                                <span class="badge bg-secondary">
-                                    <?= htmlspecialchars($orderStatus) ?>
-                                </span>
-                            </td>
-                            <td><?= date('m-d-Y', strtotime($row['date_created'])) ?></td>
-                            <!-- <td><?= date('m-d-Y', strtotime( $row['date_needed'])) ?></td> -->
-                            <!-- <td><?= htmlspecialchars($row['remarks'] ?? '-') ?></td> -->
-                            <td onclick="event.stopPropagation();">
-
-                                <a href="?page=ticket/view_purch_request&request_id=<?= (int)$row['request_id'] ?>"
-                                class="btn btn-sm btn-primary"
-                                title="View">
-                                    <i class="fas fa-eye"></i>
-                                </a>
-
-                                <?php
-                                $isLocalUser =
-                                    (int)$row['created_by'] === (int)$_SESSION['user_id'];
-
-                                $isPending =
-                                    strcasecmp(trim($row['status']), 'pending') === 0;
-                                ?>
-
-                                <?php if ($isLocalUser && $isPending): ?>
-                                    <a href="?page=ticket/includes/edit_request&request_id=<?= (int)$row['request_id'] ?>"
-                                    class="btn btn-sm btn-warning"
-                                    title="Edit">
-                                        <i class="fas fa-edit"></i>
-                                    </a>
-                                <?php endif; ?>
-
-                                <button
-                                    type="button"
-                                    class="btn btn-sm btn-success btn-print"
-                                    data-lmr="<?= htmlspecialchars($row['lmr_no']) ?>"
-                                    data-status="<?= htmlspecialchars(strtolower(trim($row['status']))) ?>"
-                                    title="Print">
-                                    <i class="fas fa-print"></i>
-                                </button>
-
-                            </td>
-
-                        </tr>
-                            <?php endwhile; ?>
-                        <?php else: ?>
+                        <tr
+                            data-request-id="<?= (int)$row['request_id'] ?>"
+                            data-lmr-no="<?= htmlspecialchars($row['lmr_no'], ENT_QUOTES) ?>"
+                            data-status="<?= htmlspecialchars(strtolower(trim($row['status'])), ENT_QUOTES) ?>"
+                            data-order-status="<?= htmlspecialchars(strtolower(trim($row['order_status'] ?? 'N/A')), ENT_QUOTES) ?>"
+                            data-priority="<?= htmlspecialchars($row['priority'] ?? '', ENT_QUOTES) ?>"
+                            data-category="<?= htmlspecialchars($row['category_name'] ?? '', ENT_QUOTES) ?>"
+                            data-category-id="<?= (int)($row['category_id'] ?? 0) ?>"
+                            data-po="<?= htmlspecialchars($row['po_no'] ?? '', ENT_QUOTES) ?>"
+                            data-company="<?= htmlspecialchars($row['company'], ENT_QUOTES) ?>"
+                            data-department="<?= htmlspecialchars($row['department'], ENT_QUOTES) ?>"
+                            data-item="<?= htmlspecialchars($row['item'], ENT_QUOTES) ?>"
+                            data-description="<?= htmlspecialchars($row['description'] ?? '', ENT_QUOTES) ?>"
+                            data-quantity="<?= htmlspecialchars($row['quantity'], ENT_QUOTES) ?>"
+                            data-uom="<?= htmlspecialchars($row['UoM'], ENT_QUOTES) ?>"
+                            data-date-needed="<?= htmlspecialchars($row['date_needed'], ENT_QUOTES) ?>"
+                            data-date-created="<?= htmlspecialchars($row['date_created'], ENT_QUOTES) ?>"
+                            data-remarks="<?= htmlspecialchars($row['remarks'] ?? '', ENT_QUOTES) ?>"
+                            data-purchaser-id="<?= (int)$row['purchaser_id'] ?>"
+                            data-purchaser-name="<?= htmlspecialchars($purchaser_name, ENT_QUOTES) ?>"
+                            data-requestor-name="<?= htmlspecialchars($requestor_name, ENT_QUOTES) ?>"
+                            style="cursor:pointer;"
+                        >
+                    <td onclick="event.stopPropagation();">
+                        <input 
+                            type="checkbox"
+                            class="request-checkbox"
+                            value="<?= (int)$row['request_id'] ?>"
+                        >
+                    </td>
+                        <td><?= htmlspecialchars($row['request_id']) ?></td>
+                        <td><?= htmlspecialchars($row['lmr_no']) ?></td>
+                        <td><?= htmlspecialchars($row['po_no']) ?></td>
+                        <td><?= htmlspecialchars($requestor_name) ?></td>
                         
-                        <?php endif; ?>
-                    </tbody>
-                </table>
-            </div>
+                        <td><?= htmlspecialchars($row['department']) ?></td>
+                        <td><?= htmlspecialchars($row['item']) ?></td>
+                        <td>
+                            <?= htmlspecialchars($row['category_name'] ?? 'N/A') ?>
+                        </td>
+                        <!-- <td><?= $row['quantity'] ?></td> -->
+                        <!-- <td><?= htmlspecialchars($row['UoM']) ?></td> -->
+                        <td>
+                            <?php if ($purchaser_id == 1): ?>
+                                <span class="unassigned-purchaser">
+                                    Unassigned
+                                </span>
+                            <?php else: ?>
+                                <?= htmlspecialchars($purchaser_name) ?>
+                            <?php endif; ?>
+                        </td>
+                        <td class="priority-cell">
+                            <?php
+                                $priority = strtolower(trim($row['priority'] ?? ''));
+
+                                $priorityClass = match ($priority) {
+                                    'urgent' => 'priority-urgent',
+                                    'high'   => 'priority-high',
+                                    'medium' => 'priority-medium',
+                                    default  => 'priority-default'
+                                };
+
+                                echo '<span class="priority-badge ' . $priorityClass . '">' .
+                                    htmlspecialchars(ucfirst($priority)) .
+                                    '</span>';
+                            ?>
+                        </td>
+                        <td>
+                            <?php 
+                                $status = strtolower(trim($row['status']));
+
+                                switch ($status) {
+                                    case 'proceed request':
+                                        $statusClass = 'badge-proceed';
+                                        break;
+
+                                    case 'checking requirements':
+                                    case 'canvassing':
+                                        $statusClass = 'badge-checking';
+                                        break;
+
+                                    case 'negotiation':
+                                    case 'draft po under discussion':
+                                        $statusClass = 'badge-negotiation';
+                                        break;
+
+                                    case 'draft po approved':
+                                        $statusClass = 'badge-draft';
+                                        break;
+
+                                    case 'final po approved':
+                                        $statusClass = 'badge-proceed';
+                                        break;
+
+                                    case 'pending':
+                                        $statusClass = 'badge-pending';
+                                        break;
+
+                                    case 'end':
+                                    case 'closed':
+                                        $statusClass = 'badge-closed';
+                                        break;
+
+                                    case 'rejected':
+                                        $statusClass = 'badge-canceled';
+                                        break;
+
+                                    default:
+                                        $statusClass = 'badge-pending';
+                                        break;
+                                }
+                            ?>
+
+                            <span class="badge <?= $statusClass ?>" style="width: 100%;">
+                                <?= ucfirst($row['status']) ?>
+                            </span>
+                        </td>
+                        <td>
+                            <?php
+                            $orderStatus = trim($row['order_status'] ?? 'N/A');
+                            ?>
+
+                            <span class="badge bg-secondary">
+                                <?= htmlspecialchars($orderStatus) ?>
+                            </span>
+                        </td>
+                        <td><?= date('m-d-Y', strtotime($row['date_created'])) ?></td>
+                        <!-- <td><?= date('m-d-Y', strtotime( $row['date_needed'])) ?></td> -->
+                        <!-- <td><?= htmlspecialchars($row['remarks'] ?? '-') ?></td> -->
+                        <td onclick="event.stopPropagation();">
+
+                            <a href="?page=ticket/view_purch_request&request_id=<?= (int)$row['request_id'] ?>"
+                            class="btn btn-sm btn-primary"
+                            title="View">
+                                <i class="fas fa-eye"></i>
+                            </a>
+
+                            <?php
+                            $isLocalUser =
+                                (int)$row['created_by'] === (int)$_SESSION['user_id'];
+
+                            $isPending =
+                                strcasecmp(trim($row['status']), 'pending') === 0;
+                            ?>
+
+                            <?php if ($isLocalUser && $isPending): ?>
+                                <a href="?page=ticket/includes/edit_request&request_id=<?= (int)$row['request_id'] ?>"
+                                class="btn btn-sm btn-warning"
+                                title="Edit">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                            <?php endif; ?>
+
+                            <button
+                                type="button"
+                                class="btn btn-sm btn-success btn-print"
+                                data-lmr="<?= htmlspecialchars($row['lmr_no']) ?>"
+                                data-status="<?= htmlspecialchars(strtolower(trim($row['status']))) ?>"
+                                title="Print">
+                                <i class="fas fa-print"></i>
+                            </button>
+
+                        </td>
+
+                    </tr>
+                        <?php endwhile; ?>
+                    <?php else: ?>
+                    
+                    <?php endif; ?>
+                </tbody>
+            </table>
+        </div>
         </div>
     </div>
-    <!-- Context Menu -->
-    <!-- <div id="contextMenu" class="custom-menu">
-        <a href="#" id="deleteRequest" class="text-danger"><i class="fas fa-trash"></i> Delete Request</a>
-    </div> -->
 
     <!-- =========================================================
         REQUEST DETAILS MODAL
@@ -1142,313 +1173,306 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
     </div>
 
     <!-- =========================================================
-        BULK UPDATE MODAL
-        ========================================================= -->
-        <div class="modal fade" id="bulkUpdateModal" tabindex="-1"
-            aria-labelledby="bulkUpdateModalLabel" aria-hidden="true">
+    BULK UPDATE MODAL
+    ========================================================= -->
+    <div class="modal fade" id="bulkUpdateModal" tabindex="-1"
+        aria-labelledby="bulkUpdateModalLabel" aria-hidden="true">
 
         <div class="modal-dialog modal-lg modal-dialog-centered">
 
-            <div class="modal-content">
+        <div class="modal-content">
 
-                <div class="modal-header bg-gradient-primary text-white">
+            <div class="modal-header bg-gradient-primary text-white">
 
-                    <div>
-                        <h5 class="modal-title" id="bulkUpdateModalLabel">
-                            Bulk Update Requests
-                        </h5>
+                <div>
+                    <h5 class="modal-title" id="bulkUpdateModalLabel">
+                        Bulk Update Requests
+                    </h5>
 
-                        <small>
-                            Selected:
-                            <strong id="bulkSelectedCount">0</strong>
-                            requests
-                        </small>
-                    </div>
-
-                    <button type="button"
-                            class="btn-close btn-close-white"
-                            data-bs-dismiss="modal">
-                    </button>
-
+                    <small>
+                        Selected:
+                        <strong id="bulkSelectedCount">0</strong>
+                        requests
+                    </small>
                 </div>
 
-                <div class="modal-body">
+                <button type="button"
+                        class="btn-close btn-close-white"
+                        data-bs-dismiss="modal">
+                </button>
 
-                    <div class="alert alert-info">
-                        Leave a field unchanged if you do not want to modify it.
+            </div>
+
+            <div class="modal-body">
+
+                <div class="alert alert-info">
+                    Leave a field unchanged if you do not want to modify it.
+                </div>
+
+                <div class="row g-3">
+                    <!-- PURCHASER -->
+                    <div class="col-md-4">
+
+                        <label class="form-label fw-bold">
+                            Assigned Purchaser
+                        </label>
+
+                        <select id="bulkPurchaser"
+                                class="form-select">
+
+                            <option value="">
+                                No Change
+                            </option>
+
+                            <option value="1">
+                                Unassigned
+                            </option>
+
+                            <?php
+                            $bulkPurchaserQuery = $conn->query("
+                                SELECT user_id, fullname, company
+                                FROM user_tb
+                                WHERE department = 'Purchasing'
+                                AND is_active = 1
+                                ORDER BY company ASC, fullname ASC
+                            ");
+
+                            while ($bulkPurchaser = $bulkPurchaserQuery->fetch_assoc()):
+                            ?>
+
+                                <option value="<?= (int)$bulkPurchaser['user_id'] ?>">
+                                    <?= htmlspecialchars($bulkPurchaser['company']) ?> -
+                                    <?= htmlspecialchars($bulkPurchaser['fullname']) ?>
+                                </option>
+
+                            <?php endwhile; ?>
+
+                        </select>
+
                     </div>
 
-                    <div class="row g-3">
-                        <!-- PURCHASER -->
-                        <div class="col-md-4">
+                        <!-- CATEGORY -->
+                    <div class="col-md-4">
 
-                            <label class="form-label fw-bold">
-                                Assigned Purchaser
-                            </label>
+                        <label class="form-label fw-bold">
+                            Category
+                        </label>
 
-                            <select id="bulkPurchaser"
-                                    class="form-select">
+                        <select id="bulkCategory"
+                                class="form-select">
 
-                                <option value="">
-                                    No Change
+                            <option value="">
+                                No Change
+                            </option>
+
+                            <?php foreach ($filterCategories as $category): ?>
+
+                                <option value="<?= (int)$category['category_id'] ?>">
+                                    <?= htmlspecialchars($category['category_name']) ?>
                                 </option>
 
-                                <option value="1">
-                                    Unassigned
-                                </option>
+                            <?php endforeach; ?>
 
-                                <?php
-                                $bulkPurchaserQuery = $conn->query("
-                                    SELECT user_id, fullname, company
-                                    FROM user_tb
-                                    WHERE department = 'Purchasing'
-                                    AND is_active = 1
-                                    ORDER BY company ASC, fullname ASC
-                                ");
+                        </select>
 
-                                while ($bulkPurchaser = $bulkPurchaserQuery->fetch_assoc()):
-                                ?>
+                    </div>
+                    <!-- PRIORITY -->
+                    <div class="col-md-4">
 
-                                    <option value="<?= (int)$bulkPurchaser['user_id'] ?>">
-                                        <?= htmlspecialchars($bulkPurchaser['company']) ?> -
-                                        <?= htmlspecialchars($bulkPurchaser['fullname']) ?>
-                                    </option>
+                        <label class="form-label fw-bold">
+                            Priority
+                        </label>
 
-                                <?php endwhile; ?>
+                        <select id="bulkPriority"
+                                class="form-select">
 
-                            </select>
+                            <option value="">
+                                No Change
+                            </option>
 
-                        </div>
+                            <option value="urgent">
+                                Urgent
+                            </option>
 
-                         <!-- CATEGORY -->
-                        <div class="col-md-4">
+                            <option value="high">
+                                High
+                            </option>
 
-                            <label class="form-label fw-bold">
-                                Category
-                            </label>
+                            <option value="medium">
+                                Medium
+                            </option>
 
-                            <select id="bulkCategory"
-                                    class="form-select">
+                        </select>
 
-                                <option value="">
-                                    No Change
-                                </option>
+                    </div>
+                    <!-- STATUS -->
+                    <div class="col-md-4">
 
-                                <?php foreach ($filterCategories as $category): ?>
+                        <label class="form-label fw-bold">
+                            Status
+                        </label>
 
-                                    <option value="<?= (int)$category['category_id'] ?>">
-                                        <?= htmlspecialchars($category['category_name']) ?>
-                                    </option>
+                        <select id="bulkStatus"
+                                class="form-select">
 
-                                <?php endforeach; ?>
+                            <option value="">
+                                No Change
+                            </option>
 
-                            </select>
+                            <option value="pending">
+                                Pending
+                            </option>
 
-                        </div>
-                        <!-- PRIORITY -->
-                        <div class="col-md-4">
+                            <option value="checking requirements">
+                                Checking Requirements
+                            </option>
 
-                            <label class="form-label fw-bold">
-                                Priority
-                            </label>
+                            <option value="canvassing">
+                                Canvassing
+                            </option>
 
-                            <select id="bulkPriority"
-                                    class="form-select">
+                            <option value="negotiation">
+                                Negotiation
+                            </option>
 
-                                <option value="">
-                                    No Change
-                                </option>
+                            <option value="draft po under discussion">
+                                Draft PO Under Discussion
+                            </option>
 
-                                <option value="urgent">
-                                    Urgent
-                                </option>
+                            <option value="draft po approved">
+                                Draft PO Approved
+                            </option>
 
-                                <option value="high">
-                                    High
-                                </option>
+                            <option value="final po approved">
+                                Final PO Approved
+                            </option>
 
-                                <option value="medium">
-                                    Medium
-                                </option>
+                            <option value="rejected">
+                                Rejected
+                            </option>
 
-                            </select>
+                            <!-- <option value="closed">
+                                Closed
+                            </option> -->
 
-                        </div>
-                        <!-- STATUS -->
-                        <div class="col-md-4">
+                        </select>
 
-                            <label class="form-label fw-bold">
-                                Status
-                            </label>
+                    </div>
+                    <!-- ORDER STATUS -->
+                    <div class="col-md-4">
 
-                            <select id="bulkStatus"
-                                    class="form-select">
+                        <label class="form-label fw-bold">
+                            Order Status
+                        </label>
 
-                                <option value="">
-                                    No Change
-                                </option>
-
-                                <option value="pending">
-                                    Pending
-                                </option>
-
-                                <option value="checking requirements">
-                                    Checking Requirements
-                                </option>
-
-                                <option value="canvassing">
-                                    Canvassing
-                                </option>
-
-                                <option value="negotiation">
-                                    Negotiation
-                                </option>
-
-                                <option value="draft po under discussion">
-                                    Draft PO Under Discussion
-                                </option>
-
-                                <option value="draft po approved">
-                                    Draft PO Approved
-                                </option>
-
-                                <option value="final po approved">
-                                    Final PO Approved
-                                </option>
-
-                                <option value="rejected">
-                                    Rejected
-                                </option>
-
-                                <!-- <option value="closed">
-                                    Closed
-                                </option> -->
-
-                            </select>
-
-                        </div>
-                        <!-- ORDER STATUS -->
-                        <div class="col-md-4">
-
-                            <label class="form-label fw-bold">
-                                Order Status
-                            </label>
-
-                            <select id="bulkOrderStatus"
-                                    class="form-select"
-                                    disabled>
-
-                                <option value="">
-                                    No Change
-                                </option>
-
-                                <option value="n/a">
-                                    N/A
-                                </option>
-
-                                <option value="order acknowledged">
-                                    Order Acknowledged
-                                </option>
-
-                                <!-- <option value="goods delivered">
-                                    Goods Delivered
-                                </option> -->
-
-                                <option value="goods received">
-                                    Goods Received
-                                </option>
-
-                                <option value="payment processing">
-                                    Payment Processing
-                                </option>
-
-                                <option value="payment issued">
-                                    Payment Issued
-                                </option>
-
-                                <option value="closed">
-                                    Closed
-                                </option>
-
-                            </select>
-
-                        </div>
-
-                        <!-- PO NUMBER -->
-                        <div class="col-md-4">
-
-                            <label class="form-label fw-bold">
-                                PO Number
-                            </label>
-
-                            <input type="text"
-                                id="bulkPO"
-                                class="form-control"
-                                placeholder="Required when status is Final PO Approved"
+                        <select id="bulkOrderStatus"
+                                class="form-select"
                                 disabled>
-                        </div>
-                        <!-- COMMENT -->
-                        <div class="col-12">
 
-                            <label class="form-label fw-bold">
-                                Comment
-                                <span class="text-muted fw-normal">(Optional)</span>
-                            </label>
+                            <option value="">
+                                No Change
+                            </option>
 
-                            <textarea
-                                id="bulkChangeComment"
-                                class="form-control"
-                                rows="3"
-                                maxlength="2000"
-                                placeholder="Add a comment about this bulk update..."
-                            ></textarea>
+                            <option value="n/a">
+                                N/A
+                            </option>
 
-                            <small class="text-muted">
-                                This comment will be added to the request history of every selected request.
-                            </small>
+                            <option value="order acknowledged">
+                                Order Acknowledged
+                            </option>
 
-                        </div>
+                            <!-- <option value="goods delivered">
+                                Goods Delivered
+                            </option> -->
+
+                            <option value="goods received">
+                                Goods Received
+                            </option>
+
+                            <option value="payment processing">
+                                Payment Processing
+                            </option>
+
+                            <option value="payment issued">
+                                Payment Issued
+                            </option>
+
+                            <option value="closed">
+                                Closed
+                            </option>
+
+                        </select>
 
                     </div>
 
+                    <!-- PO NUMBER -->
+                    <div class="col-md-4">
 
-                    <div id="bulkUpdateMessage"
-                        class="alert d-none mt-4 mb-0">
+                        <label class="form-label fw-bold">
+                            PO Number
+                        </label>
+
+                        <input type="text"
+                            id="bulkPO"
+                            class="form-control"
+                            placeholder="Required when status is Final PO Approved"
+                            disabled>
+                    </div>
+                    <!-- COMMENT -->
+                    <div class="col-12">
+
+                        <label class="form-label fw-bold">
+                            Comment
+                            <span class="text-muted fw-normal">(Optional)</span>
+                        </label>
+
+                        <textarea
+                            id="bulkChangeComment"
+                            class="form-control"
+                            rows="3"
+                            maxlength="2000"
+                            placeholder="Add a comment about this bulk update..."
+                        ></textarea>
+
+                        <small class="text-muted">
+                            This comment will be added to the request history of every selected request.
+                        </small>
+
                     </div>
 
                 </div>
 
 
-                <div class="modal-footer">
-
-                    <button type="button"
-                            class="btn btn-secondary"
-                            data-bs-dismiss="modal">
-                        Cancel
-                    </button>
-
-                    <button type="button"
-                            class="btn btn-primary"
-                            id="confirmBulkUpdate">
-
-                        <i class="fas fa-save me-1"></i>
-                        Update Selected
-
-                    </button>
-
+                <div id="bulkUpdateMessage"
+                    class="alert d-none mt-4 mb-0">
                 </div>
+
+            </div>
+
+
+            <div class="modal-footer">
+
+                <button type="button"
+                        class="btn btn-secondary"
+                        data-bs-dismiss="modal">
+                    Cancel
+                </button>
+
+                <button type="button"
+                        class="btn btn-primary"
+                        id="confirmBulkUpdate">
+
+                    <i class="fas fa-save me-1"></i>
+                    Update Selected
+
+                </button>
 
             </div>
 
         </div>
 
     </div>
-
-    <!-- <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script> -->
-
+    </div>
 
 <script>
 $(document).ready(function () {
@@ -1893,73 +1917,73 @@ $(document).ready(function () {
 
         return rowStatus === selectedStatus;
     });
-// =====================================================
-// GET BULK SELECTED ROWS
-// =====================================================
+        // =====================================================
+        // GET BULK SELECTED ROWS
+        // =====================================================
 
-function getBulkSelectedRows() {
+        function getBulkSelectedRows() {
 
-    const selectedRows = [];
+            const selectedRows = [];
 
-    table.rows().every(function () {
+            table.rows().every(function () {
 
-        const row = $(this.node());
+                const row = $(this.node());
 
-        const checkbox =
-            row.find('.request-checkbox');
+                const checkbox =
+                    row.find('.request-checkbox');
 
-        if (checkbox.prop('checked')) {
-            selectedRows.push(row);
+                if (checkbox.prop('checked')) {
+                    selectedRows.push(row);
+                }
+
+            });
+
+            return selectedRows;
         }
 
-    });
 
-    return selectedRows;
-}
+        // =====================================================
+        // CHECK BULK SELECTED DETAILS
+        // =====================================================
 
+        function getBulkRowDetails(row) {
 
-// =====================================================
-// CHECK BULK SELECTED DETAILS
-// =====================================================
+            return {
 
-function getBulkRowDetails(row) {
+                purchaserId:
+                    (row.attr('data-purchaser-id') || '')
+                        .toString()
+                        .trim(),
 
-    return {
+                categoryId:
+                    (row.attr('data-category-id') || '')
+                        .toString()
+                        .trim(),
 
-        purchaserId:
-            (row.attr('data-purchaser-id') || '')
-                .toString()
-                .trim(),
+                priority:
+                    (row.attr('data-priority') || '')
+                        .toString()
+                        .toLowerCase()
+                        .trim(),
 
-        categoryId:
-            (row.attr('data-category-id') || '')
-                .toString()
-                .trim(),
+                status:
+                    (row.attr('data-status') || '')
+                        .toString()
+                        .toLowerCase()
+                        .trim(),
 
-        priority:
-            (row.attr('data-priority') || '')
-                .toString()
-                .toLowerCase()
-                .trim(),
+                orderStatus:
+                    (row.attr('data-order-status') || 'n/a')
+                        .toString()
+                        .toLowerCase()
+                        .trim(),
 
-        status:
-            (row.attr('data-status') || '')
-                .toString()
-                .toLowerCase()
-                .trim(),
-
-        orderStatus:
-            (row.attr('data-order-status') || 'n/a')
-                .toString()
-                .toLowerCase()
-                .trim(),
-
-        po:
-            (row.attr('data-po') || '')
-                .toString()
-                .trim()
-    };
-}
+                po:
+                    (row.attr('data-po') || '')
+                        .toString()
+                        .trim()
+            };
+        }
 
 
         // =====================================================
@@ -2104,57 +2128,13 @@ function getBulkRowDetails(row) {
 
         });
 
-        // =====================================================
-        // OPEN BULK UPDATE MODAL
-        // =====================================================
-        // $('#bulkUpdateBtn').on('click', function () {
-
-        //     const selectedCount =
-        //         $('#requestsTable tbody .request-checkbox:checked').length;
-
-        //     if (selectedCount === 0) {
-
-        //         alert('Please select at least one request.');
-
-        //         return;
-        //     }
-
-        //     $('#bulkSelectedCount').text(selectedCount);
-
-        //     $('#bulkUpdateMessage')
-        //         .addClass('d-none')
-        //         .removeClass('alert-success alert-danger')
-        //         .text('');
-
-        //     $('#bulkStatus').val('');
-        //     $('#bulkPriority').val('');
-        //     $('#bulkPurchaser').val('');
-        //     $('#bulkCategory').val('');
-        //     $('#bulkOrderStatus').val('');
-        //     $('#bulkPO').val('');
-
-        //     updateBulkFinalPOControls();
-
-        //     const bulkModal =
-        //         new bootstrap.Modal(
-        //             document.getElementById('bulkUpdateModal')
-        //         );
-
-        //     bulkModal.show();
-        // });
-
-
-    // =====================================================
-    // EXPORT PURCHASING REQUESTS TO CSV
-    // Exports only the currently filtered/visible requests
-    // =====================================================
-
+        
         // =====================================================
         // EXPORT PURCHASING REQUESTS TO CSV
         // Exports only the currently filtered requests
         // =====================================================
 
-        function exportPurchasingCSV() {
+    function exportPurchasingCSV() {
 
             const rows = [];
 
@@ -2673,31 +2653,31 @@ function getBulkRowDetails(row) {
     // FORMAT STATUS
     // =====================================================
 
-function formatStatus(status) {
+    function formatStatus(status) {
 
-    if (!status) {
-        return '-';
-    }
+            if (!status) {
+                return '-';
+            }
 
-    status = status.toString().trim();
+            status = status.toString().trim();
 
-    // N/A
-    if (
-        status.toLowerCase() === 'n/a' ||
-        status.toLowerCase() === 'na'
-    ) {
-        return 'N/A';
-    }
+            // N/A
+            if (
+                status.toLowerCase() === 'n/a' ||
+                status.toLowerCase() === 'na'
+            ) {
+                return 'N/A';
+            }
 
-    // Sentence case
-    status = status.toLowerCase();
-    status = status.charAt(0).toUpperCase() + status.slice(1);
+            // Sentence case
+            status = status.toLowerCase();
+            status = status.charAt(0).toUpperCase() + status.slice(1);
 
-    // Always keep PO uppercase
-    status = status.replace(/\bpo\b/gi, 'PO');
+            // Always keep PO uppercase
+            status = status.replace(/\bpo\b/gi, 'PO');
 
-    return status;
-}
+            return status;
+        }
 
     // =====================================================
     // CHECK FOR CHANGES
@@ -2944,9 +2924,9 @@ function formatStatus(status) {
             button.html(
                 '<span class="spinner-border spinner-border-sm me-1"></span>' +
                 'Saving...'
-            );
+         );
 
-            $.ajax({
+    $.ajax({
                 url: 'ticket/includes/assign_request.php',
                 type: 'POST',
                 dataType: 'json',
@@ -3690,7 +3670,6 @@ function formatStatus(status) {
   
 
 </script>
-
 
 
 <?php $conn->close(); ?>
