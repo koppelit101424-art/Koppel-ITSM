@@ -1387,6 +1387,27 @@ while ($companyRow = $companyQuery->fetch_assoc()) {
                                 placeholder="Required when status is Final PO Approved"
                                 disabled>
                         </div>
+                        <!-- COMMENT -->
+                        <div class="col-12">
+
+                            <label class="form-label fw-bold">
+                                Comment
+                                <span class="text-muted fw-normal">(Optional)</span>
+                            </label>
+
+                            <textarea
+                                id="bulkChangeComment"
+                                class="form-control"
+                                rows="3"
+                                maxlength="2000"
+                                placeholder="Add a comment about this bulk update..."
+                            ></textarea>
+
+                            <small class="text-muted">
+                                This comment will be added to the request history of every selected request.
+                            </small>
+
+                        </div>
 
                     </div>
 
@@ -2658,6 +2679,7 @@ function formatStatus(status) {
             currentPO !== originalPO ||
             currentCategoryId !== originalCategoryId ||
             currentOrderStatus !== originalOrderStatus;
+             comment !== '';
 
         $('#saveRequestChanges').prop(
             'disabled',
@@ -2768,6 +2790,28 @@ function formatStatus(status) {
     // =====================================================
     // SAVE CHANGES
     // =====================================================
+        $('#modalChangeComment').on('input', function () {
+
+            const comment = $(this).val().trim();
+
+            const status = $('#modalStatus').val();
+            const purchaserId = $('#modalPurchaser').val();
+            const priority = $('#modalPriority').val();
+            const categoryId = $('#modalCategory').val();
+            const orderStatus = $('#modalOrderStatus').val();
+            const poNumber = $('#modalPO').val().trim();
+
+            const hasChanges =
+                status !== originalStatus ||
+                purchaserId !== originalPurchaserId ||
+                priority !== originalPriority ||
+                categoryId !== originalCategoryId ||
+                orderStatus !== originalOrderStatus ||
+                poNumber !== originalPO ||
+                comment !== '';
+
+            $('#saveRequestChanges').prop('disabled', !hasChanges);
+        });
 
     $('#saveRequestChanges').on('click', function () {
 
@@ -3054,7 +3098,7 @@ function formatStatus(status) {
                             '_blank'
                         );
 
-    });
+                });
 
     // =====================================================
     // PRINT
@@ -3133,22 +3177,26 @@ function formatStatus(status) {
 
         const poNumber =
             $('#bulkPO').val().trim();
+        const comment =
+            $('#bulkChangeComment').val().trim();
 
-        if (
-            status === '' &&
-            priority === '' &&
-            purchaserId === '' &&
-            categoryId === '' &&
-            orderStatus === '' &&
-            poNumber === ''
-        ){
+            if (
+                status === '' &&
+                priority === '' &&
+                purchaserId === '' &&
+                categoryId === '' &&
+                orderStatus === '' &&
+                poNumber === '' &&
+                comment === ''
+            ) {
 
-            alert(
-                'Please select or enter at least one field to update.'
-            );
+                alert(
+                    'Please select or enter at least one field to update.'
+                );
 
-            return;
-        }
+                return;
+            }
+
             if (status === 'final po approved' && poNumber === '') {
 
                 alert(
@@ -3219,7 +3267,8 @@ function formatStatus(status) {
             purchaser_id: purchaserId,
             category_id: categoryId,
             order_status: orderStatus,
-            po_no: poNumber
+            po_no: poNumber,
+            comment: comment
         },
 
             success: function (response) {
