@@ -400,15 +400,30 @@ if (!empty($requestIds)) {
             Purchasing Request
         </span>
 
-        <a href="?page=ticket/purch_lmr"
-           class="btn btn-secondary btn-sm">
+        <div class="d-flex gap-2">
 
-            <i class="fas fa-arrow-left me-1"></i>
-            Back to Requests
+            <!-- Export Activity Logs -->
+            <a
+                href="ticket/export_purch_activity.php?request_id=<?= (int)$request_id ?>"
+                class="btn btn-success btn-sm"
+            >
+                <i class="fas fa-file-csv me-1"></i>
+                Export Activity CSV
+            </a>
 
-        </a>
+            <!-- Back -->
+            <a
+                href="?page=ticket/purch_lmr"
+                class="btn btn-secondary btn-sm"
+            >
+                <i class="fas fa-arrow-left me-1"></i>
+                Back to Requests
+            </a>
+
+        </div>
 
     </div>
+
 
 
     <!-- =====================================================
@@ -416,273 +431,264 @@ if (!empty($requestIds)) {
     ====================================================== -->
 
     <div class="card-body">
-
         <div class="row g-4">
-
-
             <!-- =================================================
                  LEFT CARD
             ================================================== -->
 
-            <div class="col-lg-7">
-
+            <div class="col-lg-8">
                 <div class="card h-100 shadow-sm">
-
                     <div class="card-header bg-light">
-
                         <strong>
                             <i class="fas fa-info-circle me-2"></i>
                             Request Details
                         </strong>
-
                     </div>
-
-
                     <div class="card-body">
 
 
-                        <!-- =====================================
-                             GENERAL INFORMATION
-                        ====================================== -->
+                    <!-- =====================================
+                            GENERAL INFORMATION
+                    ====================================== -->
 
                         <div class="row">
-                            <!-- REQUEST ID -->
-                            <!-- <div class="col-md-6">
+                        <!-- REQUEST ID -->
+                        <!-- <div class="col-md-6">
 
-                                <div class="request-label">
-                                    Request ID
-                                </div>
-
-                                <div class="request-value fw-bold">
-                                    <?= (int)$request['request_id'] ?>
-                                </div>
-
-                            </div> -->
-                            <!-- LMR -->
-                            <div class="col-md-6">
-
-                                <div class="request-label">
-                                    LMR No.
-                                </div>
-
-                                <div class="request-value fw-bold">
-                                    <?= htmlspecialchars($lmr_no) ?>
-                                </div>
-
+                            <div class="request-label">
+                                Request ID
                             </div>
 
-
-                            <!-- REQUESTOR -->
-                            <div class="col-md-6">
-
-                                <div class="request-label">
-                                    Requestor
-                                </div>
-
-                                <div class="request-value">
-                                    <?= htmlspecialchars(
-                                        $request['fullname']
-                                        ?: $request['requestor']
-                                        ?: ''
-                                    ) ?>
-                                </div>
-
+                            <div class="request-value fw-bold">
+                                <?= (int)$request['request_id'] ?>
                             </div>
 
+                        </div> -->
+                        <!-- LMR -->
+                        <div class="col-md-6">
 
-                            <!-- COMPANY -->
-                            <div class="col-md-6">
-
-                                <div class="request-label">
-                                    Company
-                                </div>
-
-                                <div class="request-value">
-                                    <?= htmlspecialchars(
-                                        $request['company'] ?? ''
-                                    ) ?>
-                                </div>
-
+                            <div class="request-label">
+                                LMR No.
                             </div>
 
-
-                            <!-- DEPARTMENT -->
-                            <div class="col-md-6">
-
-                                <div class="request-label">
-                                    Department
-                                </div>
-
-                                <div class="request-value">
-                                    <?= htmlspecialchars(
-                                        $request['department'] ?? ''
-                                    ) ?>
-                                </div>
-
+                            <div class="request-value fw-bold">
+                                <?= htmlspecialchars($lmr_no) ?>
                             </div>
 
+                        </div>
 
-                            <!-- PURCHASER -->
-                            <div class="col-md-6">
 
-                                <div class="request-label">
-                                    Assigned Purchaser
-                                </div>
+                        <!-- REQUESTOR -->
+                        <div class="col-md-6">
 
-                                <div class="request-value">
-
-                                    <?= htmlspecialchars(
-                                        $request['purchaser_name']
-                                        ?: 'Unassigned'
-                                    ) ?>
-
-                                </div>
-
+                            <div class="request-label">
+                                Requestor
                             </div>
 
-
-                            <!-- STATUS -->
-                            <div class="col-md-3">
-
-                                <div class="request-label">
-                                    Status
-                                </div>
-
-                                <div class="request-value">
-
-                                    <?php
-                                    $status = strtolower(
-                                        trim($request['status'] ?? '')
-                                    );
-
-                                    $statusClass = match ($status) {
-
-                                        'pending' =>
-                                            'bg-warning text-dark',
-
-                                        'checking requirements' =>
-                                            'bg-info text-dark',
-
-                                        'canvassing' =>
-                                            'bg-primary',
-
-                                        'negotiation' =>
-                                            'bg-purple',
-
-                                        'draft po under discussion' =>
-                                            'bg-warning text-dark',
-
-                                        'draft po approved' =>
-                                            'bg-success',
-
-                                        'final po approved' =>
-                                            'bg-success',
-
-                                        'rejected' =>
-                                            'bg-danger',
-
-                                        'closed' =>
-                                            'bg-secondary',
-
-                                        default =>
-                                            'bg-secondary'
-                                    };
-                                    ?>
-
-                                    <span class="badge <?= $statusClass ?>">
-                                        <?= htmlspecialchars(
-                                            formatStatus($status)
-                                        ) ?>
-                                    </span>
-
-                                </div>
-
+                            <div class="request-value">
+                                <?= htmlspecialchars(
+                                    $request['fullname']
+                                    ?: $request['requestor']
+                                    ?: ''
+                                ) ?>
                             </div>
 
+                        </div>
 
-                            <!-- PRIORITY -->
-                            <div class="col-md-3">
 
-                                <div class="request-label">
-                                    Priority
-                                </div>
+                        <!-- COMPANY -->
+                        <div class="col-md-6">
 
-                                <div class="request-value">
-
-                                    <?php
-                                    $priority =
-                                        strtolower(
-                                            trim(
-                                                $request['priority'] ?? ''
-                                            )
-                                        );
-
-                                    $priorityClass = 'bg-secondary';
-
-                                    if ($priority === 'urgent') {
-                                        $priorityClass = 'bg-danger';
-                                    } elseif ($priority === 'high') {
-                                        $priorityClass = 'bg-warning text-dark';
-                                    } elseif ($priority === 'medium') {
-                                        $priorityClass = 'bg-info text-dark';
-                                    }
-                                    ?>
-
-                                    <span class="badge <?= $priorityClass ?>">
-
-                                        <?= htmlspecialchars(
-                                            ucfirst($priority)
-                                        ) ?>
-
-                                    </span>
-
-                                </div>
-
+                            <div class="request-label">
+                                Company
                             </div>
 
-
-                            <!-- PO NUMBER -->
-                            <div class="col-md-6">
-
-                                <div class="request-label">
-                                    PO Number
-                                </div>
-
-                                <div class="request-value">
-
-                                    <?= !empty($request['po_no'])
-                                        ? htmlspecialchars($request['po_no'])
-                                        : '<span class="text-muted">Not yet assigned</span>'
-                                    ?>
-
-                                </div>
-
+                            <div class="request-value">
+                                <?= htmlspecialchars(
+                                    $request['company'] ?? ''
+                                ) ?>
                             </div>
 
+                        </div>
 
-                            <!-- DATE CREATED -->
-                            <div class="col-md-6">
 
-                                <div class="request-label">
-                                    Date Created
-                                </div>
+                        <!-- DEPARTMENT -->
+                        <div class="col-md-6">
 
-                                <div class="request-value">
+                            <div class="request-label">
+                                Department
+                            </div>
 
-                                    <?= htmlspecialchars(
-                                        $request['date_created'] ?? ''
-                                    ) ?>
+                            <div class="request-value">
+                                <?= htmlspecialchars(
+                                    $request['department'] ?? ''
+                                ) ?>
+                            </div>
 
-                                </div>
+                        </div>
+
+
+                        <!-- PURCHASER -->
+                        <div class="col-md-6">
+
+                            <div class="request-label">
+                                Assigned Purchaser
+                            </div>
+
+                            <div class="request-value">
+
+                                <?= htmlspecialchars(
+                                    $request['purchaser_name']
+                                    ?: 'Unassigned'
+                                ) ?>
 
                             </div>
 
                         </div>
 
-                        <hr>
-                        <!-- =====================================
-                             ITEMS
-                        ====================================== -->
+
+                        <!-- STATUS -->
+                        <div class="col-md-3">
+
+                            <div class="request-label">
+                                Status
+                            </div>
+
+                            <div class="request-value">
+
+                                <?php
+                                $status = strtolower(
+                                    trim($request['status'] ?? '')
+                                );
+
+                                $statusClass = match ($status) {
+
+                                    'pending' =>
+                                        'bg-warning text-dark',
+
+                                    'checking requirements' =>
+                                        'bg-info text-dark',
+
+                                    'canvassing' =>
+                                        'bg-primary',
+
+                                    'negotiation' =>
+                                        'bg-purple',
+
+                                    'draft po under discussion' =>
+                                        'bg-warning text-dark',
+
+                                    'draft po approved' =>
+                                        'bg-success',
+
+                                    'final po approved' =>
+                                        'bg-success',
+
+                                    'rejected' =>
+                                        'bg-danger',
+
+                                    'closed' =>
+                                        'bg-secondary',
+
+                                    default =>
+                                        'bg-secondary'
+                                };
+                                ?>
+
+                                <span class="badge <?= $statusClass ?>">
+                                    <?= htmlspecialchars(
+                                        formatStatus($status)
+                                    ) ?>
+                                </span>
+
+                            </div>
+
+                        </div>
+
+
+                        <!-- PRIORITY -->
+                        <div class="col-md-3">
+
+                            <div class="request-label">
+                                Priority
+                            </div>
+
+                            <div class="request-value">
+
+                                <?php
+                                $priority =
+                                    strtolower(
+                                        trim(
+                                            $request['priority'] ?? ''
+                                        )
+                                    );
+
+                                $priorityClass = 'bg-secondary';
+
+                                if ($priority === 'urgent') {
+                                    $priorityClass = 'bg-danger';
+                                } elseif ($priority === 'high') {
+                                    $priorityClass = 'bg-warning text-dark';
+                                } elseif ($priority === 'medium') {
+                                    $priorityClass = 'bg-info text-dark';
+                                }
+                                ?>
+
+                                <span class="badge <?= $priorityClass ?>">
+
+                                    <?= htmlspecialchars(
+                                        ucfirst($priority)
+                                    ) ?>
+
+                                </span>
+
+                            </div>
+
+                        </div>
+
+
+                        <!-- PO NUMBER -->
+                        <div class="col-md-6">
+
+                            <div class="request-label">
+                                PO Number
+                            </div>
+
+                            <div class="request-value">
+
+                                <?= !empty($request['po_no'])
+                                    ? htmlspecialchars($request['po_no'])
+                                    : '<span class="text-muted">Not yet assigned</span>'
+                                ?>
+
+                            </div>
+
+                        </div>
+
+
+                        <!-- DATE CREATED -->
+                        <div class="col-md-6">
+
+                            <div class="request-label">
+                                Date Created
+                            </div>
+
+                            <div class="request-value">
+
+                                <?= htmlspecialchars(
+                                    $request['date_created'] ?? ''
+                                ) ?>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                    <hr>
+                    <!-- =====================================
+                            ITEMS
+                    ====================================== -->
 
                         <!-- Requested Items -->
                         <div class="card shadow-sm mb-4">
@@ -1037,9 +1043,9 @@ if (!empty($requestIds)) {
                             </div>
 
 
-                                                <!-- =====================================
-                                                    ATTACHMENTS
-                                                ====================================== -->
+                                <!-- =====================================
+                                    ATTACHMENTS
+                                ====================================== -->
 
                                                 <hr class="mt-4">
 
@@ -1228,290 +1234,288 @@ if (!empty($requestIds)) {
                                     </div>
 
 
-                    <!-- =================================================
-                        RIGHT CARD
-                    ================================================== -->
+            
+                                    <!-- =================================================
+                RIGHT CARD
+            ================================================== -->
 
-                    <div class="col-lg-5">
+            <div class="col-lg-4">
 
-                        <div class="card h-100 shadow-sm">
+                <div class="card h-100 shadow-sm">
 
-                            <div class="card-header bg-light">
+                    <div class="card-header bg-light">
 
-                                <strong>
+                        <strong>
 
-                                    <i class="fas fa-history me-2"></i>
+                            <i class="fas fa-history me-2"></i>
 
-                                    Activity / Comments
+                            Activity / Comments
 
-                                </strong>
+                        </strong>
+
+                    </div>
+
+
+                    <div class="card-body">
+
+                        <?php if (empty($history)): ?>
+
+                            <div class="activity-empty">
+
+                                <div>
+
+                                    <i class="fas fa-comments fa-2x mb-3"></i>
+
+                                    <div class="fw-semibold">
+                                        No activity yet
+                                    </div>
+
+                                    <small>
+                                        Comments, status updates and activity logs
+                                        will appear here.
+                                    </small>
+
+                                </div>
 
                             </div>
 
+                        <?php else: ?>
 
-                            <div class="card-body">
+                            <div class="activity-list">
 
-                                <?php if (empty($history)): ?>
+                                <?php foreach ($history as $activity): ?>
 
-                                    <div class="activity-empty">
+                                    <?php
 
-                                        <div>
+                                    $changes = [];
 
-                                            <i class="fas fa-comments fa-2x mb-3"></i>
+                                    if (!empty($activity['changes_json'])) {
 
-                                            <div class="fw-semibold">
-                                                No activity yet
+                                        $decodedChanges = json_decode(
+                                            $activity['changes_json'],
+                                            true
+                                        );
+
+                                        if (is_array($decodedChanges)) {
+                                            $changes = $decodedChanges;
+                                        }
+                                    }
+
+                                    ?>
+
+                                    <div class="activity-item mb-4">
+
+                                        <!-- USER / DATE -->
+
+                                        <div class="d-flex align-items-start">
+
+                                            <div
+                                                class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center me-2"
+                                                style="width:36px;height:36px;flex-shrink:0;"
+                                            >
+
+                                                <i class="fas fa-user"></i>
+
                                             </div>
 
-                                            <small>
-                                                Comments, status updates and activity logs
-                                                will appear here.
-                                            </small>
+                                            <div class="flex-grow-1">
 
-                                        </div>
+                                                <div class="fw-semibold">
 
-                                    </div>
-
-                                <?php else: ?>
-
-                                    <div class="activity-list">
-
-                                        <?php foreach ($history as $activity): ?>
-
-                                            <?php
-
-                                            $changes = [];
-
-                                            if (!empty($activity['changes_json'])) {
-
-                                                $decodedChanges = json_decode(
-                                                    $activity['changes_json'],
-                                                    true
-                                                );
-
-                                                if (is_array($decodedChanges)) {
-                                                    $changes = $decodedChanges;
-                                                }
-                                            }
-
-                                            ?>
-
-                                            <div class="activity-item mb-4">
-
-                                                <!-- USER / DATE -->
-
-                                                <div class="d-flex align-items-start">
-
-                                                    <div
-                                                        class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center me-2"
-                                                        style="width:36px;height:36px;flex-shrink:0;"
-                                                    >
-
-                                                        <i class="fas fa-user"></i>
-
-                                                    </div>
-
-                                                    <div class="flex-grow-1">
-
-                                                        <div class="fw-semibold">
-
-                                                            <?= htmlspecialchars(
-                                                                $activity['fullname']
-                                                                ?: 'Unknown User'
-                                                            ) ?>
-
-                                                        </div>
-
-                                                        <small class="text-muted">
-
-                                                            <?= !empty($activity['date_created'])
-                                                                ? date(
-                                                                    'M d, Y h:i A',
-                                                                    strtotime($activity['date_created'])
-                                                                )
-                                                                : ''
-                                                            ?>
-
-                                                        </small>
-
-                                                    </div>
-
-                                                </div> <br>
-
-                                                <div class="small text-muted mt-1">
-
-                                                    <span class="me-3">
-
-                                                        <i class="fas fa-hashtag me-1"></i>
-
-                                                        Request ID:
-
-                                                        <strong>
-                                                            <?= (int)$activity['request_id'] ?>
-                                                        </strong>
-
-                                                    </span>
-
-
-                                                    <!-- ITEM -->
-
-                                                    <span>
-
-                                                        <i class="fas fa-box me-1"></i>
-
-                                                        Item:
-
-                                                        <strong>
-                                                            <?= htmlspecialchars(
-                                                                $activity['item']
-                                                                ?: 'N/A'
-                                                            ) ?>
-                                                        </strong>
-
-                                                    </span>
+                                                    <?= htmlspecialchars(
+                                                        $activity['fullname']
+                                                        ?: 'Unknown User'
+                                                    ) ?>
 
                                                 </div>
 
-                                                <!-- CHANGES -->
+                                                <small class="text-muted">
 
-                                                <?php if (!empty($changes)): ?>
+                                                    <?= !empty($activity['date_created'])
+                                                        ? date(
+                                                            'M d, Y h:i A',
+                                                            strtotime($activity['date_created'])
+                                                        )
+                                                        : ''
+                                                    ?>
 
-                                                    <div class="mt-3">
+                                                </small>
 
-                                                        <?php foreach ($changes as $field => $change): ?>
+                                            </div>
 
-                                                            <?php
+                                        </div> <br>
 
-                                                            $fieldLabel = match ($field) {
+                                        <div class="small text-muted mt-1">
 
-                                                                'status' =>
-                                                                    'Status',
+                                            <span class="me-3">
 
-                                                                'purchaser' =>
-                                                                    'Assigned Purchaser',
+                                                <i class="fas fa-hashtag me-1"></i>
 
-                                                                'priority' =>
-                                                                    'Priority',
+                                                Request ID:
 
-                                                                'category' =>
-                                                                    'Category',
+                                                <strong>
+                                                    <?= (int)$activity['request_id'] ?>
+                                                </strong>
 
-                                                                'order_status' =>
-                                                                    'Order Status',
-
-                                                                'po_no' =>
-                                                                    'PO Number',
-
-                                                                default =>
-                                                                    ucwords(
-                                                                        str_replace(
-                                                                            '_',
-                                                                            ' ',
-                                                                            $field
-                                                                        )
-                                                                    )
-                                                            };
-
-                                                            $oldValue =
-                                                                $change['old'] ?? '';
-
-                                                            $newValue =
-                                                                $change['new'] ?? '';
-
-                                                            ?>
-
-                                                            <div class="border-start border-3 border-primary ps-3 mb-3">
-
-                                                                <div class="small text-muted mb-1">
-
-                                                                    <?= htmlspecialchars(
-                                                                        $fieldLabel
-                                                                    ) ?>
-
-                                                                </div>
-
-                                                                <div>
-
-                                                                    <span class="text-muted">
-                                                                        <?= htmlspecialchars(
-                                                                            $oldValue ?: 'N/A'
-                                                                        ) ?>
-                                                                    </span>
-
-                                                                    <i class="fas fa-arrow-right mx-2 text-primary"></i>
-
-                                                                    <strong>
-                                                                        <?= htmlspecialchars(
-                                                                            $newValue ?: 'N/A'
-                                                                        ) ?>
-                                                                    </strong>
-
-                                                                </div>
-
-                                                            </div>
-
-                                                        <?php endforeach; ?>
-
-                                                    </div>
-
-                                                <?php endif; ?>
+                                            </span>
 
 
-                                                <!-- COMMENT -->
+                                            <!-- ITEM -->
 
-                                                <?php if (!empty(trim($activity['comment'] ?? ''))): ?>
+                                            <span>
 
-                                                    <div class="mt-2 p-3 bg-light rounded">
+                                                <i class="fas fa-box me-1"></i>
+
+                                                Item:
+
+                                                <strong>
+                                                    <?= htmlspecialchars(
+                                                        $activity['item']
+                                                        ?: 'N/A'
+                                                    ) ?>
+                                                </strong>
+
+                                            </span>
+
+                                        </div>
+
+                                        <!-- CHANGES -->
+
+                                        <?php if (!empty($changes)): ?>
+
+                                            <div class="mt-3">
+
+                                                <?php foreach ($changes as $field => $change): ?>
+
+                                                    <?php
+
+                                                    $fieldLabel = match ($field) {
+
+                                                        'status' =>
+                                                            'Status',
+
+                                                        'purchaser' =>
+                                                            'Assigned Purchaser',
+
+                                                        'priority' =>
+                                                            'Priority',
+
+                                                        'category' =>
+                                                            'Category',
+
+                                                        'order_status' =>
+                                                            'Order Status',
+
+                                                        'po_no' =>
+                                                            'PO Number',
+
+                                                        default =>
+                                                            ucwords(
+                                                                str_replace(
+                                                                    '_',
+                                                                    ' ',
+                                                                    $field
+                                                                )
+                                                            )
+                                                    };
+
+                                                    $oldValue =
+                                                        $change['old'] ?? '';
+
+                                                    $newValue =
+                                                        $change['new'] ?? '';
+
+                                                    ?>
+
+                                                    <div class="border-start border-3 border-primary ps-3 mb-3">
 
                                                         <div class="small text-muted mb-1">
 
-                                                            <i class="fas fa-comment me-1"></i>
-                                                            Comment
+                                                            <?= htmlspecialchars(
+                                                                $fieldLabel
+                                                            ) ?>
 
                                                         </div>
 
                                                         <div>
 
-                                                            <?= nl2br(
-                                                                htmlspecialchars(
-                                                                    $activity['comment']
-                                                                )
-                                                            ) ?>
+                                                            <span class="text-muted">
+                                                                <?= htmlspecialchars(
+                                                                    $oldValue ?: 'N/A'
+                                                                ) ?>
+                                                            </span>
+
+                                                            <i class="fas fa-arrow-right mx-2 text-primary"></i>
+
+                                                            <strong>
+                                                                <?= htmlspecialchars(
+                                                                    $newValue ?: 'N/A'
+                                                                ) ?>
+                                                            </strong>
 
                                                         </div>
 
                                                     </div>
 
-                                                <?php endif; ?>
+                                                <?php endforeach; ?>
 
                                             </div>
 
-                                            <?php if (
-                                                $activity !== end($history)
-                                            ): ?>
+                                        <?php endif; ?>
 
-                                                <hr>
 
-                                            <?php endif; ?>
+                                        <!-- COMMENT -->
 
-                                        <?php endforeach; ?>
+                                        <?php if (!empty(trim($activity['comment'] ?? ''))): ?>
+
+                                            <div class="mt-2 p-3 bg-light rounded">
+
+                                                <div class="small text-muted mb-1">
+
+                                                    <i class="fas fa-comment me-1"></i>
+                                                    Comment
+
+                                                </div>
+
+                                                <div>
+
+                                                    <?= nl2br(
+                                                        htmlspecialchars(
+                                                            $activity['comment']
+                                                        )
+                                                    ) ?>
+
+                                                </div>
+
+                                            </div>
+
+                                        <?php endif; ?>
 
                                     </div>
 
-                                <?php endif; ?>
+                                    <?php if (
+                                        $activity !== end($history)
+                                    ): ?>
+
+                                        <hr>
+
+                                    <?php endif; ?>
+
+                                <?php endforeach; ?>
 
                             </div>
 
-
-                        </div>
+                        <?php endif; ?>
 
                     </div>
+
 
                 </div>
 
             </div>
-
-                </div>
+        </div>
+    </div>
+</div>
 <script>
 $(document).on('click', '#showAllItemsBtn', function () {
 
