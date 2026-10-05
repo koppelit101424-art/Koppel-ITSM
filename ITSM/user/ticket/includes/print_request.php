@@ -166,41 +166,38 @@ $recStmt->close();
  
     <table>
       <thead>
-        <tr>
+      <tr>
           <th class="no">ITEM NO</th>
           <th class="model">ITEM</th>
           <th class="desc">DESCRIPTION</th>
           <th class="qty">QTY</th>
           <th class="oum">UoM</th>
-          <th class="price">PRICE</th>
+          <!-- <th class="price">PRICE</th> -->
           <th class="date">DATE NEEDED</th>
           <th class="remarks">REMARKS</th>
-          <th class="" >IT RECOMMENDATION: 
-        </th>
+          <th class="" ></th>
         </tr>
       </thead>
       <tbody>
       <?php foreach ($items as $index => $item): ?>
-        <tr>
+         <tr>
           <td><?= $index + 1 ?></td>
-    <td style="white-space: pre-wrap; "><?= htmlspecialchars($item['item']) ?></td>
-    <td style="white-space: pre-wrap; text-align: left; padding-left: 5px;"><?= htmlspecialchars($item['description']) ?></td>
-    <td style="white-space: pre-wrap;"><?= htmlspecialchars($item['quantity']) ?></td>
-    <td style="white-space: pre-wrap;"><?= htmlspecialchars($item['UoM']) ?></td>
-    <td style="white-space: pre-wrap;"></td>
-    <td style="white-space: pre-wrap;"><?= htmlspecialchars($item['date_needed']) ?></td>
-    <td style="white-space: pre-wrap; text-align: left; padding-left: 5px;"><?= htmlspecialchars($item['remarks']) ?></td>
-    <td rowspan="17"><br><p style="text-align: left;font-weight: 300; padding-left: -15px;"><?= nl2br(htmlspecialchars($recommendationText)) ?></p>  
-   </td>
+        <td style="white-space: pre-wrap; "><?= htmlspecialchars($item['item']) ?></td>
+        <td style="white-space: pre-wrap; text-align: left; padding-left: 5px;"><?= htmlspecialchars($item['description']) ?></td>
+        <td style="white-space: pre-wrap;"><?= htmlspecialchars($item['quantity']) ?></td>
+        <td style="white-space: pre-wrap;"><?= htmlspecialchars($item['UoM']) ?></td>
+        <!-- <td style="white-space: pre-wrap;"></td> -->
+        <td style="white-space: pre-wrap;"><?= htmlspecialchars($item['date_needed']) ?></td>
+        <td style="white-space: pre-wrap; text-align: left; padding-left: 5px;"><?= htmlspecialchars($item['remarks']) ?></td>
 
         </tr>
         <?php endforeach; ?>
         <!-- First row: populated with real data -->
          <!-- 19 blank rows for printing -->
-        <?php for ($i = 2; $i <= 14; $i++): ?>
+        <?php for ($i = 2; $i <= 17; $i++): ?>
         <tr>
           <td></td>
-          <td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+          <td></td><td></td><td></td><td></td><td></td><td></td>
         </tr>
         <?php endfor; ?>
       </tbody>
@@ -231,7 +228,7 @@ $recStmt->close();
               $assistantName = $row['fullname'];
           }
           ?>
-          <td class="checked_by"><?=$assistantName ?></td>
+          <td class="checked_by"></td>
           <?php
           $sql = "SELECT fullname FROM user_tb WHERE position = 'IT Supervisor' LIMIT 1";
           $result = $conn->query($sql);
@@ -243,7 +240,7 @@ $recStmt->close();
               $supervisorName = $row['fullname'];
           }
           ?>
-          <td class="recom_by"><?=$supervisorName ?></td>
+          <td class="recom_by"></td>
           <?php
           $sql = "SELECT fullname FROM user_tb WHERE position = 'IT Manager' LIMIT 1";
           $result = $conn->query($sql);
@@ -256,7 +253,7 @@ $recStmt->close();
           }
           ?>
             <td class="noted_by"></td>
-            <td class="approved_by"><?=$managerName ?></td>
+            <td class="approved_by"></td>
             <td class="distribution"></td>
             <td class="distribution"></td>
             <td class="distributions">Original Copy (Purchasing Dept.) <br> Duplicate Copy (Requititioning Dept) </td>
