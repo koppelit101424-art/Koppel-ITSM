@@ -186,7 +186,7 @@ $type = $_GET['type'] ?? '';
 <div class="menu-group">
 
 <a data-title="Requests"
-   class="<?= ($page=='ticket/purch_lmr' || $page=='ticket/purch_category') ? 'active' : '' ?>"
+   class="<?= ($page=='ticket/purch_lmr' || $page=='ticket/purch_lmr') ? 'active' : '' ?>"
    href="?page=ticket/purch_lmr">
     <i class="fas fa-file-text"></i>
     <span class="menu-text">Purchasing LMR</span>
