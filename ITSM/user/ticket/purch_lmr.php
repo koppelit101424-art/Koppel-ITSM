@@ -558,8 +558,8 @@ include 'includes/db.php';
                         </th>
 
                         <th>ID</th>
-                        <th>LMR No.</th>
-                        <th>PO No.</th>
+                        <th style="width: 160px;">LMR No.</th>
+                        <th>PO</th>
                         <th>Requester</th>
                         <th>Department</th>
                         <th>Item</th>
