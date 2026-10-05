@@ -310,6 +310,18 @@ if(isset($_GET['ajax'])){
                     // case "ticket/includes/update_status_lmr":
                     //     include "ticket/includes/update_status_lmr.php";
                     //     break;
+                    case "ticket/lmr_category":
+                        include "ticket/lmr_category.php";
+                        break;
+                    case "ticket/crud/add_request_category":
+                        include "ticket/crud/add_request_category.php";
+                        break;
+                    case "ticket/crud/edit_request_category":
+                        include "ticket/crud/edit_request_category.php";
+                        break;
+                    case "ticket/crud/delete_request_category":
+                        include "ticket/crud/delete_request_category.php";
+                        break;
                     case "ticket/includes/reassign_ticket":
                         include "ticket/includes/reassign_ticket.php";
                         break;

@@ -181,10 +181,31 @@ $type = $_GET['type'] ?? '';
 <i class="bi bi-file-text"></i>
 <span class="menu-text">IT LMR</span>
 </a>
-<a data-title="Requests" class="<?= ($page=='ticket/purch_lmr') ? 'active' : '' ?>" href="?page=ticket/purch_lmr">
-<i class="fas fa-file-text"></i>
-<span class="menu-text">Purchasing LMR</span>
+
+<!-- PURCHASING LMR -->
+<div class="menu-group">
+
+<a data-title="Requests"
+   class="<?= ($page=='ticket/purch_lmr' || $page=='ticket/purch_category') ? 'active' : '' ?>"
+   href="?page=ticket/purch_lmr">
+    <i class="fas fa-file-text"></i>
+    <span class="menu-text">Purchasing LMR</span>
+    <i class="bi bi-chevron-down ms-auto dropdown-arrow"></i>
 </a>
+
+<div class="submenu <?= ($page=='ticket/purch_lmr' || $page=='ticket/lmr_category') ? 'show' : '' ?>">
+
+    <a data-title="Category"
+       class="<?= ($page=='ticket/lmr_category') ? 'active' : '' ?>"
+       href="?page=ticket/lmr_category">
+        <i class="fas fa-list"></i>
+        <span class="menu-text">LMR Category</span>
+    </a>
+
+</div>
+
+</div>
+
 
 <a class="<?= ($page=='inventory/credentials') ? 'active' : '' ?>" href="?page=inventory/credentials">
     <i class="bi bi-key"></i>
