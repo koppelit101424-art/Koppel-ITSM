@@ -288,7 +288,6 @@ include 'includes/db.php';
                 $categoryQuery = $conn->query("
                 SELECT category_id, category_name
                 FROM request_category_tb
-                WHERE status = 1
                 ORDER BY category_name ASC
                 ");
 
