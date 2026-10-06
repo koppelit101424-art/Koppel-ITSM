@@ -93,7 +93,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $_POST['category_description'] ?? ''
     );
 
-    $status =  'N/A';
+    $status =  0;
 
     // =================================================
     // VALIDATION
