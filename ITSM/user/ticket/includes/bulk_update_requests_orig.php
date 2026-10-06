@@ -4,7 +4,6 @@ ob_start();
 
 require_once __DIR__ . '/../../includes/auth.php';
 require_once __DIR__ . '/../../includes/db.php';
-require_once __DIR__ . '/send_purch_request_status_email.php';
 
 header('Content-Type: application/json; charset=utf-8');
 
@@ -13,26 +12,18 @@ header('Content-Type: application/json; charset=utf-8');
 // JSON RESPONSE
 // =====================================================
 
-function returnJson(
-    $response,
-    $statusCode = 200
-) {
-
+function returnJson($response, $statusCode = 200)
+{
     if (ob_get_length()) {
         ob_clean();
     }
 
-
-    http_response_code(
-        $statusCode
-    );
-
+    http_response_code($statusCode);
 
     echo json_encode(
         $response,
         JSON_UNESCAPED_UNICODE
     );
-
 
     exit;
 }
@@ -47,55 +38,44 @@ try {
     if (!isset($_SESSION['user_id'])) {
 
         returnJson([
-            'success' =>
-                false,
-
-            'message' =>
-                'Unauthorized.'
+            'success' => false,
+            'message' => 'Unauthorized.'
         ], 401);
     }
 
-
-    $userId =
-        (int)$_SESSION['user_id'];
+    $userId = (int)$_SESSION['user_id'];
 
 
     // =====================================================
     // CHECK USER
     // =====================================================
 
-    $userQuery =
-        $conn->prepare("
-            SELECT department
-            FROM user_tb
-            WHERE user_id = ?
-            LIMIT 1
-        ");
-
+    $userQuery = $conn->prepare("
+        SELECT department
+        FROM user_tb
+        WHERE user_id = ?
+        LIMIT 1
+    ");
 
     if (!$userQuery) {
 
         throw new Exception(
-            'User query failed: ' .
-            $conn->error
+            'User query failed: ' . $conn->error
         );
     }
-
 
     $userQuery->bind_param(
         "i",
         $userId
     );
 
-
     $userQuery->execute();
 
+    $userResult =
+        $userQuery->get_result();
 
     $user =
-        $userQuery
-            ->get_result()
-            ->fetch_assoc();
-
+        $userResult->fetch_assoc();
 
     $userQuery->close();
 
@@ -109,10 +89,7 @@ try {
 
 
     $department =
-        trim(
-            $user['department'] ?? ''
-        );
-
+        trim($user['department'] ?? '');
 
     $isPurchasing =
         strcasecmp(
@@ -120,21 +97,15 @@ try {
             'Purchasing'
         ) === 0;
 
-
     $isAdmin =
         isset($_SESSION['user_type']) &&
         strcasecmp(
-            trim(
-                $_SESSION['user_type']
-            ),
+            trim($_SESSION['user_type']),
             'admin'
         ) === 0;
 
 
-    if (
-        !$isPurchasing &&
-        !$isAdmin
-    ) {
+    if (!$isPurchasing && !$isAdmin) {
 
         throw new Exception(
             'You are not authorized to perform bulk updates.'
@@ -149,48 +120,35 @@ try {
     $requestIds =
         $_POST['request_ids'] ?? [];
 
-
     $status =
         strtolower(
-            trim(
-                $_POST['status'] ?? ''
-            )
+            trim($_POST['status'] ?? '')
         );
-
 
     $priority =
         strtolower(
-            trim(
-                $_POST['priority'] ?? ''
-            )
+            trim($_POST['priority'] ?? '')
         );
-
 
     $purchaserId =
         trim(
             $_POST['purchaser_id'] ?? ''
         );
 
-
     $categoryId =
         trim(
             $_POST['category_id'] ?? ''
         );
 
-
     $orderStatus =
         strtolower(
-            trim(
-                $_POST['order_status'] ?? ''
-            )
+            trim($_POST['order_status'] ?? '')
         );
-
 
     $poNo =
         trim(
             $_POST['po_no'] ?? ''
         );
-
 
     $comment =
         trim(
@@ -199,7 +157,7 @@ try {
 
 
     // =====================================================
-    // COMMENT
+    // COMMENT VALIDATION
     // =====================================================
 
     if (mb_strlen($comment) > 1000) {
@@ -225,30 +183,25 @@ try {
     }
 
 
-    $requestIds =
-        array_map(
-            'intval',
-            $requestIds
-        );
+    $requestIds = array_map(
+        'intval',
+        $requestIds
+    );
 
 
-    $requestIds =
-        array_values(
-            array_filter(
-                $requestIds,
-                function ($id) {
-                    return $id > 0;
-                }
-            )
-        );
+    $requestIds = array_values(
+        array_filter(
+            $requestIds,
+            function ($id) {
+                return $id > 0;
+            }
+        )
+    );
 
 
-    $requestIds =
-        array_values(
-            array_unique(
-                $requestIds
-            )
-        );
+    $requestIds = array_values(
+        array_unique($requestIds)
+    );
 
 
     if (count($requestIds) === 0) {
@@ -260,7 +213,7 @@ try {
 
 
     // =====================================================
-    // ALLOWED STATUS
+    // STATUS VALIDATION
     // =====================================================
 
     $allowedStatuses = [
@@ -292,7 +245,7 @@ try {
 
 
     // =====================================================
-    // ALLOWED PRIORITY
+    // PRIORITY VALIDATION
     // =====================================================
 
     $allowedPriorities = [
@@ -318,7 +271,7 @@ try {
 
 
     // =====================================================
-    // CATEGORY
+    // CATEGORY VALIDATION
     // =====================================================
 
     if ($categoryId !== '') {
@@ -331,17 +284,15 @@ try {
         }
 
 
-        $categoryId =
-            (int)$categoryId;
+        $categoryId = (int)$categoryId;
 
 
-        $categoryCheck =
-            $conn->prepare("
-                SELECT category_id
-                FROM request_category_tb
-                WHERE category_id = ?
-                LIMIT 1
-            ");
+        $categoryCheck = $conn->prepare("
+            SELECT category_id
+            FROM request_category_tb
+            WHERE category_id = ?
+            LIMIT 1
+        ");
 
 
         if (!$categoryCheck) {
@@ -358,17 +309,13 @@ try {
             $categoryId
         );
 
-
         $categoryCheck->execute();
-
 
         $categoryResult =
             $categoryCheck->get_result();
 
 
-        if (
-            $categoryResult->num_rows === 0
-        ) {
+        if ($categoryResult->num_rows === 0) {
 
             $categoryCheck->close();
 
@@ -383,7 +330,7 @@ try {
 
 
     // =====================================================
-    // PURCHASER
+    // PURCHASER VALIDATION
     // =====================================================
 
     if ($purchaserId !== '') {
@@ -396,20 +343,18 @@ try {
         }
 
 
-        $purchaserId =
-            (int)$purchaserId;
+        $purchaserId = (int)$purchaserId;
 
 
         if ($purchaserId > 1) {
 
-            $purchaserCheck =
-                $conn->prepare("
-                    SELECT user_id
-                    FROM user_tb
-                    WHERE user_id = ?
-                      AND LOWER(TRIM(department)) = 'purchasing'
-                    LIMIT 1
-                ");
+            $purchaserCheck = $conn->prepare("
+                SELECT user_id
+                FROM user_tb
+                WHERE user_id = ?
+                  AND LOWER(TRIM(department)) = 'purchasing'
+                LIMIT 1
+            ");
 
 
             if (!$purchaserCheck) {
@@ -426,17 +371,13 @@ try {
                 $purchaserId
             );
 
-
             $purchaserCheck->execute();
-
 
             $purchaserResult =
                 $purchaserCheck->get_result();
 
 
-            if (
-                $purchaserResult->num_rows === 0
-            ) {
+            if ($purchaserResult->num_rows === 0) {
 
                 $purchaserCheck->close();
 
@@ -452,12 +393,13 @@ try {
 
 
     // =====================================================
-    // ORDER STATUS
+    // ORDER STATUS VALIDATION
     // =====================================================
 
     $allowedOrderStatuses = [
         'n/a',
         'order acknowledged',
+        'goods delivered',
         'goods received',
         'payment processing',
         'payment issued',
@@ -481,8 +423,18 @@ try {
 
 
     // =====================================================
-    // FINAL PO APPROVED
+    // BULK UPDATE RULES
     // =====================================================
+
+    /*
+     * Empty value means:
+     *
+     *     NO CHANGE
+     *
+     * Therefore we only modify the fields explicitly
+     * selected by the user.
+     */
+
 
     if ($status === 'final po approved') {
 
@@ -496,26 +448,27 @@ try {
 
         if ($orderStatus === '') {
 
-            $orderStatus =
-                'n/a';
+            $orderStatus = 'n/a';
         }
     }
 
 
-    // =====================================================
-    // STATUS AWAY FROM FINAL PO
-    // =====================================================
+    /*
+     * If status is explicitly changed away from
+     * Final PO Approved:
+     *
+     *     PO Number = NULL
+     *     Order Status = n/a
+     */
 
     if (
         $status !== '' &&
         $status !== 'final po approved'
     ) {
 
-        $poNo =
-            null;
+        $poNo = null;
 
-        $orderStatus =
-            'n/a';
+        $orderStatus = 'n/a';
     }
 
 
@@ -543,37 +496,26 @@ try {
     // PLACEHOLDERS
     // =====================================================
 
-    $placeholders =
-        implode(
-            ',',
-            array_fill(
-                0,
-                count($requestIds),
-                '?'
-            )
-        );
+    $placeholders = implode(
+        ',',
+        array_fill(
+            0,
+            count($requestIds),
+            '?'
+        )
+    );
 
 
     // =====================================================
-    // GET CURRENT REQUESTS
+    // GET CURRENT REQUEST VALUES
     // =====================================================
 
     $currentRequests = [];
 
 
-    /*
-     * IMPORTANT:
-     *
-     * user_id is assumed to be the requestor.
-     *
-     * Change user_id to requestor_id if that is
-     * the actual column in your table.
-     */
-
     $selectSql = "
         SELECT
             request_id,
-            user_id,
             status,
             purchaser_id,
             priority,
@@ -585,28 +527,21 @@ try {
     ";
 
 
-    $selectTypes =
-        '';
+    $selectTypes = '';
 
-
-    $selectValues =
-        [];
+    $selectValues = [];
 
 
     foreach ($requestIds as $id) {
 
-        $selectTypes .=
-            'i';
+        $selectTypes .= "i";
 
-        $selectValues[] =
-            $id;
+        $selectValues[] = $id;
     }
 
 
     $selectStmt =
-        $conn->prepare(
-            $selectSql
-        );
+        $conn->prepare($selectSql);
 
 
     if (!$selectStmt) {
@@ -631,15 +566,11 @@ try {
         $selectStmt->get_result();
 
 
-    while (
-        $row =
-            $selectResult->fetch_assoc()
-    ) {
+    while ($row = $selectResult->fetch_assoc()) {
 
         $currentRequests[
             (int)$row['request_id']
-        ] =
-            $row;
+        ] = $row;
     }
 
 
@@ -658,63 +589,57 @@ try {
 
 
     // =====================================================
-    // PURCHASER NAMES
+    // GET PURCHASER NAMES
     // =====================================================
 
     $purchaserNames = [];
 
 
-    $purchaserQuery =
-        $conn->query("
-            SELECT
-                user_id,
-                fullname
-            FROM user_tb
-        ");
+    $purchaserQuery = $conn->query("
+        SELECT
+            user_id,
+            fullname
+        FROM user_tb
+    ");
 
 
     if ($purchaserQuery) {
 
-        while (
-            $row =
-                $purchaserQuery->fetch_assoc()
+        while ($row =
+            $purchaserQuery->fetch_assoc()
         ) {
 
             $purchaserNames[
                 (int)$row['user_id']
-            ] =
-                $row['fullname'];
+            ] = $row['fullname'];
         }
     }
 
 
     // =====================================================
-    // CATEGORY NAMES
+    // GET CATEGORY NAMES
     // =====================================================
 
     $categoryNames = [];
 
 
-    $categoryQuery =
-        $conn->query("
-            SELECT
-                category_id,
-                category_name
-            FROM request_category_tb
-        ");
+    $categoryQuery = $conn->query("
+        SELECT
+            category_id,
+            category_name
+        FROM request_category_tb
+    ");
 
 
     if ($categoryQuery) {
 
-        while (
-            $row =
-                $categoryQuery->fetch_assoc()
+        while ($row =
+            $categoryQuery->fetch_assoc()
         ) {
 
             $categoryNames[
                 (int)$row['category_id']
-            ] =
-                $row['category_name'];
+            ] = $row['category_name'];
         }
     }
 
@@ -732,25 +657,20 @@ try {
         // BUILD UPDATE
         // =================================================
 
-        $fields =
-            [];
+        $fields = [];
 
-        $types =
-            '';
+        $types = '';
 
-        $values =
-            [];
+        $values = [];
 
 
         // STATUS
-
         if ($status !== '') {
 
             $fields[] =
-                'status = ?';
+                "status = ?";
 
-            $types .=
-                's';
+            $types .= "s";
 
             $values[] =
                 $status;
@@ -758,14 +678,12 @@ try {
 
 
         // PRIORITY
-
         if ($priority !== '') {
 
             $fields[] =
-                'priority = ?';
+                "priority = ?";
 
-            $types .=
-                's';
+            $types .= "s";
 
             $values[] =
                 $priority;
@@ -773,14 +691,12 @@ try {
 
 
         // PURCHASER
-
         if ($purchaserId !== '') {
 
             $fields[] =
-                'purchaser_id = ?';
+                "purchaser_id = ?";
 
-            $types .=
-                'i';
+            $types .= "i";
 
             $values[] =
                 $purchaserId;
@@ -788,14 +704,12 @@ try {
 
 
         // CATEGORY
-
         if ($categoryId !== '') {
 
             $fields[] =
-                'category_id = ?';
+                "category_id = ?";
 
-            $types .=
-                'i';
+            $types .= "i";
 
             $values[] =
                 $categoryId;
@@ -803,14 +717,12 @@ try {
 
 
         // ORDER STATUS
-
         if ($orderStatus !== '') {
 
             $fields[] =
-                'order_status = ?';
+                "order_status = ?";
 
-            $types .=
-                's';
+            $types .= "s";
 
             $values[] =
                 $orderStatus;
@@ -818,41 +730,34 @@ try {
 
 
         // PO NUMBER
-
-        if (
-            $poNo !== '' &&
-            $poNo !== null
-        ) {
+        if ($poNo !== '' && $poNo !== null) {
 
             $fields[] =
-                'po_no = ?';
+                "po_no = ?";
 
-            $types .=
-                's';
+            $types .= "s";
 
             $values[] =
                 $poNo;
         }
 
 
-        // CLEAR PO
-
+        // CLEAR PO WHEN STATUS CHANGES AWAY
         if (
             $status !== '' &&
             $status !== 'final po approved'
         ) {
 
             $fields[] =
-                'po_no = NULL';
+                "po_no = NULL";
         }
 
 
         // =================================================
-        // UPDATE
+        // UPDATE REQUEST TABLE
         // =================================================
 
-        $affectedRows =
-            0;
+        $affectedRows = 0;
 
 
         if (count($fields) > 0) {
@@ -866,8 +771,7 @@ try {
 
             foreach ($requestIds as $id) {
 
-                $updateTypes .=
-                    'i';
+                $updateTypes .= "i";
 
                 $updateValues[] =
                     $id;
@@ -877,10 +781,7 @@ try {
             $sql = "
                 UPDATE purch_request_tb
                 SET " .
-                implode(
-                    ', ',
-                    $fields
-                ) .
+                implode(', ', $fields) .
                 "
                 WHERE request_id IN ($placeholders)
             ";
@@ -910,9 +811,7 @@ try {
                 $error =
                     $stmt->error;
 
-
                 $stmt->close();
-
 
                 throw new Exception(
                     'Database update failed: ' .
@@ -930,11 +829,35 @@ try {
 
 
         // =================================================
-        // HISTORY
+        // BUILD INDIVIDUAL HISTORY
         // =================================================
 
-        $history =
-            $conn->prepare("
+        /*
+         * IMPORTANT:
+         *
+         * Each request gets its OWN changes_json.
+         *
+         * Example:
+         *
+         * {
+         *     "status": {
+         *         "old": "draft po approved",
+         *         "new": "negotiation"
+         *     },
+         *     "category": {
+         *         "old": "Facilities and Maintenance",
+         *         "new": "Spare Parts VRF"
+         *     }
+         * }
+         */
+
+
+        $history = null;
+
+
+        if ($comment !== '') {
+
+            $history = $conn->prepare("
                 INSERT INTO purch_request_history_tb
                 (
                     request_id,
@@ -946,30 +869,28 @@ try {
             ");
 
 
-        if (!$history) {
+            if (!$history) {
 
-            throw new Exception(
-                'History prepare failed: ' .
-                $conn->error
-            );
+                throw new Exception(
+                    'History prepare failed: ' .
+                    $conn->error
+                );
+            }
         }
 
 
         foreach ($requestIds as $requestId) {
 
             $old =
-                $currentRequests[
-                    $requestId
-                ];
+                $currentRequests[$requestId];
 
 
-            $changes =
-                [];
+            $changes = [];
 
 
-            // ---------------------------------------------
+            // =============================================
             // STATUS
-            // ---------------------------------------------
+            // =============================================
 
             if ($status !== '') {
 
@@ -981,12 +902,10 @@ try {
                     );
 
 
-                if (
-                    $oldStatus !==
-                    $status
-                ) {
+                if ($oldStatus !== $status) {
 
                     $changes['status'] = [
+
                         'old' =>
                             $old['status'],
 
@@ -997,9 +916,9 @@ try {
             }
 
 
-            // ---------------------------------------------
+            // =============================================
             // PRIORITY
-            // ---------------------------------------------
+            // =============================================
 
             if ($priority !== '') {
 
@@ -1011,12 +930,10 @@ try {
                     );
 
 
-                if (
-                    $oldPriority !==
-                    $priority
-                ) {
+                if ($oldPriority !== $priority) {
 
                     $changes['priority'] = [
+
                         'old' =>
                             $old['priority'],
 
@@ -1027,9 +944,9 @@ try {
             }
 
 
-            // ---------------------------------------------
+            // =============================================
             // PURCHASER
-            // ---------------------------------------------
+            // =============================================
 
             if ($purchaserId !== '') {
 
@@ -1071,6 +988,7 @@ try {
 
 
                     $changes['purchaser'] = [
+
                         'old' =>
                             $oldPurchaserName,
 
@@ -1081,9 +999,9 @@ try {
             }
 
 
-            // ---------------------------------------------
+            // =============================================
             // CATEGORY
-            // ---------------------------------------------
+            // =============================================
 
             if ($categoryId !== '') {
 
@@ -1125,6 +1043,7 @@ try {
 
 
                     $changes['category'] = [
+
                         'old' =>
                             $oldCategoryName,
 
@@ -1135,9 +1054,9 @@ try {
             }
 
 
-            // ---------------------------------------------
+            // =============================================
             // ORDER STATUS
-            // ---------------------------------------------
+            // =============================================
 
             if ($orderStatus !== '') {
 
@@ -1155,6 +1074,7 @@ try {
                 ) {
 
                     $changes['order_status'] = [
+
                         'old' =>
                             $old['order_status'],
 
@@ -1165,9 +1085,15 @@ try {
             }
 
 
-            // ---------------------------------------------
+            // =============================================
             // PO NUMBER
-            // ---------------------------------------------
+            // =============================================
+
+            /*
+             * If status changed away from Final PO Approved,
+             * the PO is cleared even though the user did not
+             * directly enter a PO value.
+             */
 
             if (
                 $status !== '' &&
@@ -1183,6 +1109,7 @@ try {
                 if ($oldPO !== '') {
 
                     $changes['po_no'] = [
+
                         'old' =>
                             $oldPO,
 
@@ -1202,6 +1129,7 @@ try {
                 if ($oldPO !== $poNo) {
 
                     $changes['po_no'] = [
+
                         'old' =>
                             $oldPO,
 
@@ -1212,47 +1140,68 @@ try {
             }
 
 
-            // ---------------------------------------------
+            // =============================================
             // SAVE HISTORY
-            // ---------------------------------------------
+            // =============================================
 
-            $changesJson =
-                json_encode(
-                    $changes,
-                    JSON_UNESCAPED_UNICODE
+            /*
+             * IMPORTANT:
+             *
+             * If there is ONLY a comment and no actual
+             * field changed, changes_json will be:
+             *
+             * {}
+             *
+             * This is intentional.
+             */
+
+
+            if (
+                $comment !== '' &&
+                $history
+            ) {
+
+                $changesJson =
+                    json_encode(
+                        $changes,
+                        JSON_UNESCAPED_UNICODE
+                    );
+
+
+                if ($changesJson === false) {
+
+                    throw new Exception(
+                        'Failed to encode change history.'
+                    );
+                }
+
+
+                $history->bind_param(
+                    "iiss",
+                    $requestId,
+                    $userId,
+                    $comment,
+                    $changesJson
                 );
 
 
-            if ($changesJson === false) {
+                if (!$history->execute()) {
 
-                throw new Exception(
-                    'Failed to encode change history.'
-                );
-            }
-
-
-            $history->bind_param(
-                "iiss",
-                $requestId,
-                $userId,
-                $comment,
-                $changesJson
-            );
-
-
-            if (!$history->execute()) {
-
-                throw new Exception(
-                    'Failed to save history for request ' .
-                    $requestId .
-                    ': ' .
-                    $history->error
-                );
+                    throw new Exception(
+                        'Failed to save history for request ' .
+                        $requestId .
+                        ': ' .
+                        $history->error
+                    );
+                }
             }
         }
 
 
-        $history->close();
+        if ($history) {
+
+            $history->close();
+        }
 
 
         // =================================================
@@ -1261,347 +1210,12 @@ try {
 
         $conn->commit();
 
+
     } catch (Throwable $e) {
 
         $conn->rollback();
 
         throw $e;
-    }
-
-
-    // =====================================================
-    // EMAIL NOTIFICATIONS
-    // =====================================================
-
-    $emailSentCount =
-        0;
-
-    $emailFailedCount =
-        0;
-
-
-    $notificationStatuses = [
-        'pending',
-        'rejected',
-        'goods received',
-        'closed'
-    ];
-
-
-    /*
-     * Only process email when status was explicitly
-     * supplied and is one of the notification statuses.
-     */
-
-    if (
-        $status !== '' &&
-        in_array(
-            $status,
-            $notificationStatuses,
-            true
-        )
-    ) {
-
-        foreach ($requestIds as $requestId) {
-
-            $old =
-                $currentRequests[
-                    $requestId
-                ];
-
-
-            $oldStatus =
-                strtolower(
-                    trim(
-                        $old['status'] ?? ''
-                    )
-                );
-
-
-            // ---------------------------------------------
-            // STATUS MUST ACTUALLY CHANGE
-            // ---------------------------------------------
-
-            if (
-                $oldStatus ===
-                $status
-            ) {
-
-                continue;
-            }
-
-
-            // ---------------------------------------------
-            // REQUESTOR
-            // ---------------------------------------------
-
-            $requestorId =
-                (int)(
-                    $old['user_id'] ?? 0
-                );
-
-
-            if ($requestorId <= 0) {
-
-                error_log(
-                    "Purchasing Email: Request #{$requestId} " .
-                    "has no valid requestor ID."
-                );
-
-                $emailFailedCount++;
-
-                continue;
-            }
-
-
-            // ---------------------------------------------
-            // BUILD EMAIL CHANGES
-            // ---------------------------------------------
-
-            $emailChanges =
-                [];
-
-
-            // STATUS
-
-            $emailChanges['status'] = [
-                'old' =>
-                    $old['status'],
-
-                'new' =>
-                    $status
-            ];
-
-
-            // PRIORITY
-
-            if ($priority !== '') {
-
-                $oldPriority =
-                    strtolower(
-                        trim(
-                            $old['priority'] ?? ''
-                        )
-                    );
-
-
-                if (
-                    $oldPriority !==
-                    $priority
-                ) {
-
-                    $emailChanges['priority'] = [
-                        'old' =>
-                            $old['priority'],
-
-                        'new' =>
-                            $priority
-                    ];
-                }
-            }
-
-
-            // PURCHASER
-
-            if ($purchaserId !== '') {
-
-                $oldPurchaserId =
-                    (int)$old['purchaser_id'];
-
-
-                if (
-                    $oldPurchaserId !==
-                    $purchaserId
-                ) {
-
-                    $oldPurchaserName =
-                        'Unassigned';
-
-
-                    $newPurchaserName =
-                        'Unassigned';
-
-
-                    if ($oldPurchaserId > 1) {
-
-                        $oldPurchaserName =
-                            $purchaserNames[
-                                $oldPurchaserId
-                            ] ??
-                            'Unassigned';
-                    }
-
-
-                    if ($purchaserId > 1) {
-
-                        $newPurchaserName =
-                            $purchaserNames[
-                                $purchaserId
-                            ] ??
-                            'Unassigned';
-                    }
-
-
-                    $emailChanges['purchaser'] = [
-                        'old' =>
-                            $oldPurchaserName,
-
-                        'new' =>
-                            $newPurchaserName
-                    ];
-                }
-            }
-
-
-            // CATEGORY
-
-            if ($categoryId !== '') {
-
-                $oldCategoryId =
-                    (int)$old['category_id'];
-
-
-                if (
-                    $oldCategoryId !==
-                    $categoryId
-                ) {
-
-                    $oldCategoryName =
-                        'N/A';
-
-
-                    $newCategoryName =
-                        'N/A';
-
-
-                    if ($oldCategoryId > 0) {
-
-                        $oldCategoryName =
-                            $categoryNames[
-                                $oldCategoryId
-                            ] ??
-                            'N/A';
-                    }
-
-
-                    if ($categoryId > 0) {
-
-                        $newCategoryName =
-                            $categoryNames[
-                                $categoryId
-                            ] ??
-                            'N/A';
-                    }
-
-
-                    $emailChanges['category'] = [
-                        'old' =>
-                            $oldCategoryName,
-
-                        'new' =>
-                            $newCategoryName
-                    ];
-                }
-            }
-
-
-            // ORDER STATUS
-
-            if ($orderStatus !== '') {
-
-                $oldOrderStatus =
-                    strtolower(
-                        trim(
-                            $old['order_status'] ?? ''
-                        )
-                    );
-
-
-                if (
-                    $oldOrderStatus !==
-                    $orderStatus
-                ) {
-
-                    $emailChanges['order_status'] = [
-                        'old' =>
-                            $old['order_status'],
-
-                        'new' =>
-                            $orderStatus
-                    ];
-                }
-            }
-
-
-            // PO NUMBER
-
-            if (
-                $status !== '' &&
-                $status !== 'final po approved'
-            ) {
-
-                $oldPO =
-                    trim(
-                        $old['po_no'] ?? ''
-                    );
-
-
-                if ($oldPO !== '') {
-
-                    $emailChanges['po_no'] = [
-                        'old' =>
-                            $oldPO,
-
-                        'new' =>
-                            ''
-                    ];
-                }
-
-            } elseif ($poNo !== '') {
-
-                $oldPO =
-                    trim(
-                        $old['po_no'] ?? ''
-                    );
-
-
-                if ($oldPO !== $poNo) {
-
-                    $emailChanges['po_no'] = [
-                        'old' =>
-                            $oldPO,
-
-                        'new' =>
-                            $poNo
-                    ];
-                }
-            }
-
-
-            // ---------------------------------------------
-            // SEND EMAIL
-            // ---------------------------------------------
-
-            $sent =
-                sendPurchRequestStatusEmail(
-                    $conn,
-                    $requestId,
-                    $requestorId,
-                    $status,
-                    $emailChanges,
-                    $comment
-                );
-
-
-            if ($sent) {
-
-                $emailSentCount++;
-
-            } else {
-
-                $emailFailedCount++;
-            }
-        }
     }
 
 
@@ -1643,13 +1257,7 @@ try {
             $affectedRows,
 
         'comment_saved' =>
-            $comment !== '',
-
-        'emails_sent' =>
-            $emailSentCount,
-
-        'emails_failed' =>
-            $emailFailedCount
+            $comment !== ''
 
     ]);
 
@@ -1666,3 +1274,4 @@ try {
 
     ], 400);
 }
+?>
