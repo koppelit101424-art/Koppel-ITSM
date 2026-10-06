@@ -933,104 +933,203 @@ try {
     }
 
 
+// =====================================================
+// EMAIL
+//
+// IMPORTANT:
+// Email is sent AFTER COMMIT.
+//
+// Status notifications:
+//     pending
+//     rejected
+//
+// Order status notifications:
+//     goods received
+//     closed
+//
+// SMTP failure will NOT undo the database update.
+// =====================================================
+
+$emailSent = false;
+
+
+// =====================================================
+// CURRENT OLD ORDER STATUS
+// =====================================================
+
+$oldOrderStatus =
+    strtolower(
+        trim(
+            $currentRequest['order_status'] ?? ''
+        )
+    );
+
+
+// =====================================================
+// CURRENT NEW ORDER STATUS
+// =====================================================
+
+$newOrderStatus =
+    strtolower(
+        trim(
+            $order_status
+        )
+    );
+
+
+            // =====================================================
+            // NOTIFICATION FLAGS
+            // =====================================================
+
+            $shouldSendEmail = false;
+
+            $emailNotificationStatus = '';
+
+
+            // =====================================================
+            // STATUS NOTIFICATIONS
+            // =====================================================
+            //
+            // These come from purch_request_tb.status
+            //
+            // pending
+            // rejected
+            // =====================================================
+
+            $statusNotificationStatuses = [
+                'pending',
+                'rejected'
+            ];
+
+
+            if (
+                $oldStatus !== $status &&
+                in_array(
+                    $status,
+                    $statusNotificationStatuses,
+                    true
+                ) &&
+                $requestorId > 0
+            ) {
+
+                $shouldSendEmail = true;
+
+                $emailNotificationStatus =
+                    $status;
+            }
+
+
+            // =====================================================
+            // ORDER STATUS NOTIFICATIONS
+            // =====================================================
+            //
+            // These come from purch_request_tb.order_status
+            //
+            // goods received
+            // closed
+            // =====================================================
+
+            $orderStatusNotificationStatuses = [
+                'goods received',
+                'closed'
+            ];
+
+
+            if (
+                $oldOrderStatus !== $newOrderStatus &&
+                in_array(
+                    $newOrderStatus,
+                    $orderStatusNotificationStatuses,
+                    true
+                ) &&
+                $requestorId > 0
+            ) {
+
+                $shouldSendEmail = true;
+
+                $emailNotificationStatus =
+                    $newOrderStatus;
+            }
+
+
+            // =====================================================
+            // SEND EMAIL
+            // =====================================================
+
+            if ($shouldSendEmail) {
+
+                $emailSent =
+                    sendPurchRequestStatusEmail(
+                        $conn,
+                        $request_id,
+                        $requestorId,
+                        $emailNotificationStatus,
+                        $changes,
+                        $comment,
+                        $purchaser_id
+                    );
+            }
+
+
+
     // =====================================================
-    // EMAIL
-    //
-    // IMPORTANT:
-    // Email is AFTER COMMIT.
-    //
-    // SMTP failure will NOT undo the database update.
-    // =====================================================
+// RESPONSE
+// =====================================================
 
-    $emailSent = false;
+$response['success'] =
+    true;
 
 
-    $notificationStatuses = [
-        'pending',
-        'rejected',
-        'goods received',
-        'closed'
-    ];
+$response['message'] =
+    'Request updated successfully.';
 
 
-    if (
-        $oldStatus !== $status &&
-        in_array(
-            $status,
-            $notificationStatuses,
-            true
-        ) &&
-        $requestorId > 0
-    ) {
-
-        $emailSent =
-            sendPurchRequestStatusEmail(
-                $conn,
-                $request_id,
-                $requestorId,
-                $status,
-                $changes,
-                $comment,
-                $purchaser_id
-            );
-
-    }
+$response['request_id'] =
+    $request_id;
 
 
-    // =====================================================
-    // RESPONSE
-    // =====================================================
-
-    $response['success'] =
-        true;
+$response['status'] =
+    $status;
 
 
-    $response['message'] =
-        'Request updated successfully.';
+$response['purchaser_id'] =
+    $purchaser_id;
 
 
-    $response['request_id'] =
-        $request_id;
+$response['priority'] =
+    $priority;
 
 
-    $response['status'] =
-        $status;
+$response['category_id'] =
+    $category_id;
 
 
-    $response['purchaser_id'] =
-        $purchaser_id;
+$response['category_name'] =
+    $newCategoryName;
 
 
-    $response['priority'] =
-        $priority;
+$response['order_status'] =
+    $order_status;
 
 
-    $response['category_id'] =
-        $category_id;
+$response['po_no'] =
+    $po_no;
 
 
-    $response['category_name'] =
-        $newCategoryName;
+$response['purchaser_name'] =
+    $newPurchaserName;
 
 
-    $response['order_status'] =
-        $order_status;
+$response['changes'] =
+    $changes;
 
 
-    $response['po_no'] =
-        $po_no;
+$response['email_sent'] =
+    $emailSent;
 
 
-    $response['purchaser_name'] =
-        $newPurchaserName;
-
-
-    $response['changes'] =
-        $changes;
-
-
-    $response['email_sent'] =
-        $emailSent;
+$response['email_notification_status'] =
+    $emailNotificationStatus;
 
 
 } catch (Throwable $e) {

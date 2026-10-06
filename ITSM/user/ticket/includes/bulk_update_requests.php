@@ -1270,339 +1270,451 @@ try {
 
 
     // =====================================================
-    // EMAIL NOTIFICATIONS
-    // =====================================================
+// EMAIL NOTIFICATIONS
+// =====================================================
 
-    $emailSentCount =
-        0;
-
-    $emailFailedCount =
-        0;
+$emailSentCount =
+    0;
 
 
-    $notificationStatuses = [
-        'pending',
-        'rejected',
-        'goods received',
-        'closed'
-    ];
+$emailFailedCount =
+    0;
 
 
-    /*
-     * Only process email when status was explicitly
-     * supplied and is one of the notification statuses.
-     */
+// =====================================================
+// STATUS NOTIFICATIONS
+// =====================================================
+//
+// These values belong to:
+// purch_request_tb.status
+//
+// pending
+// rejected
+// =====================================================
+
+$statusNotificationStatuses = [
+    'pending',
+    'rejected'
+];
+
+
+// =====================================================
+// ORDER STATUS NOTIFICATIONS
+// =====================================================
+//
+// These values belong to:
+// purch_request_tb.order_status
+//
+// goods received
+// closed
+// =====================================================
+
+$orderStatusNotificationStatuses = [
+    'goods received',
+    'closed'
+];
+
+
+// =====================================================
+// PROCESS EACH REQUEST
+// =====================================================
+
+foreach ($requestIds as $requestId) {
+
+    $old =
+        $currentRequests[
+            $requestId
+        ];
+
+
+    // =================================================
+    // OLD VALUES
+    // =================================================
+
+    $oldStatus =
+        strtolower(
+            trim(
+                $old['status'] ?? ''
+            )
+        );
+
+
+    $oldOrderStatus =
+        strtolower(
+            trim(
+                $old['order_status'] ?? ''
+            )
+        );
+
+
+    // =================================================
+    // NEW VALUES
+    // =================================================
+
+    $newStatus =
+        $status;
+
+
+    $newOrderStatus =
+        $orderStatus;
+
+
+    // =================================================
+    // DETERMINE NOTIFICATION
+    // =================================================
+
+    $shouldSendEmail =
+        false;
+
+
+    $emailNotificationStatus =
+        '';
+
+
+    // =================================================
+    // STATUS NOTIFICATION
+    // =================================================
+    //
+    // pending
+    // rejected
+    // =================================================
 
     if (
         $status !== '' &&
+        $oldStatus !== $newStatus &&
         in_array(
-            $status,
-            $notificationStatuses,
+            $newStatus,
+            $statusNotificationStatuses,
             true
         )
     ) {
 
-        foreach ($requestIds as $requestId) {
-
-            $old =
-                $currentRequests[
-                    $requestId
-                ];
+        $shouldSendEmail =
+            true;
 
 
-            $oldStatus =
-                strtolower(
-                    trim(
-                        $old['status'] ?? ''
-                    )
-                );
+        $emailNotificationStatus =
+            $newStatus;
+    }
 
 
-            // ---------------------------------------------
-            // STATUS MUST ACTUALLY CHANGE
-            // ---------------------------------------------
+    // =================================================
+    // ORDER STATUS NOTIFICATION
+    // =================================================
+    //
+    // goods received
+    // closed
+    // =================================================
 
-            if (
-                $oldStatus ===
-                $status
-            ) {
+    if (
+        $orderStatus !== '' &&
+        $oldOrderStatus !== $newOrderStatus &&
+        in_array(
+            $newOrderStatus,
+            $orderStatusNotificationStatuses,
+            true
+        )
+    ) {
 
-                continue;
-            }
-
-
-            // ---------------------------------------------
-            // REQUESTOR
-            // ---------------------------------------------
-
-            $requestorId =
-                (int)(
-                    $old['user_id'] ?? 0
-                );
-
-
-            if ($requestorId <= 0) {
-
-                error_log(
-                    "Purchasing Email: Request #{$requestId} " .
-                    "has no valid requestor ID."
-                );
-
-                $emailFailedCount++;
-
-                continue;
-            }
+        $shouldSendEmail =
+            true;
 
 
-            // ---------------------------------------------
-            // BUILD EMAIL CHANGES
-            // ---------------------------------------------
-
-            $emailChanges =
-                [];
+        $emailNotificationStatus =
+            $newOrderStatus;
+    }
 
 
-            // STATUS
+    // =================================================
+    // NO EMAIL REQUIRED
+    // =================================================
 
-            $emailChanges['status'] = [
+    if (!$shouldSendEmail) {
+
+        continue;
+    }
+
+
+    // =================================================
+    // REQUESTOR
+    // =================================================
+
+    $requestorId =
+        (int)(
+            $old['user_id'] ?? 0
+        );
+
+
+    if ($requestorId <= 0) {
+
+        error_log(
+            "Purchasing Email: Request #{$requestId} " .
+            "has no valid requestor ID."
+        );
+
+
+        $emailFailedCount++;
+
+        continue;
+    }
+
+
+    // =================================================
+    // BUILD EMAIL CHANGES
+    // =================================================
+
+    $emailChanges =
+        [];
+
+
+    // =================================================
+    // STATUS
+    // =================================================
+
+    if (
+        $status !== '' &&
+        $oldStatus !== $newStatus
+    ) {
+
+        $emailChanges['status'] = [
+            'old' =>
+                $old['status'],
+
+            'new' =>
+                $newStatus
+        ];
+    }
+
+
+    // =================================================
+    // PRIORITY
+    // =================================================
+
+    if ($priority !== '') {
+
+        $oldPriority =
+            strtolower(
+                trim(
+                    $old['priority'] ?? ''
+                )
+            );
+
+
+        if (
+            $oldPriority !==
+            $priority
+        ) {
+
+            $emailChanges['priority'] = [
                 'old' =>
-                    $old['status'],
+                    $old['priority'],
 
                 'new' =>
-                    $status
-            ];
-
-
-            // PRIORITY
-
-            if ($priority !== '') {
-
-                $oldPriority =
-                    strtolower(
-                        trim(
-                            $old['priority'] ?? ''
-                        )
-                    );
-
-
-                if (
-                    $oldPriority !==
                     $priority
-                ) {
-
-                    $emailChanges['priority'] = [
-                        'old' =>
-                            $old['priority'],
-
-                        'new' =>
-                            $priority
-                    ];
-                }
-            }
-
-
-            // PURCHASER
-
-            if ($purchaserId !== '') {
-
-                $oldPurchaserId =
-                    (int)$old['purchaser_id'];
-
-
-                if (
-                    $oldPurchaserId !==
-                    $purchaserId
-                ) {
-
-                    $oldPurchaserName =
-                        'Unassigned';
-
-
-                    $newPurchaserName =
-                        'Unassigned';
-
-
-                    if ($oldPurchaserId > 1) {
-
-                        $oldPurchaserName =
-                            $purchaserNames[
-                                $oldPurchaserId
-                            ] ??
-                            'Unassigned';
-                    }
-
-
-                    if ($purchaserId > 1) {
-
-                        $newPurchaserName =
-                            $purchaserNames[
-                                $purchaserId
-                            ] ??
-                            'Unassigned';
-                    }
-
-
-                    $emailChanges['purchaser'] = [
-                        'old' =>
-                            $oldPurchaserName,
-
-                        'new' =>
-                            $newPurchaserName
-                    ];
-                }
-            }
-
-
-            // CATEGORY
-
-            if ($categoryId !== '') {
-
-                $oldCategoryId =
-                    (int)$old['category_id'];
-
-
-                if (
-                    $oldCategoryId !==
-                    $categoryId
-                ) {
-
-                    $oldCategoryName =
-                        'N/A';
-
-
-                    $newCategoryName =
-                        'N/A';
-
-
-                    if ($oldCategoryId > 0) {
-
-                        $oldCategoryName =
-                            $categoryNames[
-                                $oldCategoryId
-                            ] ??
-                            'N/A';
-                    }
-
-
-                    if ($categoryId > 0) {
-
-                        $newCategoryName =
-                            $categoryNames[
-                                $categoryId
-                            ] ??
-                            'N/A';
-                    }
-
-
-                    $emailChanges['category'] = [
-                        'old' =>
-                            $oldCategoryName,
-
-                        'new' =>
-                            $newCategoryName
-                    ];
-                }
-            }
-
-
-            // ORDER STATUS
-
-            if ($orderStatus !== '') {
-
-                $oldOrderStatus =
-                    strtolower(
-                        trim(
-                            $old['order_status'] ?? ''
-                        )
-                    );
-
-
-                if (
-                    $oldOrderStatus !==
-                    $orderStatus
-                ) {
-
-                    $emailChanges['order_status'] = [
-                        'old' =>
-                            $old['order_status'],
-
-                        'new' =>
-                            $orderStatus
-                    ];
-                }
-            }
-
-
-            // PO NUMBER
-
-            if (
-                $status !== '' &&
-                $status !== 'final po approved'
-            ) {
-
-                $oldPO =
-                    trim(
-                        $old['po_no'] ?? ''
-                    );
-
-
-                if ($oldPO !== '') {
-
-                    $emailChanges['po_no'] = [
-                        'old' =>
-                            $oldPO,
-
-                        'new' =>
-                            ''
-                    ];
-                }
-
-            } elseif ($poNo !== '') {
-
-                $oldPO =
-                    trim(
-                        $old['po_no'] ?? ''
-                    );
-
-
-                if ($oldPO !== $poNo) {
-
-                    $emailChanges['po_no'] = [
-                        'old' =>
-                            $oldPO,
-
-                        'new' =>
-                            $poNo
-                    ];
-                }
-            }
-
-
-            // ---------------------------------------------
-            // SEND EMAIL
-            // ---------------------------------------------
-
-            $sent =
-                sendPurchRequestStatusEmail(
-                    $conn,
-                    $requestId,
-                    $requestorId,
-                    $status,
-                    $emailChanges,
-                    $comment
-                );
-
-
-            if ($sent) {
-
-                $emailSentCount++;
-
-            } else {
-
-                $emailFailedCount++;
-            }
+            ];
         }
     }
+
+
+    // =================================================
+    // PURCHASER
+    // =================================================
+
+    if ($purchaserId !== '') {
+
+        $oldPurchaserId =
+            (int)$old['purchaser_id'];
+
+
+        if (
+            $oldPurchaserId !==
+            $purchaserId
+        ) {
+
+            $oldPurchaserName =
+                'Unassigned';
+
+
+            $newPurchaserName =
+                'Unassigned';
+
+
+            if ($oldPurchaserId > 1) {
+
+                $oldPurchaserName =
+                    $purchaserNames[
+                        $oldPurchaserId
+                    ] ??
+                    'Unassigned';
+            }
+
+
+            if ($purchaserId > 1) {
+
+                $newPurchaserName =
+                    $purchaserNames[
+                        $purchaserId
+                    ] ??
+                    'Unassigned';
+            }
+
+
+            $emailChanges['purchaser'] = [
+                'old' =>
+                    $oldPurchaserName,
+
+                'new' =>
+                    $newPurchaserName
+            ];
+        }
+    }
+
+
+    // =================================================
+    // CATEGORY
+    // =================================================
+
+    if ($categoryId !== '') {
+
+        $oldCategoryId =
+            (int)$old['category_id'];
+
+
+        if (
+            $oldCategoryId !==
+            $categoryId
+        ) {
+
+            $oldCategoryName =
+                'N/A';
+
+
+            $newCategoryName =
+                'N/A';
+
+
+            if ($oldCategoryId > 0) {
+
+                $oldCategoryName =
+                    $categoryNames[
+                        $oldCategoryId
+                    ] ??
+                    'N/A';
+            }
+
+
+            if ($categoryId > 0) {
+
+                $newCategoryName =
+                    $categoryNames[
+                        $categoryId
+                    ] ??
+                    'N/A';
+            }
+
+
+            $emailChanges['category'] = [
+                'old' =>
+                    $oldCategoryName,
+
+                'new' =>
+                    $newCategoryName
+            ];
+        }
+    }
+
+
+    // =================================================
+    // ORDER STATUS
+    // =================================================
+
+    if (
+        $orderStatus !== '' &&
+        $oldOrderStatus !== $newOrderStatus
+    ) {
+
+        $emailChanges['order_status'] = [
+            'old' =>
+                $old['order_status'],
+
+            'new' =>
+                $newOrderStatus
+        ];
+    }
+
+
+    // =================================================
+    // PO NUMBER
+    // =================================================
+
+    if (
+        $status !== '' &&
+        $status !== 'final po approved'
+    ) {
+
+        $oldPO =
+            trim(
+                $old['po_no'] ?? ''
+            );
+
+
+        if ($oldPO !== '') {
+
+            $emailChanges['po_no'] = [
+                'old' =>
+                    $oldPO,
+
+                'new' =>
+                    ''
+            ];
+        }
+
+    } elseif ($poNo !== '') {
+
+        $oldPO =
+            trim(
+                $old['po_no'] ?? ''
+            );
+
+
+        if ($oldPO !== $poNo) {
+
+            $emailChanges['po_no'] = [
+                'old' =>
+                    $oldPO,
+
+                'new' =>
+                    $poNo
+            ];
+        }
+    }
+
+
+    // =================================================
+    // SEND EMAIL
+    // =================================================
+
+    $sent =
+        sendPurchRequestStatusEmail(
+            $conn,
+            $requestId,
+            $requestorId,
+            $emailNotificationStatus,
+            $emailChanges,
+            $comment,
+            $purchaserId
+        );
+
+
+    if ($sent) {
+
+        $emailSentCount++;
+
+    } else {
+
+        $emailFailedCount++;
+    }
+}
 
 
     // =====================================================
