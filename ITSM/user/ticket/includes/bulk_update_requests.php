@@ -291,7 +291,6 @@ try {
             SELECT category_id
             FROM request_category_tb
             WHERE category_id = ?
-              AND status = 1
             LIMIT 1
         ");
 
