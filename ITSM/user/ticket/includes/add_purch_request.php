@@ -26,20 +26,30 @@ include 'includes/db.php';
     // GET REQUEST CATEGORIES
     // ==========================================
 
-    $categoryQuery = $conn->query("
-        SELECT category_id, category_name
-        FROM request_category_tb
-        WHERE status = 1
-        ORDER BY category_name ASC
-    ");
+        $categoryQuery = $conn->query("
+            SELECT 
+                category_id,
+                category_name,
+                purchaser_id
+            FROM request_category_tb
+          
+            ORDER BY category_name ASC
+        ");
 
-    $categories = [];
+        $categories = [];
+        $categoryPurchasers = [];
 
-    if ($categoryQuery) {
-        while ($category = $categoryQuery->fetch_assoc()) {
-            $categories[] = $category;
+        if ($categoryQuery) {
+            while ($category = $categoryQuery->fetch_assoc()) {
+
+                $categories[] = $category;
+
+                // category_id => purchaser_id
+                $categoryPurchasers[(int)$category['category_id']] =
+                    (int)$category['purchaser_id'];
+            }
         }
-    }
+
     // ==========================================
     // GENERATE LMR NUMBER
     //
@@ -188,7 +198,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $area = trim($user['area'] ?? '');
 
     // Default purchaser
-    $purchaser_id = 1;
+    // $purchaser_id = 1;
 
 
     // ==========================================
@@ -236,14 +246,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $validItems = [];
 
-    foreach ($items as $i => $item) {
+        foreach ($items as $i => $item) {
 
-        $item = trim($item);
+            $item = trim($item);
 
-        // Ignore empty rows
-        if ($item === '') {
-            continue;
-        }
+            // Ignore empty rows
+            if ($item === '') {
+                continue;
+            }
+
+            $category_id = (int)($categories_post[$i] ?? 0);
+
+            // ==========================================
+            // AUTO ASSIGN PURCHASER FROM CATEGORY
+            // ==========================================
+
+            $purchaser_id = $categoryPurchasers[$category_id] ?? 0;
+
 
         $category_id = (int)($categories_post[$i] ?? 0);
         $desc = trim($descriptions[$i] ?? '');
@@ -261,6 +280,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if ($category_id <= 0) {
             $errors[] = "Category is required for item: {$item}";
+            $itemHasError = true;
+        }
+
+        if ($purchaser_id <= 0) {
+            $errors[] = "No purchaser is assigned to the selected category for item: {$item}";
             $itemHasError = true;
         }
         if ($desc === '') {
@@ -288,6 +312,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $validItems[] = [
                 'item' => $item,
                 'category_id' => $category_id,
+                'purchaser_id' => $purchaser_id,
                 'desc' => $desc,
                 'qty' => $qty,
                 'uom' => $uom,
@@ -298,6 +323,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'po_no' => $po_no,
                 'priority' => $priority
             ];
+
         }
     }
 
@@ -365,26 +391,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             foreach ($validItems as $itemData) {
 
-                $stmt->bind_param(
-                    "sisssisdsssssiiss",
-                    $lmr_no,
-                    $user_id,
-                    $requestor,
-                    $department,
-                    $itemData['item'],
-                    $itemData['category_id'],
-                    $itemData['desc'],
-                    $itemData['qty'],
-                    $itemData['uom'],
-                    $itemData['date_needed'],
-                    $itemData['remarks'],
-                    $status,
-                    $itemData['order_status'],
-                    $created_by,
-                    $purchaser_id,
-                    $po_no,
-                    $priority
-                );
+                    $stmt->bind_param(
+                        "sisssisdsssssiiss",
+                        $lmr_no,
+                        $user_id,
+                        $requestor,
+                        $department,
+                        $itemData['item'],
+                        $itemData['category_id'],
+                        $itemData['desc'],
+                        $itemData['qty'],
+                        $itemData['uom'],
+                        $itemData['date_needed'],
+                        $itemData['remarks'],
+                        $status,
+                        $itemData['order_status'],
+                        $created_by,
+                        $itemData['purchaser_id'],   // <-- AUTO ASSIGNED
+                        $itemData['po_no'],
+                        $itemData['priority']
+                    );
+
 
                 if (!$stmt->execute()) {
 
@@ -790,7 +817,6 @@ $('#user_id').on('change', function() {
 
                     <div class="col-md-3">
                         <label class="form-label">Category *</label>
-
                         <select
                             class="form-select"
                             name="category_id[]"
@@ -807,6 +833,7 @@ $('#user_id').on('change', function() {
                             <?php endforeach; ?>
 
                         </select>
+
                     </div>
 
                     <div class="col-md-2">
