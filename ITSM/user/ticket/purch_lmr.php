@@ -776,14 +776,14 @@ include 'includes/db.php';
                                 </a>
                             <?php endif; ?>
 
-                            <button
+                            <!-- <button
                                 type="button"
                                 class="btn btn-sm btn-success btn-print"
                                 data-lmr="<?= htmlspecialchars($row['lmr_no']) ?>"
                                 data-status="<?= htmlspecialchars(strtolower(trim($row['status']))) ?>"
                                 title="Print">
                                 <i class="fas fa-print"></i>
-                            </button>
+                            </button> -->
 
                         </td>
 
@@ -1274,170 +1274,170 @@ include 'includes/db.php';
 
                         </select>
 
-                    </div>
-                    <!-- PRIORITY -->
-                    <div class="col-md-4">
+                        </div>
+                        <!-- PRIORITY -->
+                        <div class="col-md-4">
 
-                        <label class="form-label fw-bold">
-                            Priority
-                        </label>
+                            <label class="form-label fw-bold">
+                                Priority
+                            </label>
 
-                        <select id="bulkPriority"
-                                class="form-select">
+                            <select id="bulkPriority"
+                                    class="form-select">
 
-                            <option value="">
-                                No Change
-                            </option>
+                                <option value="">
+                                    No Change
+                                </option>
 
-                            <option value="urgent">
-                                Urgent
-                            </option>
+                                <option value="urgent">
+                                    Urgent
+                                </option>
 
-                            <option value="high">
-                                High
-                            </option>
+                                <option value="high">
+                                    High
+                                </option>
 
-                            <option value="medium">
-                                Medium
-                            </option>
+                                <option value="medium">
+                                    Medium
+                                </option>
 
-                        </select>
+                            </select>
 
-                    </div>
-                    <!-- STATUS -->
-                    <div class="col-md-4">
+                        </div>
+                        <!-- STATUS -->
+                        <div class="col-md-4">
 
-                        <label class="form-label fw-bold">
-                            Status
-                        </label>
+                            <label class="form-label fw-bold">
+                                Status
+                            </label>
 
-                        <select id="bulkStatus"
-                                class="form-select">
+                            <select id="bulkStatus"
+                                    class="form-select">
 
-                            <option value="">
-                                No Change
-                            </option>
+                                <option value="">
+                                    No Change
+                                </option>
 
-                            <option value="pending">
-                                Pending
-                            </option>
+                                <option value="pending">
+                                    Pending
+                                </option>
 
-                            <option value="checking requirements">
-                                Checking Requirements
-                            </option>
+                                <option value="checking requirements">
+                                    Checking Requirements
+                                </option>
 
-                            <option value="canvassing">
-                                Canvassing
-                            </option>
+                                <option value="canvassing">
+                                    Canvassing
+                                </option>
 
-                            <option value="negotiation">
-                                Negotiation
-                            </option>
+                                <option value="negotiation">
+                                    Negotiation
+                                </option>
 
-                            <option value="draft po under discussion">
-                                Draft PO Under Discussion
-                            </option>
+                                <option value="draft po under discussion">
+                                    Draft PO Under Discussion
+                                </option>
 
-                            <option value="draft po approved">
-                                Draft PO Approved
-                            </option>
+                                <option value="draft po approved">
+                                    Draft PO Approved
+                                </option>
 
-                            <option value="final po approved">
-                                Final PO Approved
-                            </option>
+                                <option value="final po approved">
+                                    Final PO Approved
+                                </option>
 
-                            <option value="rejected">
-                                Rejected
-                            </option>
+                                <option value="rejected">
+                                    Rejected
+                                </option>
 
-                            <!-- <option value="closed">
-                                Closed
-                            </option> -->
+                                <!-- <option value="closed">
+                                    Closed
+                                </option> -->
 
-                        </select>
+                            </select>
 
-                    </div>
-                    <!-- ORDER STATUS -->
-                    <div class="col-md-4">
+                        </div>
+                        <!-- ORDER STATUS -->
+                        <div class="col-md-4">
 
-                        <label class="form-label fw-bold">
-                            Order Status
-                        </label>
+                            <label class="form-label fw-bold">
+                                Order Status
+                            </label>
 
-                        <select id="bulkOrderStatus"
-                                class="form-select"
+                            <select id="bulkOrderStatus"
+                                    class="form-select"
+                                    disabled>
+
+                                <option value="">
+                                    No Change
+                                </option>
+
+                                <option value="n/a">
+                                    N/A
+                                </option>
+
+                                <option value="order acknowledged">
+                                    Order Acknowledged
+                                </option>
+
+                                <!-- <option value="goods delivered">
+                                    Goods Delivered
+                                </option> -->
+
+                                <option value="goods received">
+                                    Goods Received
+                                </option>
+
+                                <option value="payment processing">
+                                    Payment Processing
+                                </option>
+
+                                <option value="payment issued">
+                                    Payment Issued
+                                </option>
+
+                                <option value="closed">
+                                    Closed
+                                </option>
+
+                            </select>
+
+                        </div>
+
+                        <!-- PO NUMBER -->
+                        <div class="col-md-4">
+
+                            <label class="form-label fw-bold">
+                                PO Number
+                            </label>
+
+                            <input type="text"
+                                id="bulkPO"
+                                class="form-control"
+                                placeholder="Required when status is Final PO Approved"
                                 disabled>
+                        </div>
+                        <!-- COMMENT -->
+                        <div class="col-12">
 
-                            <option value="">
-                                No Change
-                            </option>
+                            <label class="form-label fw-bold">
+                                Comment
+                                <span class="text-muted fw-normal">(Required)</span>
+                            </label>
 
-                            <option value="n/a">
-                                N/A
-                            </option>
+                            <textarea
+                                id="bulkChangeComment"
+                                class="form-control"
+                                rows="3"
+                                maxlength="2000"
+                                placeholder="Add a comment about this bulk update..."
+                            required></textarea>
+        <!-- 
+                    <small class="text-muted">
+                        This comment will be added to the request history of every selected request.
+                    </small> -->
 
-                            <option value="order acknowledged">
-                                Order Acknowledged
-                            </option>
-
-                            <!-- <option value="goods delivered">
-                                Goods Delivered
-                            </option> -->
-
-                            <option value="goods received">
-                                Goods Received
-                            </option>
-
-                            <option value="payment processing">
-                                Payment Processing
-                            </option>
-
-                            <option value="payment issued">
-                                Payment Issued
-                            </option>
-
-                            <option value="closed">
-                                Closed
-                            </option>
-
-                        </select>
-
-                    </div>
-
-                    <!-- PO NUMBER -->
-                    <div class="col-md-4">
-
-                        <label class="form-label fw-bold">
-                            PO Number
-                        </label>
-
-                        <input type="text"
-                            id="bulkPO"
-                            class="form-control"
-                            placeholder="Required when status is Final PO Approved"
-                            disabled>
-                    </div>
-                    <!-- COMMENT -->
-                    <div class="col-12">
-
-                        <label class="form-label fw-bold">
-                            Comment
-                            <span class="text-muted fw-normal">(Required)</span>
-                        </label>
-
-                        <textarea
-                            id="bulkChangeComment"
-                            class="form-control"
-                            rows="3"
-                            maxlength="2000"
-                            placeholder="Add a comment about this bulk update..."
-                        required></textarea>
-<!-- 
-                        <small class="text-muted">
-                            This comment will be added to the request history of every selected request.
-                        </small> -->
-
-                    </div>
+                </div>
 
                 </div>
 
