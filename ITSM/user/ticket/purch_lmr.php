@@ -776,14 +776,14 @@ include 'includes/db.php';
                                 </a>
                             <?php endif; ?>
 
-                            <!-- <button
+                            <button
                                 type="button"
                                 class="btn btn-sm btn-success btn-print"
                                 data-lmr="<?= htmlspecialchars($row['lmr_no']) ?>"
                                 data-status="<?= htmlspecialchars(strtolower(trim($row['status']))) ?>"
                                 title="Print">
                                 <i class="fas fa-print"></i>
-                            </button> -->
+                            </button>
 
                         </td>
 
