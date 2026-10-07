@@ -1,6 +1,6 @@
 <?php
-include __DIR__ . '/../../includes/auth.php';
-include __DIR__ . '/../../includes/db.php';
+include __DIR__ . '/../../../includes/auth.php';
+include __DIR__ . '/../../../includes/db.php';
 $fullname = $_SESSION['fullname'];
 // ✅ Get LMR No from URL (not request_id)
 $lmr_no = trim($_GET['lmr_no'] ?? '');

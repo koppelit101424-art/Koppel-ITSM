@@ -215,7 +215,7 @@ $recStmt->close();
             <td class="distribution"> DISTRIBUTION</td>
         </tr>
         <tr>
-          <td colspan="2" class="prepared_by"><?= $fullname ?></td>
+          <td colspan="2" class="prepared_by"></td>
           
           <?php
           $sql = "SELECT fullname FROM user_tb WHERE position = 'IT Assistant' LIMIT 1";
