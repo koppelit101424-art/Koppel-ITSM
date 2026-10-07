@@ -1294,6 +1294,7 @@ $emailFailedCount =
 
 $statusNotificationStatuses = [
     'pending',
+     'final po approved',
     'rejected'
 ];
 
