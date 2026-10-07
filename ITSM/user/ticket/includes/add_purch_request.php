@@ -65,16 +65,19 @@ include 'includes/db.php';
     // Department prefixes
     $departmentPrefixes = [
         'Marketing'              => 'MKTG',
-        'Sales'                  => 'SALES',
+        'Sales'                  => 'SD',
         'PDED'                   => 'PDED',
-        'PDED OEM'               => 'OEM',
-        'PDED DESIGN'            => 'DESIGN',
-        'Purchasing'             => 'PURCH',
+        'PDED OEM'               => 'PDED',
+        'PDED DESIGN'            => 'PDED',
+        'Purchasing'             => 'PUR',
         'Accounting'             => 'ACTG',
         'Information Technology' => 'IT',
         'Human Resource'         => 'HR',
         'HR'                     => 'HR',
         'Logistic'               => 'LOGI',
+        'QA'               => 'QA',
+        'PROD'               => 'PROD',
+        'CNC'               => 'CNC',
     ];
 
     // Branch prefixes
