@@ -66,18 +66,25 @@ include 'includes/db.php';
     $departmentPrefixes = [
         'Marketing'              => 'MKTG',
         'Sales'                  => 'SD',
+        'Service'                  =>'SVC',
         'PDED'                   => 'PDED',
         'PDED OEM'               => 'PDED',
         'PDED DESIGN'            => 'PDED',
         'Purchasing'             => 'PUR',
         'Accounting'             => 'ACTG',
+        'Accounting & Finance'   => 'ACTG',
         'Information Technology' => 'IT',
         'Human Resource'         => 'HR',
         'HR'                     => 'HR',
         'Logistic'               => 'LOGI',
-        'QA'               => 'QA',
-        'PROD'               => 'PROD',
-        'CNC'               => 'CNC',
+        'Warehouse'        => 'LOGI',
+        'Sucat Warehouse'        => 'LOGI',
+        'Canlubang Warehouse'    => 'LOGI',
+        'Import'                  =>'IMP',
+        'QA/QC'               => 'QA',
+        'Quality Assurance'               => 'QA',
+        'Production'               => 'PROD',
+        'Credit & Collection'               => 'CNC',
     ];
 
     // Branch prefixes
