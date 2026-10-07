@@ -101,6 +101,7 @@ function sendPurchRequestStatusEmail(
         'pending',
         'rejected',
         'goods received',
+        'final po approved',
         'closed'
     ];
 
@@ -693,6 +694,10 @@ function sendPurchRequestStatusEmail(
             break;
 
         case 'goods received':
+            $statusColor = '#198754';
+            break;
+
+        case 'final po approved':
             $statusColor = '#198754';
             break;
 
