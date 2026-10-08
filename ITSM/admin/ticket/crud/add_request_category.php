@@ -217,7 +217,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // STATUS
         // -------------------------------------------------
 
-        $status = 'N/A';
+        $status = 0;
 
 
         // -------------------------------------------------
@@ -529,7 +529,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <input
                     type="text"
                     class="form-control"
-                    value="N/A"
+                    value="0"
                     readonly>
 
                 <div class="form-text">
