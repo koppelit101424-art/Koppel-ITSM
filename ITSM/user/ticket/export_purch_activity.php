@@ -19,12 +19,16 @@ if ($request_id <= 0) {
 
 /*
 |--------------------------------------------------------------------------
-| GET LMR NUMBER
+| GET LMR INFORMATION
 |--------------------------------------------------------------------------
 */
 
 $stmt = $conn->prepare("
-    SELECT lmr_no
+    SELECT
+        request_id,
+        lmr_no,
+        item,
+        date_created
     FROM purch_request_tb
     WHERE request_id = ?
     LIMIT 1
@@ -34,7 +38,6 @@ $stmt->bind_param("i", $request_id);
 $stmt->execute();
 
 $result = $stmt->get_result();
-
 $request = $result->fetch_assoc();
 
 $stmt->close();
@@ -46,6 +49,8 @@ if (!$request) {
 
 
 $lmr_no = trim($request['lmr_no']);
+
+$creationDate = $request['date_created'];
 
 
 /*
@@ -100,18 +105,625 @@ $result = $stmt->get_result();
 
 /*
 |--------------------------------------------------------------------------
+| STATUS COLUMNS
+|--------------------------------------------------------------------------
+|
+| These are the ONLY status columns that will appear in Excel.
+|
+*/
+
+$statusColumns = [
+
+    'pending' =>
+        'Pending',
+
+    'checking requirements' =>
+        'Checking Requirements',
+
+    'canvassing' =>
+        'Canvassing',
+
+    'negotiation' =>
+        'Negotiation',
+
+    'draft po under discussion' =>
+        'Draft PO Under Discussion',
+
+    'draft po approved' =>
+        'Draft PO Approved',
+
+    'final po approved' =>
+        'Final PO Approved',
+
+    'rejected' =>
+        'Rejected',
+
+    'closed' =>
+        'Closed'
+
+];
+
+
+/*
+|--------------------------------------------------------------------------
+| WORKING DAYS CALCULATOR
+|--------------------------------------------------------------------------
+|
+| Does NOT count the starting date.
+|
+| Example:
+|
+| Monday Oct 5 -> Thursday Oct 8
+|
+| Oct 5 = starting date, NOT counted
+| Oct 6 = 1
+| Oct 7 = 2
+| Oct 8 = 3
+|
+| Saturday and Sunday are excluded.
+|
+*/
+
+function calculateWorkingDays(
+    $startDate,
+    $endDate
+) {
+
+    if (
+        empty($startDate) ||
+        empty($endDate)
+    ) {
+        return '';
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | CONVERT TO DATE ONLY
+    |--------------------------------------------------------------------------
+    */
+
+    $start = new DateTime(
+        date(
+            'Y-m-d',
+            strtotime($startDate)
+        )
+    );
+
+    $end = new DateTime(
+        date(
+            'Y-m-d',
+            strtotime($endDate)
+        )
+    );
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | SAME DATE OR END BEFORE START
+    |--------------------------------------------------------------------------
+    */
+
+    if ($end <= $start) {
+        return 0;
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | START FROM THE NEXT DAY
+    |--------------------------------------------------------------------------
+    */
+
+    $current = clone $start;
+
+    $current->modify('+1 day');
+
+
+    $workingDays = 0;
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | COUNT MONDAY - FRIDAY
+    |--------------------------------------------------------------------------
+    */
+
+    while ($current <= $end) {
+
+        $dayOfWeek =
+            (int)$current->format('N');
+
+
+        /*
+        | Monday    = 1
+        | Tuesday   = 2
+        | Wednesday = 3
+        | Thursday  = 4
+        | Friday    = 5
+        | Saturday  = 6
+        | Sunday    = 7
+        */
+
+        if ($dayOfWeek <= 5) {
+
+            $workingDays++;
+        }
+
+
+        $current->modify('+1 day');
+    }
+
+
+    return $workingDays;
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| PREPARE EXPORT DATA
+|--------------------------------------------------------------------------
+*/
+
+$exportData = [];
+
+
+/*
+|--------------------------------------------------------------------------
+| PROCESS ACTIVITY LOGS
+|--------------------------------------------------------------------------
+*/
+
+while ($row = $result->fetch_assoc()) {
+
+    $requestId =
+        (int)$row['request_id'];
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | INITIALIZE REQUEST
+    |--------------------------------------------------------------------------
+    */
+
+    if (!isset(
+        $exportData[$requestId]
+    )) {
+
+        $exportData[$requestId] = [
+
+            'request_id' =>
+                $requestId,
+
+            'lmr_no' =>
+                $row['lmr_no'],
+
+            'item' =>
+                $row['item'],
+
+            'creation_date' =>
+                $creationDate,
+
+            'changed_by' =>
+                [],
+
+            'statuses' =>
+                [],
+
+            'status_events' =>
+                []
+
+        ];
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | CHANGED BY
+    |--------------------------------------------------------------------------
+    */
+
+    $changedBy =
+        trim(
+            $row['fullname'] ?? ''
+        );
+
+
+    if ($changedBy === '') {
+
+        $changedBy =
+            'Unknown User';
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | STORE UNIQUE USERS
+    |--------------------------------------------------------------------------
+    */
+
+    if (!in_array(
+        $changedBy,
+        $exportData[$requestId]['changed_by'],
+        true
+    )) {
+
+        $exportData[$requestId]['changed_by'][] =
+            $changedBy;
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | GET CHANGES JSON
+    |--------------------------------------------------------------------------
+    */
+
+    if (
+        empty(
+            $row['changes_json']
+        )
+    ) {
+
+        continue;
+    }
+
+
+    $changes =
+        json_decode(
+            $row['changes_json'],
+            true
+        );
+
+
+    if (!is_array($changes)) {
+
+        continue;
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | CHECK STATUS CHANGE
+    |--------------------------------------------------------------------------
+    */
+
+    if (
+        !isset(
+            $changes['status']
+        )
+    ) {
+
+        continue;
+    }
+
+
+    $statusChange =
+        $changes['status'];
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | GET NEW STATUS
+    |--------------------------------------------------------------------------
+    */
+
+    $newStatus = '';
+
+
+    if (is_array($statusChange)) {
+
+        $newStatus =
+            $statusChange['new']
+            ?? '';
+
+    } else {
+
+        $newStatus =
+            $statusChange;
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | NORMALIZE STATUS
+    |--------------------------------------------------------------------------
+    */
+
+    $newStatus =
+        strtolower(
+            trim(
+                (string)$newStatus
+            )
+        );
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | IGNORE UNKNOWN STATUS
+    |--------------------------------------------------------------------------
+    */
+
+    if (
+        !isset(
+            $statusColumns[$newStatus]
+        )
+    ) {
+
+        continue;
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | STATUS DATE
+    |--------------------------------------------------------------------------
+    */
+
+    $statusDate =
+        $row['date_created'];
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | INITIALIZE STATUS ARRAY
+    |--------------------------------------------------------------------------
+    */
+
+    if (
+        !isset(
+            $exportData[$requestId]['statuses'][$newStatus]
+        )
+    ) {
+
+        $exportData[$requestId]['statuses'][$newStatus] = [];
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | SAVE STATUS OCCURRENCE
+    |--------------------------------------------------------------------------
+    |
+    | IMPORTANT:
+    |
+    | We keep EVERY occurrence.
+    |
+    | Example:
+    |
+    | Pending:
+    |
+    | 10-05-2026 08:30
+    | 10-08-2026 10:15
+    | 10-12-2026 09:20
+    |
+    | All of them will appear inside the SAME
+    | Pending column in Excel.
+    |
+    |--------------------------------------------------------------------------
+    */
+
+    $exportData[$requestId]['statuses'][$newStatus][] = [
+
+        'date' =>
+            $statusDate,
+
+        'changed_by' =>
+            $changedBy
+
+    ];
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | SAVE STATUS EVENT
+    |--------------------------------------------------------------------------
+    |
+    | Used for calculating completion times.
+    |
+    |--------------------------------------------------------------------------
+    */
+
+    $exportData[$requestId]['status_events'][] = [
+
+        'status' =>
+            $newStatus,
+
+        'date' =>
+            $statusDate,
+
+        'changed_by' =>
+            $changedBy
+
+    ];
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| CREATE EXACTLY ONE COLUMN FOR EACH STATUS
+|--------------------------------------------------------------------------
+|
+| There will NEVER be:
+|
+| Pending 2
+| Pending 3
+| Negotiation 2
+| Canvassing 2
+|
+| Only:
+|
+| Pending
+| Checking Requirements
+| Canvassing
+| Negotiation
+| ...
+|
+|--------------------------------------------------------------------------
+*/
+
+$dynamicStatusColumns = [];
+
+
+foreach (
+    $statusColumns
+    as $statusKey => $statusLabel
+) {
+
+    $dynamicStatusColumns[] = [
+
+        'key' =>
+            $statusKey,
+
+        'label' =>
+            $statusLabel
+
+    ];
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| CALCULATE COMPLETION TIMES
+|--------------------------------------------------------------------------
+*/
+
+foreach (
+    $exportData
+    as $requestId => &$data
+) {
+
+    $finalPoApprovedDate = null;
+
+    $closedDate = null;
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | FIND FIRST FINAL PO APPROVED
+    |--------------------------------------------------------------------------
+    */
+
+    foreach (
+        $data['status_events']
+        as $event
+    ) {
+
+        if (
+            $event['status'] ===
+                'final po approved'
+            &&
+            $finalPoApprovedDate === null
+        ) {
+
+            $finalPoApprovedDate =
+                $event['date'];
+        }
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | FIND FIRST CLOSED
+    |--------------------------------------------------------------------------
+    */
+
+    foreach (
+        $data['status_events']
+        as $event
+    ) {
+
+        if (
+            $event['status'] ===
+                'closed'
+            &&
+            $closedDate === null
+        ) {
+
+            $closedDate =
+                $event['date'];
+        }
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | CREATION → FINAL PO APPROVED
+    |--------------------------------------------------------------------------
+    */
+
+    $data['creation_to_po_approved'] =
+
+        $finalPoApprovedDate !== null
+
+            ? calculateWorkingDays(
+                $data['creation_date'],
+                $finalPoApprovedDate
+            )
+
+            : '';
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | FINAL PO APPROVED → CLOSED
+    |--------------------------------------------------------------------------
+    */
+
+    $data['po_approved_to_closed'] =
+
+        (
+            $finalPoApprovedDate !== null
+            &&
+            $closedDate !== null
+        )
+
+            ? calculateWorkingDays(
+                $finalPoApprovedDate,
+                $closedDate
+            )
+
+            : '';
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | CREATION → CLOSED
+    |--------------------------------------------------------------------------
+    */
+
+    $data['creation_to_closed'] =
+
+        $closedDate !== null
+
+            ? calculateWorkingDays(
+                $data['creation_date'],
+                $closedDate
+            )
+
+            : '';
+}
+
+
+unset($data);
+
+
+/*
+|--------------------------------------------------------------------------
 | CSV FILENAME
 |--------------------------------------------------------------------------
 */
 
-$safeLmr = preg_replace(
-    '/[^A-Za-z0-9_-]/',
-    '_',
-    $lmr_no
-);
+$safeLmr =
+    preg_replace(
+        '/[^A-Za-z0-9_-]/',
+        '_',
+        $lmr_no
+    );
+
 
 $filename =
-    'Purchasing_Activity_' .
+    'Purchasing_Status_History_' .
     $safeLmr .
     '_' .
     date('Y-m-d_H-i-s') .
@@ -124,7 +736,9 @@ $filename =
 |--------------------------------------------------------------------------
 */
 
-header('Content-Type: text/csv; charset=UTF-8');
+header(
+    'Content-Type: text/csv; charset=UTF-8'
+);
 
 header(
     'Content-Disposition: attachment; filename="' .
@@ -132,17 +746,26 @@ header(
     '"'
 );
 
-header('Pragma: no-cache');
-header('Expires: 0');
+header(
+    'Pragma: no-cache'
+);
+
+header(
+    'Expires: 0'
+);
 
 
 /*
 |--------------------------------------------------------------------------
-| OPEN OUTPUT
+| OPEN CSV
 |--------------------------------------------------------------------------
 */
 
-$output = fopen('php://output', 'w');
+$output =
+    fopen(
+        'php://output',
+        'w'
+    );
 
 
 /*
@@ -150,216 +773,301 @@ $output = fopen('php://output', 'w');
 | UTF-8 BOM
 |--------------------------------------------------------------------------
 |
-| This helps Microsoft Excel correctly recognize UTF-8.
+| Allows Excel to correctly detect UTF-8.
 |
 */
 
 fprintf(
     $output,
-    chr(0xEF) . chr(0xBB) . chr(0xBF)
+    chr(0xEF) .
+    chr(0xBB) .
+    chr(0xBF)
 );
 
 
 /*
 |--------------------------------------------------------------------------
-| CSV TITLE
+| REPORT TITLE
 |--------------------------------------------------------------------------
 */
 
-fputcsv($output, [
-    'PURCHASING REQUEST ACTIVITY REPORT'
-]);
+fputcsv(
+    $output,
+    [
+        'PURCHASING REQUEST STATUS HISTORY'
+    ]
+);
 
-fputcsv($output, [
-    'LMR No.',
-    $lmr_no
-]);
 
-fputcsv($output, [
-    'Generated Date',
-    date('Y-m-d H:i:s')
-]);
+fputcsv(
+    $output,
+    [
+        'LMR No.',
+        $lmr_no
+    ]
+);
 
-fputcsv($output, []);
+
+fputcsv(
+    $output,
+    [
+        'Generated Date',
+        date(
+            'Y-m-d H:i:s'
+        )
+    ]
+);
+
+
+fputcsv(
+    $output,
+    []
+);
 
 
 /*
 |--------------------------------------------------------------------------
-| CSV COLUMN HEADERS
+| COLUMN HEADERS
 |--------------------------------------------------------------------------
 */
 
-fputcsv($output, [
-    'Activity ID',
+$headers = [
+
     'Request ID',
+
     'LMR No.',
+
     'Item',
-    'Changed By',
-    'Date / Time',
-    'Changes',
-    'Comment'
-]);
+
+    'Changed By'
+
+];
 
 
 /*
 |--------------------------------------------------------------------------
-| FORMAT CHANGE DATA
+| ADD ONE COLUMN PER STATUS
 |--------------------------------------------------------------------------
 */
 
-while ($row = $result->fetch_assoc()) {
+foreach (
+    $dynamicStatusColumns
+    as $column
+) {
 
-    $changesText = '';
-
-    if (!empty($row['changes_json'])) {
-
-        $changes = json_decode(
-            $row['changes_json'],
-            true
-        );
-
-        if (is_array($changes)) {
-
-            $changeLines = [];
-
-            foreach ($changes as $field => $change) {
-
-                /*
-                |--------------------------------------------------------------------------
-                | FRIENDLY FIELD NAME
-                |--------------------------------------------------------------------------
-                */
-
-                $fieldLabel = match ($field) {
-
-                    'status' =>
-                        'Status',
-
-                    'purchaser' =>
-                        'Assigned Purchaser',
-
-                    'priority' =>
-                        'Priority',
-
-                    'category' =>
-                        'Category',
-
-                    'order_status' =>
-                        'Order Status',
-
-                    'po_no' =>
-                        'PO Number',
-
-                    default =>
-                        ucwords(
-                            str_replace(
-                                '_',
-                                ' ',
-                                $field
-                            )
-                        )
-                };
+    $headers[] =
+        $column['label'];
+}
 
 
-                /*
-                |--------------------------------------------------------------------------
-                | OLD / NEW VALUES
-                |--------------------------------------------------------------------------
-                */
+/*
+|--------------------------------------------------------------------------
+| ADD COMPLETION COLUMNS
+|--------------------------------------------------------------------------
+*/
 
-                $oldValue =
-                    $change['old'] ?? '';
+$headers[] =
+    'Creation to Final PO Approved';
 
-                $newValue =
-                    $change['new'] ?? '';
+$headers[] =
+    'Final PO Approved to Closed';
 
-
-                /*
-                |--------------------------------------------------------------------------
-                | HANDLE ARRAYS / OBJECTS
-                |--------------------------------------------------------------------------
-                */
-
-                if (is_array($oldValue)) {
-                    $oldValue = json_encode(
-                        $oldValue,
-                        JSON_UNESCAPED_UNICODE
-                    );
-                }
-
-                if (is_array($newValue)) {
-                    $newValue = json_encode(
-                        $newValue,
-                        JSON_UNESCAPED_UNICODE
-                    );
-                }
+$headers[] =
+    'Creation to Closed';
 
 
-                /*
-                |--------------------------------------------------------------------------
-                | BUILD CHANGE TEXT
-                |--------------------------------------------------------------------------
-                */
+/*
+|--------------------------------------------------------------------------
+| WRITE HEADERS
+|--------------------------------------------------------------------------
+*/
 
-                $changeLines[] =
-                    $fieldLabel .
-                    ': ' .
-                    ($oldValue !== ''
-                        ? $oldValue
-                        : 'N/A'
-                    ) .
-                    ' -> ' .
-                    ($newValue !== ''
-                        ? $newValue
-                        : 'N/A'
-                    );
-            }
+fputcsv(
+    $output,
+    $headers
+);
 
-            $changesText = implode(
-                ' | ',
-                $changeLines
-            );
+
+/*
+|--------------------------------------------------------------------------
+| WRITE DATA
+|--------------------------------------------------------------------------
+*/
+
+foreach (
+    $exportData
+    as $data
+) {
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | BASIC INFORMATION
+    |--------------------------------------------------------------------------
+    */
+
+    $rowData = [
+
+        $data['request_id'],
+
+        $data['lmr_no'],
+
+        $data['item'],
+
+        implode(
+            ' / ',
+            $data['changed_by']
+        )
+
+    ];
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | STATUS COLUMNS
+    |--------------------------------------------------------------------------
+    |
+    | Each status gets exactly ONE column.
+    |
+    | If the status happened multiple times,
+    | every date is placed inside the same Excel cell.
+    |
+    |--------------------------------------------------------------------------
+    */
+
+    foreach (
+        $dynamicStatusColumns
+        as $column
+    ) {
+
+        $statusKey =
+            $column['key'];
+
+
+        $occurrences =
+            $data['statuses'][$statusKey]
+            ?? [];
+
+
+        $dates = [];
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | COLLECT ALL STATUS DATES
+        |--------------------------------------------------------------------------
+        */
+
+        foreach (
+            $occurrences
+            as $event
+        ) {
+
+            $dates[] =
+                date(
+                    'm-d-Y H:i',
+                    strtotime(
+                        $event['date']
+                    )
+                );
         }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | PUT ALL DATES IN ONE CELL
+        |--------------------------------------------------------------------------
+        |
+        | Example:
+        |
+        | 10-05-2026 08:30
+        | 10-08-2026 10:15
+        | 10-12-2026 09:20
+        |
+        |--------------------------------------------------------------------------
+        */
+
+        $rowData[] =
+            implode(
+                "\n",
+                $dates
+            );
     }
 
 
     /*
     |--------------------------------------------------------------------------
-    | COMMENT
+    | CREATION → FINAL PO APPROVED
     |--------------------------------------------------------------------------
     */
 
-    $comment = trim(
-        $row['comment'] ?? ''
-    );
+    $rowData[] =
+
+        $data['creation_to_po_approved'] !== ''
+
+            ? $data['creation_to_po_approved'] .
+                ' working day' .
+                (
+                    $data['creation_to_po_approved'] != 1
+                        ? 's'
+                        : ''
+                )
+
+            : '';
 
 
     /*
     |--------------------------------------------------------------------------
-    | WRITE CSV ROW
+    | FINAL PO APPROVED → CLOSED
     |--------------------------------------------------------------------------
     */
 
-    fputcsv($output, [
+    $rowData[] =
 
-        $row['history_id'],
+        $data['po_approved_to_closed'] !== ''
 
-        $row['request_id'],
+            ? $data['po_approved_to_closed'] .
+                ' working day' .
+                (
+                    $data['po_approved_to_closed'] != 1
+                        ? 's'
+                        : ''
+                )
 
-        $row['lmr_no'],
+            : '';
 
-        $row['item'],
 
-        $row['fullname']
-            ?: 'Unknown User',
+    /*
+    |--------------------------------------------------------------------------
+    | CREATION → CLOSED
+    |--------------------------------------------------------------------------
+    */
 
-        $row['date_created'],
+    $rowData[] =
 
-        $changesText,
+        $data['creation_to_closed'] !== ''
 
-        $comment
+            ? $data['creation_to_closed'] .
+                ' working day' .
+                (
+                    $data['creation_to_closed'] != 1
+                        ? 's'
+                        : ''
+                )
 
-    ]);
+            : '';
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | WRITE ROW
+    |--------------------------------------------------------------------------
+    */
+
+    fputcsv(
+        $output,
+        $rowData
+    );
 }
 
 
