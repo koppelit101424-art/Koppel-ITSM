@@ -637,7 +637,75 @@ function sendPurchRequestStatusEmail(
     */
 
     $commentHtml = '';
+/*
+|--------------------------------------------------------------------------
+| GOODS RECEIVED BUTTON
+|--------------------------------------------------------------------------
+*/
 
+$goodsReceivedButton = '';
+
+if ($newStatus === 'goods received') {
+
+    $confirmationUrl =
+        'https://115.88.1.63/Koppel-ITSM/ITSM/user/index.php'
+        . '?page=ticket/view_purch_request'
+        . '&request_id=' . urlencode($requestId);
+
+    $safeConfirmationUrl =
+        htmlspecialchars(
+            $confirmationUrl,
+            ENT_QUOTES,
+            'UTF-8'
+        );
+
+    $goodsReceivedButton = "
+
+        <div style='
+            margin:25px 0;
+            padding:20px;
+            background:#f0f8f4;
+            border:1px solid #b7dfc8;
+            border-radius:6px;
+            text-align:center;
+        '>
+
+            <p style='
+                margin-top:0;
+                font-size:15px;
+                font-weight:bold;
+                color:#198754;
+            '>
+                Item Marked as Goods Received
+            </p>
+
+            <p style='
+                color:#555;
+                line-height:1.5;
+            '>
+                Please click the button below to review your
+                purchasing request and confirm that you received
+                the item and that it is in good condition.
+            </p>
+
+            <a href='{$safeConfirmationUrl}'
+               style='
+                    display:inline-block;
+                    padding:12px 24px;
+                    background:#198754;
+                    color:#ffffff;
+                    text-decoration:none;
+                    border-radius:5px;
+                    font-weight:bold;
+                    font-size:14px;
+               '>
+                Confirm Goods Received
+            </a>
+
+        </div>
+
+    ";
+}
 
     if (trim($comment) !== '') {
 
@@ -954,9 +1022,10 @@ function sendPurchRequestStatusEmail(
 
         {$commentHtml}
 
+        {$goodsReceivedButton}
+
 
         <br>
-
 
         <p style='
             color:#666;
