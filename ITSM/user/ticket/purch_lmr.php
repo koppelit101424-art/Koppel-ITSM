@@ -414,6 +414,9 @@ include 'includes/db.php';
                     <label class="form-label">Status</label>
                     <select id="statusSelectFilter" class="form-select">
                         <option value="">All Status</option>
+                        <option value="not_final_po_approved">
+                            Not Final PO Approved
+                        </option>
                         <option value="pending">Pending</option>
                         <option value="checking requirements">Checking Requirements</option>
                         <option value="canvassing">Canvassing</option>
@@ -776,14 +779,16 @@ include 'includes/db.php';
                                 </a>
                             <?php endif; ?>
 
-                            <button
-                                type="button"
-                                class="btn btn-sm btn-success btn-print"
-                                data-lmr="<?= htmlspecialchars($row['lmr_no']) ?>"
-                                data-status="<?= htmlspecialchars(strtolower(trim($row['status']))) ?>"
-                                title="Print">
-                                <i class="fas fa-print"></i>
-                            </button>
+                            <?php if (!$isPurchasing): ?>
+                                <button
+                                    type="button"
+                                    class="btn btn-sm btn-success btn-print"
+                                    data-lmr="<?= htmlspecialchars($row['lmr_no']) ?>"
+                                    data-status="<?= htmlspecialchars(strtolower(trim($row['status']))) ?>"
+                                    title="Print">
+                                    <i class="fas fa-print"></i>
+                                </button>
+                            <?php endif; ?>
 
                         </td>
 
@@ -1894,6 +1899,7 @@ $(document).ready(function () {
         if ($('#statusSelectFilter').length) {
             return true;
         }
+
 
         const selectedStatus = $('.status-filter.active').data('status');
 
