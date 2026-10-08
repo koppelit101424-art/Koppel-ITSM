@@ -560,20 +560,21 @@ include 'includes/db.php';
                         </th>
 
                         <th>ID</th>
-                        <th style="width: 160px;">LMR No.</th>
+                        <th style="min-width: 160px; width: 180px;">LMR No.</th>
                         <th>PO</th>
                         <th>Requester</th>
                         <th>Department</th>
-                        <th>Item</th>
-                        <th>Category</th>
+                        <th style="min-width: 100px; width: 120px;">Item</th>
+                        <th style="min-width: 100px; width: 120px;">Category</th>
                         <!-- <th>Qty</th> -->
                         <!-- <th>UoM</th> -->
                         <th>Assigned to</th>
                         <th>Urgency</th>
-                        <th>Status</th>
+                        <th style="min-width: 150px; width: 160px;">Status</th>
                         <th>Order Status</th>
                         <th>Date Created</th>
-                        <!-- <th>Date Needed</th> -->
+                        <th>Days Elapsed</th>
+                        <th>Date Needed</th>
                         <th>Action</th>
                     </tr>
                 </thead>
@@ -657,7 +658,7 @@ include 'includes/db.php';
                         >
                     </td>
                         <td><?= htmlspecialchars($row['request_id']) ?></td>
-                        <td><?= htmlspecialchars($row['lmr_no']) ?></td>
+                        <td style="min-width: 160px; width: 180px;"><?= htmlspecialchars($row['lmr_no']) ?></td>
                         <td><?= htmlspecialchars($row['po_no']) ?></td>
                         <td><?= htmlspecialchars($requestor_name) ?></td>
                         
@@ -752,8 +753,52 @@ include 'includes/db.php';
                                 <?= htmlspecialchars($orderStatus) ?>
                             </span>
                         </td>
-                        <td><?= date('m-d-Y', strtotime($row['date_created'])) ?></td>
-                        <!-- <td><?= date('m-d-Y', strtotime( $row['date_needed'])) ?></td> -->
+                    <td>
+                        <?= date('m-d-Y', strtotime($row['date_created'])) ?>
+                    </td>
+
+                    <td>
+                        <?php
+                            $createdDate = new DateTime(
+                                date('Y-m-d', strtotime($row['date_created']))
+                            );
+
+                            $today = new DateTime();
+
+                            // Start counting AFTER the request date
+                            $checkDate = clone $createdDate;
+                            $checkDate->modify('+1 day');
+
+                            $workingDaysElapsed = 0;
+
+                            while ($checkDate < $today) {
+
+                                $dayOfWeek = (int)$checkDate->format('N');
+
+                                // Monday = 1, Friday = 5
+                                if ($dayOfWeek <= 5) {
+                                    $workingDaysElapsed++;
+                                }
+
+                                $checkDate->modify('+1 day');
+                            }
+
+                            // Red if more than 15 working days
+                            $daysBadgeClass =
+                                $workingDaysElapsed > 15
+                                    ? 'bg-danger'
+                                    : 'bg-warning text-dark';
+                        ?>
+
+                        <span class="badge <?= $daysBadgeClass ?>">
+                            <?= $workingDaysElapsed ?>
+                             day<?= $workingDaysElapsed != 1 ? 's' : '' ?>
+                        </span>
+                    </td>
+
+                    <td>
+                        <?= date('m-d-Y', strtotime($row['date_needed'])) ?>
+                    </td>
                         <!-- <td><?= htmlspecialchars($row['remarks'] ?? '-') ?></td> -->
                         <td onclick="event.stopPropagation();">
 
@@ -1494,7 +1539,7 @@ $(document).ready(function () {
         columnDefs: [
             {
                 orderable: false,
-                targets: [0, 13]
+                targets: [0, 14]
             }
         ]
     });
