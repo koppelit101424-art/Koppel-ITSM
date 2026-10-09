@@ -1,4 +1,3 @@
-
 <?php
 
 include __DIR__ . '/../../includes/auth.php';
@@ -420,9 +419,6 @@ include __DIR__ . '/../../includes/db.php';
                     <label class="form-label">Status</label>
                     <select id="statusSelectFilter" class="form-select">
                         <option value="">All Status</option>
-                        <option value="not_final_po_approved">
-                            Not Final PO Approved
-                        </option>
                         <option value="pending">Pending</option>
                         <option value="checking requirements">Checking Requirements</option>
                         <option value="canvassing">Canvassing</option>
@@ -566,21 +562,20 @@ include __DIR__ . '/../../includes/db.php';
                         </th>
 
                         <th>ID</th>
-                        <th style="min-width: 160px; width: 180px;">LMR No.</th>
+                        <th style="width: 160px;">LMR No.</th>
                         <th>PO</th>
                         <th>Requester</th>
                         <th>Department</th>
-                        <th style="min-width: 100px; width: 120px;">Item</th>
-                        <th style="min-width: 100px; width: 120px;">Category</th>
+                        <th>Item</th>
+                        <th>Category</th>
                         <!-- <th>Qty</th> -->
                         <!-- <th>UoM</th> -->
                         <th>Assigned to</th>
                         <th>Urgency</th>
-                        <th style="min-width: 150px; width: 160px;">Status</th>
+                        <th>Status</th>
                         <th>Order Status</th>
-                        <th>Date Created</th>
-                        <th>Days Elapsed</th>
-                        <th>Date Needed</th>
+                        <th>Created</th>
+                        <!-- <th>Date Needed</th> -->
                         <th>Action</th>
                     </tr>
                 </thead>
@@ -664,7 +659,7 @@ include __DIR__ . '/../../includes/db.php';
                         >
                     </td>
                         <td><?= htmlspecialchars($row['request_id']) ?></td>
-                        <td style="min-width: 160px; width: 180px;"><?= htmlspecialchars($row['lmr_no']) ?></td>
+                        <td><?= htmlspecialchars($row['lmr_no']) ?></td>
                         <td><?= htmlspecialchars($row['po_no']) ?></td>
                         <td><?= htmlspecialchars($requestor_name) ?></td>
                         
@@ -759,52 +754,8 @@ include __DIR__ . '/../../includes/db.php';
                                 <?= htmlspecialchars($orderStatus) ?>
                             </span>
                         </td>
-                    <td>
-                        <?= date('m-d-Y', strtotime($row['date_created'])) ?>
-                    </td>
-
-                    <td>
-                        <?php
-                            $createdDate = new DateTime(
-                                date('Y-m-d', strtotime($row['date_created']))
-                            );
-
-                            $today = new DateTime();
-
-                            // Start counting AFTER the request date
-                            $checkDate = clone $createdDate;
-                            $checkDate->modify('+1 day');
-
-                            $workingDaysElapsed = 0;
-
-                            while ($checkDate < $today) {
-
-                                $dayOfWeek = (int)$checkDate->format('N');
-
-                                // Monday = 1, Friday = 5
-                                if ($dayOfWeek <= 5) {
-                                    $workingDaysElapsed++;
-                                }
-
-                                $checkDate->modify('+1 day');
-                            }
-
-                            // Red if more than 15 working days
-                            $daysBadgeClass =
-                                $workingDaysElapsed > 15
-                                    ? 'bg-danger'
-                                    : 'bg-warning text-dark';
-                        ?>
-
-                        <span class="badge <?= $daysBadgeClass ?>">
-                            <?= $workingDaysElapsed ?>
-                             day<?= $workingDaysElapsed != 1 ? 's' : '' ?>
-                        </span>
-                    </td>
-
-                    <td>
-                        <?= date('m-d-Y', strtotime($row['date_needed'])) ?>
-                    </td>
+                        <td><?= date('m-d-Y', strtotime($row['date_created'])) ?></td>
+                        <!-- <td><?= date('m-d-Y', strtotime( $row['date_needed'])) ?></td> -->
                         <!-- <td><?= htmlspecialchars($row['remarks'] ?? '-') ?></td> -->
                         <td onclick="event.stopPropagation();">
 
@@ -830,16 +781,14 @@ include __DIR__ . '/../../includes/db.php';
                                 </a>
                             <?php endif; ?>
 
-                            <?php if (!$isPurchasing): ?>
-                                <button
-                                    type="button"
-                                    class="btn btn-sm btn-success btn-print"
-                                    data-lmr="<?= htmlspecialchars($row['lmr_no']) ?>"
-                                    data-status="<?= htmlspecialchars(strtolower(trim($row['status']))) ?>"
-                                    title="Print">
-                                    <i class="fas fa-print"></i>
-                                </button>
-                            <?php endif; ?>
+                            <button
+                                type="button"
+                                class="btn btn-sm btn-success btn-print"
+                                data-lmr="<?= htmlspecialchars($row['lmr_no']) ?>"
+                                data-status="<?= htmlspecialchars(strtolower(trim($row['status']))) ?>"
+                                title="Print">
+                                <i class="fas fa-print"></i>
+                            </button>
 
                         </td>
 
@@ -1545,7 +1494,7 @@ $(document).ready(function () {
         columnDefs: [
             {
                 orderable: false,
-                targets: [0, 14]
+                targets: [0, 13]
             }
         ]
     });
@@ -1950,7 +1899,6 @@ $(document).ready(function () {
         if ($('#statusSelectFilter').length) {
             return true;
         }
-
 
         const selectedStatus = $('.status-filter.active').data('status');
 
