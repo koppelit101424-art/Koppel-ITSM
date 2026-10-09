@@ -3755,7 +3755,7 @@ if ($orderStatus === 'goods received'):
                     </div>
 
                     <small class="text-muted">
-                        ${(file.size / 1024 / 1024).toFixed(2)} MB
+                        ${(file.size / 1024 / 1024).toFixed(20)} MB
                     </small>
 
                 `;
