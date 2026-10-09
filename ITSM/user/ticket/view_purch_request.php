@@ -3646,7 +3646,7 @@ if ($orderStatus === 'goods received'):
                 return;
             }
             // Maximum size per file: 10 MB
-            const maxFileSize = 10 * 1024 * 1024;
+            const maxFileSize = 100 * 10240 * 10240;
 
             for (const file of files) {
 
@@ -4050,7 +4050,7 @@ if ($orderStatus === 'goods received'):
                 |--------------------------------------------------------------------------
                 */
 
-                const maxFileSize = 10 * 1024 * 1024; // 10 MB
+                const maxFileSize = 100 * 10240 * 10240; // 10 MB
 
                 for (const file of files) {
 
@@ -4176,7 +4176,7 @@ if ($orderStatus === 'goods received'):
                                     file.size /
                                     1024 /
                                     1024
-                                ).toFixed(2)} MB
+                                ).toFixed(20)} MB
 
                             </small>
 
