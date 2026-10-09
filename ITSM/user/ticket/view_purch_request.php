@@ -3645,23 +3645,29 @@ if ($orderStatus === 'goods received'):
 
                 return;
             }
-            // Maximum size per file: 10 MB
-            const maxFileSize = 100 * 10240 * 10240;
+            const maxFileSize = 10 * 1024 * 1024; // 10 MB
+
+            // Check if a file was selected
+            if (!files || files.length === 0) {
+                errorBox.textContent = 'Please upload a PO file.';
+                errorBox.classList.remove('d-none');
+                return;
+            }
 
             for (const file of files) {
-
                 if (file.size > maxFileSize) {
-
                     errorBox.textContent =
-                        `"${file.name}" exceeds the maximum file size of 10 MB.`;
+                        `PO file "${file.name}" exceeds the maximum file size of 10 MB.`;
 
                     errorBox.classList.remove('d-none');
-
                     input.value = '';
-
                     return;
                 }
             }
+
+            // Hide the error if validation succeeds
+            errorBox.textContent = '';
+            errorBox.classList.add('d-none');
 
             /*
             |--------------------------------------------------------------------------
@@ -3755,7 +3761,7 @@ if ($orderStatus === 'goods received'):
                     </div>
 
                     <small class="text-muted">
-                        ${(file.size / 1024 / 1024).toFixed(20)} MB
+                        ${(file.size / 1024 / 1024).toFixed(2)} MB
                     </small>
 
                 `;
@@ -4050,23 +4056,29 @@ if ($orderStatus === 'goods received'):
                 |--------------------------------------------------------------------------
                 */
 
-                const maxFileSize = 100 * 10240 * 10240; // 10 MB
+const maxFileSize = 10 * 1024 * 1024; // 10 MB
 
-                for (const file of files) {
+// Check if a file was selected
+if (!files || files.length === 0) {
+    errorBox.textContent = 'Please upload a PO file.';
+    errorBox.classList.remove('d-none');
+    return;
+}
 
-                    if (file.size > maxFileSize) {
+for (const file of files) {
+    if (file.size > maxFileSize) {
+        errorBox.textContent =
+            `PO file "${file.name}" exceeds the maximum file size of 10 MB.`;
 
-                        errorBox.textContent =
-                            `PO file "${file.name}" exceeds the maximum file size of 10 MB.`;
+        errorBox.classList.remove('d-none');
+        input.value = '';
+        return;
+    }
+}
 
-                        errorBox.classList.remove('d-none');
-
-                        input.value = '';
-
-                        return;
-                    }
-
-                }
+// Hide the error if validation succeeds
+errorBox.textContent = '';
+errorBox.classList.add('d-none');
 
                 /*
                 |--------------------------------------------------------------------------
@@ -4176,7 +4188,7 @@ if ($orderStatus === 'goods received'):
                                     file.size /
                                     1024 /
                                     1024
-                                ).toFixed(20)} MB
+                                ).toFixed(2)} MB
 
                             </small>
 
