@@ -12,13 +12,14 @@ include 'includes/db.php';
     $user_id = $_SESSION['user_id'];
 
     $userQuery = $conn->prepare("
-        SELECT fullname, department, area
+        SELECT fullname, department, area, company
         FROM user_tb
         WHERE user_id = ?
     ");
 
     $userQuery->bind_param("i", $user_id);
     $userQuery->execute();
+
     $result = $userQuery->get_result();
     $user = $result->fetch_assoc();
 
@@ -50,141 +51,115 @@ include 'includes/db.php';
             }
         }
 
-    // ==========================================
-    // GENERATE LMR NUMBER
-    //
-    // Mandaluyong:
-    //     Use DEPARTMENT prefix
-    //     Example: ACTG-2610-00001
-    //
-    // Other branches:
-    //     Use BRANCH prefix
-    //     Example: CEB-2610-00001
-    // ==========================================
+   // ==========================================
+// GET USER INFORMATION
+// ==========================================
 
-    // Department prefixes
-    $departmentPrefixes = [
-        'Marketing'              => 'MKTG',
-        'Sales'                  => 'SD',
-        'Service'                  =>'SVC',
-        'PDED'                   => 'PDED',
-        'PDED OEM'               => 'PDED',
-        'PDED DESIGN'            => 'PDED',
-        'Purchasing'             => 'PUR',
-        'Accounting'             => 'ACTG',
-        'Accounting & Finance'   => 'ACTG',
-        'Information Technology' => 'IT',
-        'Human Resource'         => 'HR',
-        'HR'                     => 'HR',
-        'Logistic'               => 'LOGI',
-        'Warehouse'        => 'LOGI',
-        'Sucat Warehouse'        => 'LOGI',
-        'Canlubang Warehouse'    => 'LOGI',
-        'Import'                  =>'IMP',
-        'QA/QC'               => 'QA',
-        'Quality Assurance'               => 'QA',
-        'Production'               => 'PROD',
-        'Credit & Collection'               => 'CNC',
-    ];
+$department = trim($user['department'] ?? '');
+$area = trim($user['area'] ?? '');
+$company = strtoupper(trim($user['company'] ?? ''));
 
-    // Branch prefixes
-    $areaPrefixes = [
+// ==========================================
+// DEPARTMENT PREFIXES (KOPPEL INC. DEFAULT)
+// ==========================================
 
-        'Tarlac'      => 'TAR',
-        'TARLAC'      => 'TAR',
+$departmentPrefixes = [
+    'Marketing'              => 'MKTG',
+    'Sales'                  => 'SD',
+    'Service'                => 'SVC',
+    'PDED'                   => 'PDED',
+    'PDED OEM'               => 'PDED',
+    'PDED DESIGN'            => 'PDED',
+    'Purchasing'             => 'PUR',
+    'Accounting'             => 'ACTG',
+    'Accounting & Finance'   => 'ACTG',
+    'Information Technology' => 'IT',
+    'Human Resource'         => 'HR',
+    'HR'                     => 'HR',
+    'Logistic'               => 'LOGI',
+    'Warehouse'              => 'LOGI',
+    'Sucat Warehouse'        => 'LOGI',
+    'Canlubang Warehouse'    => 'LOGI',
+    'Import'                 => 'IMP',
+    'QA/QC'                  => 'QA',
+    'Quality Assurance'      => 'QA',
+    'Production'             => 'PROD',
+    'Credit & Collection'    => 'CNC',
+];
 
-        'Cebu'       => 'CEB',
-        'CEBU'       => 'CEB',
+// ==========================================
+// BRANCH PREFIXES
+// ==========================================
 
-        'Iloilo'     => 'ILO',
-        'ILOILO'     => 'ILO',
+$normalizedAreaPrefixes = [
+    'cebu'            => 'CEB',
+    'iloilo'          => 'ILO',
+    'davao'            => 'DAV',
+    'cdo'              => 'CDO',
+    'cagayan de oro'   => 'CDO',
+    'tarlac'           => 'TAR',
+];
 
-        'Davao'      => 'DAV',
-        'DAVAO'      => 'DAV',
+// ==========================================
+// DETERMINE LMR PREFIX
+// ==========================================
 
-        'CDO'        => 'CDO',
-        'Cagayan de Oro' => 'CDO',
-        'Cagayan De Oro' => 'CDO',
+if (in_array($company, ['HIMC', 'HEEC', 'HI-AIRE'], true)) {
 
-        'Mandaluyong' => null,
-        'MANDALUYONG' => null,
-    ];
+    // Other companies use their company name as prefix
+    $prefix = $company;
 
-    // Get user's department
-    $department = trim($user['department'] ?? '');
+} else {
 
-    // Get user's branch
-    $area = trim($user['area'] ?? '');
-
-    // Normalize for matching
-    $areaKey = strtolower($area);
-
-    // Default to department prefix
+    // Koppel Inc. and default retain existing logic
     $prefix = $departmentPrefixes[$department] ?? 'PURCH';
 
-    // ==========================================
-    // DETERMINE LMR PREFIX
-    // ==========================================
-    //
-    // If branch is NOT Mandaluyong:
-    //     use branch prefix
-    //
-    // If branch IS Mandaluyong:
-    //     use department prefix
-    // ==========================================
+    $areaKey = strtolower(trim($area));
 
+    // Non-Mandaluyong branches use branch prefixes
     if ($areaKey !== '' && $areaKey !== 'mandaluyong') {
-
-        $normalizedAreaPrefixes = [
-            'cebu'            => 'CEB',
-            'iloilo'          => 'ILO',
-            'davao'           => 'DAV',
-            'cdo'             => 'CDO',
-            'cagayan de oro'  => 'CDO',
-            'tarlac'  => 'TAR',
-        ];
-
         if (isset($normalizedAreaPrefixes[$areaKey])) {
             $prefix = $normalizedAreaPrefixes[$areaKey];
         }
     }
+}
 
-    // Current year and month
-    $yearMonth = date('ym');
+// ==========================================
+// GENERATE LMR NUMBER
+// ==========================================
 
-    // Example:
-    // Mandaluyong + Accounting = ACTG-2610
-    // Cebu + Accounting       = CEB-2610
-    $lmrPrefix = $prefix . '-' . $yearMonth;
+$yearMonth = date('ym');
 
+$lmrPrefix = $prefix . '-' . $yearMonth;
 
-    // ==========================================
-    // FIND LAST NUMBER
-    // ==========================================
+// ==========================================
+// FIND LAST NUMBER FOR THIS PREFIX
+// ==========================================
 
-    $lastLMR = $conn->prepare("
-        SELECT MAX(
-            CAST(SUBSTRING_INDEX(lmr_no, '-', -1) AS UNSIGNED)
-        ) AS max_id
-        FROM purch_request_tb
-        WHERE lmr_no LIKE CONCAT(?, '-%')
-    ");
+$lastLMR = $conn->prepare("
+    SELECT MAX(
+        CAST(SUBSTRING_INDEX(lmr_no, '-', -1) AS UNSIGNED)
+    ) AS max_id
+    FROM purch_request_tb
+    WHERE lmr_no LIKE CONCAT(?, '-%')
+");
 
-    $lastLMR->bind_param("s", $lmrPrefix);
-    $lastLMR->execute();
+$lastLMR->bind_param("s", $lmrPrefix);
+$lastLMR->execute();
 
-    $result = $lastLMR->get_result();
-    $row = $result->fetch_assoc();
+$result = $lastLMR->get_result();
+$row = $result->fetch_assoc();
 
-    $num = ((int)($row['max_id'] ?? 0)) + 1;
+$num = ((int)($row['max_id'] ?? 0)) + 1;
 
-    // Generate LMR
-    $newLMR =
-        $lmrPrefix . '-' .
-        str_pad($num, 5, '0', STR_PAD_LEFT);
+$newLMR = $lmrPrefix . '-' . str_pad(
+    $num,
+    5,
+    '0',
+    STR_PAD_LEFT
+);
 
-    $lastLMR->close();
-
+$lastLMR->close();
 
 $success = $error = '';
 $errors = [];
@@ -817,7 +792,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     >
 
     <small class="text-muted">
-        Maximum 10 files and Maximum 10MB PER FILE
+        Maximum 10 files and Maximum 10MB PER
         Allowed: JPG, JPEG, PNG, PDF, DOC, DOCX, CSV,
         XLS, XLSX, XLSM, XLSB, XLT, XLTX, XLTM, ODS.
     </small>
