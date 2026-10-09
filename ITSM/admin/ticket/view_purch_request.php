@@ -3,7 +3,6 @@
 include __DIR__ . '/../../includes/auth.php';
 include __DIR__ . '/../../includes/db.php';
 
-
 $request_id = (int)($_GET['request_id'] ?? 0);
 
 if ($request_id <= 0) {
@@ -11,7 +10,276 @@ if ($request_id <= 0) {
     exit;
 }
 
+/*
+|--------------------------------------------------------------------------
+| ADD MORE ATTACHMENTS
+|--------------------------------------------------------------------------
+*/
 
+$uploadErrors = [];
+$uploadSuccess = '';
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_attachments'])) {
+
+    $uploadRequestId = (int)($_POST['request_id'] ?? 0);
+
+    if ($uploadRequestId <= 0 || $uploadRequestId !== $request_id) {
+        $uploadErrors[] = 'Invalid request ID.';
+    }
+
+    if (
+        !isset($_FILES['new_attachments']) ||
+        empty($_FILES['new_attachments']['name'][0])
+    ) {
+        $uploadErrors[] = 'Please select at least one file.';
+    }
+
+    if (empty($uploadErrors)) {
+
+        $files = $_FILES['new_attachments'];
+
+        /*
+        |--------------------------------------------------------------------------
+        | Maximum 10 files PER ADD ACTION
+        |--------------------------------------------------------------------------
+        */
+
+        $fileCount = count($files['name']);
+
+        if ($fileCount > 10) {
+            $uploadErrors[] = 'You can add a maximum of 10 files at a time.';
+        }
+    }
+
+    if (empty($uploadErrors)) {
+
+        /*
+        |--------------------------------------------------------------------------
+        | Upload directory
+        |--------------------------------------------------------------------------
+        */
+
+        $uploadDir = dirname(__DIR__) . "/uploads/purchasing/";
+        $dbDir = "uploads/purchasing/";
+
+        if (!is_dir($uploadDir)) {
+
+            if (!mkdir($uploadDir, 0777, true)) {
+                $uploadErrors[] =
+                    'Unable to create attachment directory.';
+            }
+        }
+    }
+
+    if (empty($uploadErrors)) {
+
+        /*
+        |--------------------------------------------------------------------------
+        | Allowed file types
+        |--------------------------------------------------------------------------
+        |
+        | Excel intentionally excluded.
+        |
+        */
+
+        $allowedExtensions = [
+                            'jpg',
+                            'jpeg',
+                            'png',
+                            'pdf',
+                            'doc',
+                            'docx',
+                            'csv',
+                            'xls',
+                            'xlsx',
+                            'xlsm',
+                            'xlsb',
+                            'xlt',
+                            'xltx',
+                            'xltm',
+                            'ods'
+        ];
+
+        $uploadedFiles = [];
+
+        /*
+        |--------------------------------------------------------------------------
+        | Validate ALL files first
+        |--------------------------------------------------------------------------
+        */
+
+        for ($i = 0; $i < $fileCount; $i++) {
+
+            if (
+                empty($files['name'][$i]) ||
+                $files['error'][$i] === UPLOAD_ERR_NO_FILE
+            ) {
+                continue;
+            }
+
+            if ($files['error'][$i] !== UPLOAD_ERR_OK) {
+
+                $uploadErrors[] =
+                    'Failed to upload file: ' .
+                    $files['name'][$i];
+
+                break;
+            }
+
+            $originalName =
+                basename($files['name'][$i]);
+
+            $extension =
+                strtolower(
+                    pathinfo(
+                        $originalName,
+                        PATHINFO_EXTENSION
+                    )
+                );
+
+            /*
+            |--------------------------------------------------------------------------
+            | Reject Excel and other unsupported files
+            |--------------------------------------------------------------------------
+            */
+
+            if (!in_array($extension, $allowedExtensions, true)) {
+
+                $uploadErrors[] =
+                    'Invalid file type: ' .
+                    htmlspecialchars($originalName) .
+                    '. Excel files are not allowed.';
+
+                break;
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | Generate unique filename
+            |--------------------------------------------------------------------------
+            */
+
+            $newName =
+                uniqid('lmr_', true) .
+                '_' .
+                $i .
+                '.' .
+                $extension;
+
+            $fullPath =
+                $uploadDir . $newName;
+
+            $dbPath =
+                $dbDir . $newName;
+
+            $uploadedFiles[] = [
+                'original_name' => $originalName,
+                'tmp_name'      => $files['tmp_name'][$i],
+                'full_path'     => $fullPath,
+                'db_path'       => $dbPath
+            ];
+        }
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | SAVE FILES
+    |--------------------------------------------------------------------------
+    */
+
+    if (empty($uploadErrors) && !empty($uploadedFiles)) {
+
+        $conn->begin_transaction();
+
+        try {
+
+            $attachStmt = $conn->prepare("
+                INSERT INTO purch_request_attachments
+                (
+                    request_id,
+                    file_name,
+                    file_path
+                )
+                VALUES (?, ?, ?)
+            ");
+
+            if (!$attachStmt) {
+                throw new Exception(
+                    'Attachment database error: ' .
+                    $conn->error
+                );
+            }
+
+            foreach ($uploadedFiles as $file) {
+
+                /*
+                |--------------------------------------------------------------------------
+                | Move physical file
+                |--------------------------------------------------------------------------
+                */
+
+                if (!move_uploaded_file(
+                    $file['tmp_name'],
+                    $file['full_path']
+                )) {
+
+                    throw new Exception(
+                        'Failed to save file: ' .
+                        $file['original_name']
+                    );
+                }
+
+                /*
+                |--------------------------------------------------------------------------
+                | Save database record
+                |--------------------------------------------------------------------------
+                */
+
+                $attachStmt->bind_param(
+                    "iss",
+                    $request_id,
+                    $file['original_name'],
+                    $file['db_path']
+                );
+
+                if (!$attachStmt->execute()) {
+
+                    throw new Exception(
+                        'Failed to save attachment: ' .
+                        $file['original_name']
+                    );
+                }
+            }
+
+            $attachStmt->close();
+
+            $conn->commit();
+
+            $uploadSuccess =
+                count($uploadedFiles) .
+                ' attachment(s) added successfully.';
+
+        } catch (Exception $e) {
+
+            $conn->rollback();
+
+            /*
+            |--------------------------------------------------------------------------
+            | Delete files that were already moved if DB insert fails
+            |--------------------------------------------------------------------------
+            */
+
+            foreach ($uploadedFiles as $file) {
+
+                if (file_exists($file['full_path'])) {
+                    @unlink($file['full_path']);
+                }
+            }
+
+            $uploadErrors[] = $e->getMessage();
+        }
+    }
+}
 /*
 |--------------------------------------------------------------------------
 | STEP 1: GET LMR NUMBER FROM SELECTED REQUEST
@@ -241,10 +509,11 @@ if (!empty($requestIds)) {
             attachment_id,
             request_id,
             file_name,
-            file_path
+            file_path,
+            date_uploaded
         FROM purch_request_attachments
         WHERE request_id IN ($placeholders)
-        ORDER BY attachment_id ASC
+        ORDER BY date_uploaded DESC, attachment_id DESC
     ";
 
     $attachStmt = $conn->prepare($sql);
@@ -267,7 +536,543 @@ if (!empty($requestIds)) {
 
 ?>
 
+    <?php
 
+                $isPurchasing =
+                    strcasecmp(
+                        trim($_SESSION['department'] ?? ''),
+                        'Purchasing'
+                    ) === 0
+                    || (
+                        strcasecmp(
+                            trim($_SESSION['user_type'] ?? ''),
+                            'admin'
+                        ) === 0
+                    );
+
+                /*
+                |--------------------------------------------------------------------------
+                | PO ATTACHMENTS
+                |--------------------------------------------------------------------------
+                |
+                | Only Purchasing/Admin users can upload PO attachments.
+                |
+                */
+
+                $poUploadErrors = [];
+                $poUploadSuccess = '';
+
+                if (
+                    $_SERVER['REQUEST_METHOD'] === 'POST'
+                    && isset($_POST['add_po_attachments'])
+                ) {
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | SECURITY CHECK
+                    |--------------------------------------------------------------------------
+                    */
+
+                    if (!$isPurchasing) {
+
+                        $poUploadErrors[] =
+                            'You are not authorized to upload PO attachments.';
+
+                    }
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | REQUEST ID VALIDATION
+                    |--------------------------------------------------------------------------
+                    */
+
+                    $poRequestId =
+                        (int)($_POST['request_id'] ?? 0);
+
+                    if (
+                        $poRequestId <= 0
+                        || $poRequestId !== $request_id
+                    ) {
+
+                        $poUploadErrors[] =
+                            'Invalid request ID.';
+
+                    }
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | FILE VALIDATION
+                    |--------------------------------------------------------------------------
+                    */
+
+                    if (
+                        empty($poUploadErrors)
+                        && (
+                            !isset($_FILES['po_attachments'])
+                            || empty($_FILES['po_attachments']['name'][0])
+                        )
+                    ) {
+
+                        $poUploadErrors[] =
+                            'Please select at least one PO attachment.';
+
+                    }
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | MAXIMUM FILE COUNT
+                    |--------------------------------------------------------------------------
+                    */
+
+                    if (empty($poUploadErrors)) {
+
+                        $poFiles = $_FILES['po_attachments'];
+
+                        $maxPoFiles = 10;
+                        $maxPoTotalSize = 10 * 1024 * 1024; // 10 MB total
+                        $maxPoFileSize = 10 * 1024 * 1024;  // 10 MB per file
+
+                        $poFileCount = 0;
+                        $poTotalSize = 0;
+
+                        foreach ($poFiles['name'] as $i => $name) {
+
+                            // Skip empty file inputs
+                            if (
+                                $name === '' ||
+                                $poFiles['error'][$i] === UPLOAD_ERR_NO_FILE
+                            ) {
+                                continue;
+                            }
+
+                            $poFileCount++;
+
+                            // Check upload errors
+                            if ($poFiles['error'][$i] !== UPLOAD_ERR_OK) {
+
+                                if (
+                                    $poFiles['error'][$i] === UPLOAD_ERR_INI_SIZE ||
+                                    $poFiles['error'][$i] === UPLOAD_ERR_FORM_SIZE
+                                ) {
+                                    $poUploadErrors[] =
+                                        'A PO attachment exceeds the server upload size limit.';
+                                } else {
+                                    $poUploadErrors[] =
+                                        'Failed to upload PO attachment: ' . basename($name);
+                                }
+
+                                break;
+                            }
+
+                            $fileSize = (int) $poFiles['size'][$i];
+
+                            // Check individual file size
+                            if ($fileSize > $maxPoFileSize) {
+                                $poUploadErrors[] =
+                                    basename($name) . ' exceeds the maximum file size of 10 MB.';
+                                break;
+                            }
+
+                            $poTotalSize += $fileSize;
+                        }
+
+                        // Check maximum number of files
+                        if (empty($poUploadErrors) && $poFileCount > $maxPoFiles) {
+                            $poUploadErrors[] =
+                                'You can add a maximum of 10 PO attachments at a time.';
+                        }
+
+                        // Check combined file size
+                        if (
+                            empty($poUploadErrors) &&
+                            $poTotalSize > $maxPoTotalSize
+                        ) {
+                            $poUploadErrors[] =
+                                'The total size of all PO attachments must not exceed 10 MB.';
+                        }
+                    }
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | UPLOAD DIRECTORY
+                    |--------------------------------------------------------------------------
+                    */
+
+                    if (empty($poUploadErrors)) {
+
+                        /*
+                        |--------------------------------------------------------------------------
+                        | Physical folder
+                        |--------------------------------------------------------------------------
+                        */
+
+                       $poUploadDir =
+                            dirname(__DIR__) .
+                            "/uploads/po/";
+
+                        /*
+                        |--------------------------------------------------------------------------
+                        | Database path
+                        |--------------------------------------------------------------------------
+                        */
+
+                        $poDbDir =
+                            "uploads/po/";
+
+                        if (!is_dir($poUploadDir)) {
+
+                            if (!mkdir($poUploadDir, 0777, true)) {
+
+                                $poUploadErrors[] =
+                                    'Unable to create PO attachment directory.';
+
+                            }
+
+                        }
+
+                    }
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | ALLOWED FILE TYPES
+                    |--------------------------------------------------------------------------
+                    */
+
+                    if (empty($poUploadErrors)) {
+
+                        $allowedPoExtensions = [
+                            'jpg',
+                            'jpeg',
+                            'png',
+                            'pdf',
+                            'doc',
+                            'docx',
+                            'csv',
+                            'xls',
+                            'xlsx',
+                            'xlsm',
+                            'xlsb',
+                            'xlt',
+                            'xltx',
+                            'xltm',
+                            'ods'
+                        ];
+
+                        $uploadedPoFiles = [];
+
+                        /*
+                        |--------------------------------------------------------------------------
+                        | VALIDATE ALL FILES FIRST
+                        |--------------------------------------------------------------------------
+                        */
+
+                        for (
+                            $i = 0;
+                            $i < $poFileCount;
+                            $i++
+                        ) {
+
+                            if (
+                                empty($poFiles['name'][$i])
+                                || $poFiles['error'][$i] === UPLOAD_ERR_NO_FILE
+                            ) {
+                                continue;
+                            }
+
+                            if (
+                                $poFiles['error'][$i]
+                                !== UPLOAD_ERR_OK
+                            ) {
+
+                                $poUploadErrors[] =
+                                    'Failed to upload PO file: ' .
+                                    $poFiles['name'][$i];
+
+                                break;
+
+                            }
+
+                            $originalName =
+                                basename(
+                                    $poFiles['name'][$i]
+                                );
+
+                            $extension =
+                                strtolower(
+                                    pathinfo(
+                                        $originalName,
+                                        PATHINFO_EXTENSION
+                                    )
+                                );
+
+                            /*
+                            |--------------------------------------------------------------------------
+                            | CHECK FILE TYPE
+                            |--------------------------------------------------------------------------
+                            */
+
+                            if (
+                                !in_array(
+                                    $extension,
+                                    $allowedPoExtensions,
+                                    true
+                                )
+                            ) {
+
+                                $poUploadErrors[] =
+                                    'Invalid PO file type: ' .
+                                    htmlspecialchars($originalName) .
+                                    '.';
+
+                                break;
+
+                            }
+
+                            /*
+                            |--------------------------------------------------------------------------
+                            | UNIQUE FILE NAME
+                            |--------------------------------------------------------------------------
+                            */
+
+                            $newName =
+                                uniqid(
+                                    'po_',
+                                    true
+                                )
+                                . '_'
+                                . $i
+                                . '.'
+                                . $extension;
+
+                            $fullPath =
+                                $poUploadDir .
+                                $newName;
+
+                            $dbPath =
+                                $poDbDir .
+                                $newName;
+
+                            $uploadedPoFiles[] = [
+
+                                'original_name' =>
+                                    $originalName,
+
+                                'tmp_name' =>
+                                    $poFiles['tmp_name'][$i],
+
+                                'full_path' =>
+                                    $fullPath,
+
+                                'db_path' =>
+                                    $dbPath
+
+                            ];
+
+                        }
+
+                    }
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | SAVE PO ATTACHMENTS
+                    |--------------------------------------------------------------------------
+                    */
+
+                    if (
+                        empty($poUploadErrors)
+                        && !empty($uploadedPoFiles)
+                    ) {
+
+                        $conn->begin_transaction();
+
+                        try {
+
+                            $poAttachStmt =
+                                $conn->prepare("
+                                    INSERT INTO po_attachment
+                                    (
+                                        request_id,
+                                        file_name,
+                                        file_path
+                                    )
+                                    VALUES (?, ?, ?)
+                                ");
+
+                            if (!$poAttachStmt) {
+
+                                throw new Exception(
+                                    'PO attachment database error: ' .
+                                    $conn->error
+                                );
+
+                            }
+
+                            foreach (
+                                $uploadedPoFiles
+                                as $file
+                            ) {
+
+                                /*
+                                |--------------------------------------------------------------------------
+                                | MOVE FILE
+                                |--------------------------------------------------------------------------
+                                */
+
+                                if (
+                                    !move_uploaded_file(
+                                        $file['tmp_name'],
+                                        $file['full_path']
+                                    )
+                                ) {
+
+                                    throw new Exception(
+                                        'Failed to save PO file: ' .
+                                        $file['original_name']
+                                    );
+
+                                }
+
+                                /*
+                                |--------------------------------------------------------------------------
+                                | DATABASE RECORD
+                                |--------------------------------------------------------------------------
+                                */
+
+                                $poAttachStmt->bind_param(
+                                    "iss",
+                                    $poRequestId,
+                                    $file['original_name'],
+                                    $file['db_path']
+                                );
+
+                                if (!$poAttachStmt->execute()) {
+
+                                    throw new Exception(
+                                        'Failed to save PO attachment: ' .
+                                        $file['original_name']
+                                    );
+
+                                }
+
+                            }
+
+                            $poAttachStmt->close();
+
+                            $conn->commit();
+
+                            $poUploadSuccess =
+                                count($uploadedPoFiles) .
+                                ' PO attachment(s) added successfully.';
+
+                        } catch (Exception $e) {
+
+                            $conn->rollback();
+
+                            /*
+                            |--------------------------------------------------------------------------
+                            | REMOVE FILES IF DATABASE SAVE FAILED
+                            |--------------------------------------------------------------------------
+                            */
+
+                            foreach (
+                                $uploadedPoFiles
+                                as $file
+                            ) {
+
+                                if (
+                                    file_exists(
+                                        $file['full_path']
+                                    )
+                                ) {
+
+                                    @unlink(
+                                        $file['full_path']
+                                    );
+
+                                }
+
+                            }
+
+                            $poUploadErrors[] =
+                                $e->getMessage();
+
+                        }
+
+                    }
+
+                }
+                /*
+                    |--------------------------------------------------------------------------
+                    | GET PO ATTACHMENTS
+                    |--------------------------------------------------------------------------
+                    |
+                    | Only Purchasing/Admin can retrieve PO attachments.
+                    |
+                    */
+
+                    $poAttachments = [];
+
+                    if ($isPurchasing && !empty($requestIds)) {
+
+                        $placeholders = implode(
+                            ',',
+                            array_fill(
+                                0,
+                                count($requestIds),
+                                '?'
+                            )
+                        );
+
+                        $types =
+                            str_repeat(
+                                'i',
+                                count($requestIds)
+                            );
+
+                        $sql = "
+                            SELECT
+                                attachment_id,
+                                request_id,
+                                file_name,
+                                file_path,
+                                date_uploaded
+                            FROM po_attachment
+                            WHERE request_id IN ($placeholders)
+                            ORDER BY date_uploaded DESC,
+                                    attachment_id DESC
+                        ";
+
+                        $poStmt =
+                            $conn->prepare($sql);
+
+                        if ($poStmt) {
+
+                            $poStmt->bind_param(
+                                $types,
+                                ...$requestIds
+                            );
+
+                            $poStmt->execute();
+
+                            $poResult =
+                                $poStmt->get_result();
+
+                            while (
+                                $poRow =
+                                    $poResult->fetch_assoc()
+                            ) {
+
+                                $poAttachments[] =
+                                    $poRow;
+
+                            }
+
+                            $poStmt->close();
+
+                        }
+
+                    }   
+    ?>
 <style>
 
 .request-label {
@@ -384,46 +1189,360 @@ if (!empty($requestIds)) {
     background-color: #6f42c1 !important;
     color: #fff !important;
 }
+.attachment-date-title {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: #6c757d;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+}
+
+.attachment-date-group {
+    margin-bottom: 20px;
+}
+
+.attachment-date-group hr {
+    border-color: #dee2e6;
+    opacity: 1;
+}
 
 </style>
 
+<?php
+$isPurchasing =
+    strcasecmp(
+        trim($_SESSION['department'] ?? ''),
+        'Purchasing'
+    ) === 0
+    || (
+        strcasecmp(
+            trim($_SESSION['user_type'] ?? ''),
+            'admin'
+        ) === 0
+    );
+?>
 
+<?php
+
+/*
+|--------------------------------------------------------------------------
+| PROCESS GOODS RECEIVED CONFIRMATION
+|--------------------------------------------------------------------------
+*/
+
+if (
+    $_SERVER['REQUEST_METHOD'] === 'POST' &&
+    isset($_POST['goods_received_confirmation'])
+) {
+
+    $requestId = (int)(
+        $_POST['request_id'] ?? 0
+    );
+
+
+    $goodsReceived = strtolower(
+        trim(
+            $_POST['goods_received'] ?? ''
+        )
+    );
+
+
+    $comment = trim(
+        $_POST['goods_received_comment'] ?? ''
+    );
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | GET LOGGED-IN USER
+    |--------------------------------------------------------------------------
+    |
+    | Change this if your session variable uses
+    | a different name.
+    |
+    */
+
+    $changedBy = (int)(
+        $_SESSION['user_id'] ?? 0
+    );
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | VALIDATION
+    |--------------------------------------------------------------------------
+    */
+
+    if ($requestId <= 0) {
+
+        $_SESSION['error'] =
+            'Invalid request ID.';
+
+    } elseif (!in_array(
+        $goodsReceived,
+        ['yes', 'no'],
+        true
+    )) {
+
+        $_SESSION['error'] =
+            'Please select Yes or No.';
+
+    } elseif ($comment === '') {
+
+        $_SESSION['error'] =
+            'Please enter your comments.';
+
+    } elseif ($changedBy <= 0) {
+
+        $_SESSION['error'] =
+            'Unable to identify the logged-in user.';
+
+    } else {
+
+        /*
+        |--------------------------------------------------------------------------
+        | VERIFY REQUEST EXISTS AND IS GOODS RECEIVED
+        |--------------------------------------------------------------------------
+        */
+
+        $checkStmt = $conn->prepare("
+            SELECT
+                request_id,
+                order_status
+            FROM purch_request_tb
+            WHERE request_id = ?
+            LIMIT 1
+        ");
+
+
+        if (!$checkStmt) {
+
+            $_SESSION['error'] =
+                'Unable to verify the purchasing request.';
+
+            error_log(
+                'Goods Received Confirmation: ' .
+                'Prepare failed: ' .
+                $conn->error
+            );
+
+        } else {
+
+            $checkStmt->bind_param(
+                "i",
+                $requestId
+            );
+
+
+            if (!$checkStmt->execute()) {
+
+                $_SESSION['error'] =
+                    'Unable to verify the purchasing request.';
+
+                error_log(
+                    'Goods Received Confirmation: ' .
+                    'Execute failed: ' .
+                    $checkStmt->error
+                );
+
+                $checkStmt->close();
+
+            } else {
+
+                $result =
+                    $checkStmt->get_result();
+
+                $requestCheck =
+                    $result->fetch_assoc();
+
+                $checkStmt->close();
+
+
+                if (!$requestCheck) {
+
+                    $_SESSION['error'] =
+                        'Purchasing request not found.';
+
+                } elseif (
+                    strtolower(
+                        trim(
+                            $requestCheck['order_status'] ?? ''
+                        )
+                    ) !== 'goods received'
+                ) {
+
+                    $_SESSION['error'] =
+                        'This request is no longer marked as Goods Received.';
+
+                } else {
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | CHANGES JSON
+                    |--------------------------------------------------------------------------
+                    */
+
+                    $changes = [
+
+                        'goods_received' => [
+
+                            'old' => 'pending confirmation',
+
+                            'new' => $goodsReceived
+
+                        ]
+
+                    ];
+
+
+                    $changesJson = json_encode(
+                        $changes,
+                        JSON_UNESCAPED_UNICODE |
+                        JSON_UNESCAPED_SLASHES
+                    );
+
+
+                    if ($changesJson === false) {
+
+                        $_SESSION['error'] =
+                            'Unable to prepare confirmation data.';
+
+                    } else {
+
+                        /*
+                        |--------------------------------------------------------------------------
+                        | INSERT HISTORY
+                        |--------------------------------------------------------------------------
+                        */
+
+                        $historyStmt = $conn->prepare("
+                            INSERT INTO purch_request_history_tb
+                            (
+                                request_id,
+                                bulk_group_id,
+                                changed_by,
+                                comment,
+                                changes_json,
+                                date_created
+                            )
+                            VALUES
+                            (
+                                ?,
+                                0,
+                                ?,
+                                ?,
+                                ?,
+                                NOW()
+                            )
+                        ");
+
+
+                        if (!$historyStmt) {
+
+                            $_SESSION['error'] =
+                                'Unable to save the confirmation.';
+
+                            error_log(
+                                'Goods Received Confirmation: ' .
+                                'History prepare failed: ' .
+                                $conn->error
+                            );
+
+                        } else {
+
+                            $historyStmt->bind_param(
+                                "iiss",
+                                $requestId,
+                                $changedBy,
+                                $comment,
+                                $changesJson
+                            );
+
+
+                            if ($historyStmt->execute()) {
+
+                                $_SESSION['success'] =
+                                    'Goods received confirmation submitted successfully.';
+
+                            } else {
+
+                                $_SESSION['error'] =
+                                    'Unable to save the confirmation.';
+
+                                error_log(
+                                    'Goods Received Confirmation: ' .
+                                    'History insert failed: ' .
+                                    $historyStmt->error
+                                );
+                            }
+
+
+                            $historyStmt->close();
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | REDIRECT
+    |--------------------------------------------------------------------------
+    |
+    | Prevent duplicate form submission if the user
+    | refreshes the page.
+    |
+    */
+
+echo "<script>
+    window.location.href = '?page=ticket/view_purch_request&request_id={$requestId}';
+</script>";
+
+exit;
+    exit;
+}
+?>
 <div class="card">
 
-    <!-- =====================================================
-         HEADER
-    ====================================================== -->
+            <!-- =====================================================
+                HEADER
+            ====================================================== -->
 
-    <div class="card-header d-flex justify-content-between align-items-center text-white">
+            <div class="card-header d-flex justify-content-between align-items-center text-white">
 
-        <span>
-            <i class="fas fa-file-alt me-2"></i>
-            Purchasing Request
-        </span>
+                <span>
+                    <i class="fas fa-file-alt me-2"></i>
+                    Purchasing Request
+                </span>
 
-        <div class="d-flex gap-2">
+                <div class="d-flex gap-2">
 
-            <!-- Export Activity Logs -->
-            <a
-                href="ticket/export_purch_activity.php?request_id=<?= (int)$request_id ?>"
-                class="btn btn-success btn-sm"
-            >
-                <i class="fas fa-file-csv me-1"></i>
-                Export Activity CSV
-            </a>
+                    <!-- Export Activity Logs -->
+                    <?php if ($isPurchasing): ?>
 
-            <!-- Back -->
-            <a
-                href="?page=ticket/purch_lmr"
-                class="btn btn-secondary btn-sm"
-            >
-                <i class="fas fa-arrow-left me-1"></i>
-                Back to Requests
-            </a>
+                        <a
+                            href="ticket/export_purch_activity.php?request_id=<?= (int)$request_id ?>"
+                            class="btn btn-success btn-sm"
+                        >
+                            <i class="fas fa-file-csv me-1"></i>
+                            Export Activity CSV
+                        </a>
 
-        </div>
+                    <?php endif; ?>
+                    <!-- Back -->
+                    <a
+                        href="?page=ticket/purch_lmr"
+                        class="btn btn-secondary btn-sm"
+                    >
+                        <i class="fas fa-arrow-left me-1"></i>
+                        Back to Requests
+                    </a>
 
-    </div>
+                </div>
+
+            </div>
 
 
 
@@ -685,8 +1804,53 @@ if (!empty($requestIds)) {
                         </div>
 
                     </div>
+<?php
+/*
+|--------------------------------------------------------------------------
+| GOODS RECEIVED CONFIRMATION
+|--------------------------------------------------------------------------
+*/
 
-                    <hr>
+$orderStatus = strtolower(
+    trim($request['order_status'] ?? '')
+);
+
+if ($orderStatus === 'goods received'):
+?>
+
+    <div class="alert alert-success mt-4">
+
+        <div class="d-flex justify-content-between align-items-center">
+
+            <div>
+
+                <strong>
+                    <i class="fas fa-box-open me-2"></i>
+                    Goods Received
+                </strong>
+
+                <div class="small mt-1">
+                    Please confirm whether you received the item.
+                </div>
+
+            </div>
+
+            <button
+                type="button"
+                class="btn btn-success"
+                data-bs-toggle="modal"
+                data-bs-target="#goodsReceivedModal"
+            >
+                <i class="fas fa-check-circle me-1"></i>
+                Confirm Goods Received
+            </button>
+
+        </div>
+
+    </div>
+
+<?php endif; ?>
+                    <hr><br><br>
                     <!-- =====================================
                             ITEMS
                     ====================================== -->
@@ -1048,195 +2212,280 @@ if (!empty($requestIds)) {
                                     ATTACHMENTS
                                 ====================================== -->
 
-                                                <hr class="mt-4">
+                                <hr class="mt-4">
 
-                                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
 
-                                                <h6 class="mb-0 fw-bold">
-                                                    <i class="fas fa-paperclip me-2"></i>
-                                                    Attachments
-                                                </h6>
+                                    <h6 class="mb-0 fw-bold">
+                                        <i class="fas fa-paperclip me-2"></i>
+                                        Attachments
+                                    </h6>
 
-                                                <div class="d-flex align-items-center gap-2">
+                                    <div class="d-flex align-items-center gap-2">
 
-                                                    <span class="badge bg-secondary">
-                                                        <?= count($attachments) ?>
-                                                    </span>
+                                        <span class="badge bg-secondary">
+                                            <?= count($attachments) ?>
+                                        </span>
 
-                                                    <?php if (!empty($attachments)): ?>
+                                        <?php if (!$isPurchasing): ?>
 
-                                                        <button
-                                                            type="button"
-                                                            class="btn btn-sm btn-outline-success"
-                                                            id="downloadAllAttachments"
-                                                        >
-                                                            <i class="fas fa-download me-1"></i>
-                                                            Download All
-                                                        </button>
+                                            <button
+                                                type="button"
+                                                class="btn btn-sm btn-outline-primary"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#addAttachmentsModal"
+                                            >
+                                                <i class="fas fa-plus me-1"></i>
+                                                Add Attachments
+                                            </button>
 
-                                                    <?php endif; ?>
+                                        <?php endif; ?>
 
-                                                </div>
+                                        <?php if (!empty($attachments)): ?>
 
-                                            </div>
+                                            <button
+                                                type="button"
+                                                class="btn btn-sm btn-outline-success"
+                                                id="downloadAllAttachments"
+                                            >
+                                                <i class="fas fa-download me-1"></i>
+                                                Download All
+                                            </button>
+
+                                        <?php endif; ?>
+
+                                    </div>
+
+                                </div>
 
 
+                        <?php if (empty($attachments)): ?>
 
-                                                <?php if (empty($attachments)): ?>
+                            <div class="text-muted small">
+                                <i class="fas fa-info-circle me-1"></i>
+                                No attachments for this LMR.
+                            </div>
 
-                                                    <div class="text-muted small">
+                            <?php else: ?>
 
-                                                        <i class="fas fa-info-circle me-1"></i>
+                            <?php
+                            /*
+                            |--------------------------------------------------------------------------
+                            | GROUP ATTACHMENTS BY UPLOAD DATE
+                            |--------------------------------------------------------------------------
+                            */
 
-                                                        No attachments for this LMR.
+                            $groupedAttachments = [];
 
-                                                    </div>
+                            foreach ($attachments as $attachment) {
 
-                                                <?php else: ?>
+                                $uploadDate = !empty($attachment['date_uploaded'])
+                                    ? date('Y-m-d', strtotime($attachment['date_uploaded']))
+                                    : 'unknown';
 
-                                                    <div class="row">
+                                $groupedAttachments[$uploadDate][] = $attachment;
+                            }
+                            ?>
 
-                                                        <?php foreach ($attachments as $attachment): ?>
+                            <?php foreach ($groupedAttachments as $uploadDate => $dateAttachments): ?>
 
-                                                            <?php
+                                <!-- DATE GROUP -->
 
-                                                            $fileName =
-                                                                $attachment['file_name'];
+                                <div class="attachment-date-group mb-4">
 
-                                                            $extension =
-                                                                strtolower(
-                                                                    pathinfo(
-                                                                        $fileName,
-                                                                        PATHINFO_EXTENSION
-                                                                    )
-                                                                );
+                                    <!-- DATE HEADER -->
 
-                                                            switch ($extension) {
+                                    <div class="d-flex align-items-center mb-2">
 
-                                                                case 'jpg':
-                                                                case 'jpeg':
-                                                                case 'png':
+                                        <div class="attachment-date-title">
 
-                                                                    $icon =
-                                                                        'fa-file-image';
+                                            <?php if ($uploadDate !== 'unknown'): ?>
 
-                                                                    $iconClass =
-                                                                        'text-success';
+                                                <?= strtoupper(
+                                                    date(
+                                                        'M d, Y',
+                                                        strtotime($uploadDate)
+                                                    )
+                                                ) ?>
 
-                                                                    break;
+                                            <?php else: ?>
 
-                                                                case 'pdf':
+                                                DATE UNKNOWN
 
-                                                                    $icon =
-                                                                        'fa-file-pdf';
+                                            <?php endif; ?>
 
-                                                                    $iconClass =
-                                                                        'text-danger';
+                                        </div>
 
-                                                                    break;
-
-                                                                case 'doc':
-                                                                case 'docx':
-
-                                                                    $icon =
-                                                                        'fa-file-word';
-
-                                                                    $iconClass =
-                                                                        'text-primary';
-
-                                                                    break;
-
-                                                                default:
-
-                                                                    $icon =
-                                                                        'fa-file';
-
-                                                                    $iconClass =
-                                                                        'text-secondary';
-                                                            }
-
-                                                            ?>
-
-                                                            <div class="col-md-6 mb-2">
-                                                                    <a
-                                                                        href="ticket/preview_purch_attachment.php?attachment_id=<?= (int)$attachment['attachment_id'] ?>"
-                                                                        target="_blank"
-                                                                        rel="noopener noreferrer"
-                                                                        class="text-decoration-none"
-                                                                    >
-                                                                    <div class="card attachment-card">
-
-                                                                        <div class="card-body py-2">
-
-                                                                            <div class="d-flex align-items-center">
-
-                                                                                <i class="
-                                                                                    fas
-                                                                                    <?= $icon ?>
-                                                                                    fa-lg
-                                                                                    <?= $iconClass ?>
-                                                                                    me-3
-                                                                                "></i>
-
-                                                                                <div
-                                                                                    class="flex-grow-1"
-                                                                                    style="min-width:0;"
-                                                                                >
-
-                                                                                    <div
-                                                                                        class="fw-semibold text-dark"
-                                                                                        style="word-break:break-word;"
-                                                                                    >
-
-                                                                                        <?= htmlspecialchars(
-                                                                                            $fileName
-                                                                                        ) ?>
-
-                                                                                    </div>
-
-                                                                                    <small class="text-muted">
-
-                                                                                        <?= strtoupper(
-                                                                                            $extension
-                                                                                        ) ?>
-
-                                                                                        · Click to preview
-
-                                                                                    </small>
-
-                                                                                </div>
-
-                                                                                <i class="
-                                                                                    fas
-                                                                                    fa-chevron-right
-                                                                                    text-muted
-                                                                                "></i>
-
-                                                                            </div>
-
-                                                                        </div>
-
-                                                                    </div>
-
-                                                                </a>
-
-                                                            </div>
-
-                                                        <?php endforeach; ?>
-
-                                                    </div>
-
-                                                <?php endif; ?>
-
-                                            </div>
-
+                                        <div class="flex-grow-1 ms-3">
+                                            <hr class="my-0">
                                         </div>
 
                                     </div>
 
 
-            
-                                    <!-- =================================================
+                                    <!-- ATTACHMENT GRID -->
+
+                                    <div class="row g-2">
+
+                                        <?php foreach ($dateAttachments as $attachment): ?>
+
+                                            <?php
+
+                                            $fileName =
+                                                $attachment['file_name'];
+
+                                            $extension =
+                                                strtolower(
+                                                    pathinfo(
+                                                        $fileName,
+                                                        PATHINFO_EXTENSION
+                                                    )
+                                                );
+
+                                            switch ($extension) {
+
+                                                case 'jpg':
+                                                case 'jpeg':
+                                                case 'png':
+
+                                                    $icon = 'fa-file-image';
+                                                    $iconClass = 'text-success';
+
+                                                    break;
+
+                                                case 'pdf':
+
+                                                    $icon = 'fa-file-pdf';
+                                                    $iconClass = 'text-danger';
+
+                                                    break;
+
+                                                case 'doc':
+                                                case 'docx':
+
+                                                    $icon = 'fa-file-word';
+                                                    $iconClass = 'text-primary';
+
+                                                    break;
+
+                                                default:
+
+                                                    $icon = 'fa-file';
+                                                    $iconClass = 'text-secondary';
+                                            }
+
+                                            ?>
+
+                                            <!-- GRID ITEM -->
+
+                                            <div class="col-md-3">
+
+                                                <a
+                                                    href="ticket/preview_purch_attachment.php?attachment_id=<?= (int)$attachment['attachment_id'] ?>"
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    class="text-decoration-none"
+                                                >
+
+                                                    <div class="card attachment-card h-100">
+
+                                                        <div class="card-body py-2 px-3">
+
+                                                            <div class="d-flex align-items-center">
+
+                                                                <!-- SMALL ICON -->
+
+                                                                <i
+                                                                    class="fas <?= $icon ?> <?= $iconClass ?> me-2"
+                                                                    style="
+                                                                        font-size:1.15rem;
+                                                                        flex-shrink:0;
+                                                                    "
+                                                                ></i>
+
+
+                                                                <!-- FILE INFORMATION -->
+
+                                                                <div
+                                                                    class="flex-grow-1"
+                                                                    style="min-width:0;"
+                                                                >
+
+                                                                    <div
+                                                                        class="fw-semibold text-dark"
+                                                                        style="
+                                                                            word-break:break-word;
+                                                                            font-size:0.85rem;
+                                                                        "
+                                                                    >
+
+                                                                        <?= htmlspecialchars(
+                                                                            $fileName
+                                                                        ) ?>
+
+                                                                    </div>
+
+                                                                    <small
+                                                                        class="text-muted"
+                                                                        style="font-size:0.72rem;"
+                                                                    >
+
+                                                                        <?= strtoupper(
+                                                                            $extension
+                                                                        ) ?>
+
+                                                                        ·
+
+                                                                        <?= !empty(
+                                                                            $attachment['date_uploaded']
+                                                                        )
+                                                                            ? date(
+                                                                                'h:i A',
+                                                                                strtotime(
+                                                                                    $attachment['date_uploaded']
+                                                                                )
+                                                                            )
+                                                                            : 'Time unknown'
+                                                                        ?>
+
+                                                                    </small>
+
+                                                                </div>
+
+
+                                                                <!-- ARROW -->
+
+                                                                <i
+                                                                    class="fas fa-chevron-right text-muted ms-2"
+                                                                    style="font-size:0.65rem;"
+                                                                ></i>
+
+                                                            </div>
+
+                                                        </div>
+
+                                                    </div>
+
+                                                </a>
+
+                                            </div>
+
+                                        <?php endforeach; ?>
+
+                                    </div>
+
+                                </div>
+
+                            <?php endforeach; ?>
+
+                        <?php endif; ?>
+
+                </div>
+
+            </div>
+
+        </div>
+            <!-- =================================================
                 RIGHT CARD
             ================================================== -->
 
@@ -1508,123 +2757,1607 @@ if (!empty($requestIds)) {
 
                         <?php endif; ?>
 
+               <!-- // PO ATTACHMENT -->
+                <?php if ($isPurchasing): ?>
+
+                    <hr class="mt-4">
+
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+
+                        <h6 class="mb-0 fw-bold">
+                            <i class="fas fa-file-invoice-dollar me-2"></i>
+                            PO Attachments
+                        </h6>
+
+                        <div class="d-flex align-items-center gap-2">
+
+                            <span class="badge bg-primary">
+                                <?= count($poAttachments) ?>
+                            </span>
+
+                            <button
+                                type="button"
+                                class="btn btn-sm btn-outline-primary"
+                                data-bs-toggle="modal"
+                                data-bs-target="#addPOAttachmentsModal"
+                            >
+                                <i class="fas fa-plus me-1"></i>
+                                Add PO Attachments
+                            </button>
+
+                        </div>
+
                     </div>
 
+
+                    <?php if (empty($poAttachments)): ?>
+
+                        <div class="text-muted small">
+
+                            <i class="fas fa-info-circle me-1"></i>
+                            No PO attachments for this LMR.
+
+                        </div>
+
+                    <?php else: ?>
+
+                        <?php
+                        /*
+                        |--------------------------------------------------------------------------
+                        | GROUP PO ATTACHMENTS BY UPLOAD DATE
+                        |--------------------------------------------------------------------------
+                        */
+
+                        $groupedPoAttachments = [];
+
+                        foreach ($poAttachments as $poAttachment) {
+
+                            $uploadDate = !empty($poAttachment['date_uploaded'])
+                                ? date(
+                                    'Y-m-d',
+                                    strtotime(
+                                        $poAttachment['date_uploaded']
+                                    )
+                                )
+                                : 'unknown';
+
+                            $groupedPoAttachments[$uploadDate][] =
+                                $poAttachment;
+                        }
+                        ?>
+
+
+                        <?php foreach ($groupedPoAttachments as $uploadDate => $datePoAttachments): ?>
+
+                            <!-- DATE HEADER -->
+
+                            <div class="attachment-date-group mb-4">
+
+                                <div class="d-flex align-items-center mb-2">
+
+                                    <div class="attachment-date-title">
+
+                                        <?php if ($uploadDate !== 'unknown'): ?>
+
+                                            <?= strtoupper(
+                                                date(
+                                                    'M d, Y',
+                                                    strtotime($uploadDate)
+                                                )
+                                            ) ?>
+
+                                        <?php else: ?>
+
+                                            DATE UNKNOWN
+
+                                        <?php endif; ?>
+
+                                    </div>
+
+                                    <div class="flex-grow-1 ms-3">
+
+                                        <hr class="my-0">
+
+                                    </div>
+
+                                </div>
+
+
+                                <!-- PO ATTACHMENTS FOR THIS DATE -->
+
+                                <div class="row">
+
+                                    <?php foreach ($datePoAttachments as $poAttachment): ?>
+
+                                        <?php
+
+                                        $poFileName =
+                                            $poAttachment['file_name'];
+
+                                        $poExtension =
+                                            strtolower(
+                                                pathinfo(
+                                                    $poFileName,
+                                                    PATHINFO_EXTENSION
+                                                )
+                                            );
+
+
+                                        /*
+                                        |--------------------------------------------------------------------------
+                                        | FILE ICON
+                                        |--------------------------------------------------------------------------
+                                        */
+
+                                        switch ($poExtension) {
+
+                                            case 'jpg':
+                                            case 'jpeg':
+                                            case 'png':
+
+                                                $poIcon =
+                                                    'fa-file-image';
+
+                                                $poIconClass =
+                                                    'text-success';
+
+                                                break;
+
+
+                                            case 'pdf':
+
+                                                $poIcon =
+                                                    'fa-file-pdf';
+
+                                                $poIconClass =
+                                                    'text-danger';
+
+                                                break;
+
+
+                                            case 'doc':
+                                            case 'docx':
+
+                                                $poIcon =
+                                                    'fa-file-word';
+
+                                                $poIconClass =
+                                                    'text-primary';
+
+                                                break;
+
+
+                                            default:
+
+                                                $poIcon =
+                                                    'fa-file';
+
+                                                $poIconClass =
+                                                    'text-secondary';
+
+                                        }
+
+                                        ?>
+
+
+                                        <div class="col-md-6 mb-2">
+
+                                            <a
+                                                href="ticket/preview_po_attachment.php?attachment_id=<?= (int)$poAttachment['attachment_id'] ?>"
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                class="text-decoration-none"
+                                            >
+
+                                                <div class="card attachment-card">
+
+                                                    <div class="card-body py-2">
+
+                                                        <div class="d-flex align-items-center">
+
+
+                                                            <!-- SMALLER ICON -->
+
+                                                            <i
+                                                                class="
+                                                                    fas
+                                                                    <?= $poIcon ?>
+                                                                    <?= $poIconClass ?>
+                                                                    me-3
+                                                                "
+                                                                style="
+                                                                    font-size: 1.25rem;
+                                                                    width: 25px;
+                                                                    text-align: center;
+                                                                    flex-shrink: 0;
+                                                                "
+                                                            ></i>
+
+
+                                                            <!-- FILE INFORMATION -->
+
+                                                            <div
+                                                                class="flex-grow-1"
+                                                                style="min-width:0;"
+                                                            >
+
+                                                                <div
+                                                                    class="fw-semibold text-dark"
+                                                                    style="word-break:break-word;"
+                                                                >
+
+                                                                    <?= htmlspecialchars(
+                                                                        $poFileName
+                                                                    ) ?>
+
+                                                                </div>
+
+
+                                                                <small class="text-muted">
+
+                                                                    <?= strtoupper(
+                                                                        $poExtension
+                                                                    ) ?>
+
+                                                                    ·
+
+                                                                    <?= !empty(
+                                                                        $poAttachment['date_uploaded']
+                                                                    )
+                                                                        ? date(
+                                                                            'h:i A',
+                                                                            strtotime(
+                                                                                $poAttachment['date_uploaded']
+                                                                            )
+                                                                        )
+                                                                        : 'Time unknown'
+                                                                    ?>
+
+                                                                </small>
+
+                                                            </div>
+
+
+                                                            <!-- ARROW -->
+
+                                                            <i
+                                                                class="
+                                                                    fas
+                                                                    fa-chevron-right
+                                                                    text-muted
+                                                                "
+                                                            ></i>
+
+                                                        </div>
+
+                                                    </div>
+
+                                                </div>
+
+                                            </a>
+
+                                        </div>
+
+
+                                    <?php endforeach; ?>
+
+                                </div>
+
+                            </div>
+
+                        <?php endforeach; ?>
+
+                    <?php endif; ?>
+
+                <?php endif; ?>
+            </div>
+             </div> 
+            </div>
+        </div>
+    </div>
+
+    <!-- =====================================================
+        ADD PO ATTACHMENTS MODAL
+    ====================================================== -->
+        <?php if ($isPurchasing): ?>
+
+        <div
+            class="modal fade"
+            id="addPOAttachmentsModal"
+            tabindex="-1"
+            aria-labelledby="addPOAttachmentsModalLabel"
+            aria-hidden="true"
+        >
+
+            <div class="modal-dialog modal-lg modal-dialog-centered">
+
+                <div class="modal-content">
+
+                    <div class="modal-header">
+
+                        <h5
+                            class="modal-title"
+                            id="addPOAttachmentsModalLabel"
+                        >
+
+                            <i class="fas fa-file-invoice-dollar me-2"></i>
+
+                            Add PO Attachments
+
+                        </h5>
+
+                        <button
+                            type="button"
+                            class="btn-close"
+                            data-bs-dismiss="modal"
+                            aria-label="Close"
+                        ></button>
+
+                    </div>
+
+
+                    <form
+                        method="POST"
+                        enctype="multipart/form-data"
+                        id="addPOAttachmentsForm"
+                    >
+
+                        <div class="modal-body">
+
+                            <input
+                                type="hidden"
+                                name="request_id"
+                                value="<?= (int)$request_id ?>"
+                            >
+
+                            <input
+                                type="hidden"
+                                name="add_po_attachments"
+                                value="1"
+                            >
+
+
+                            <div class="alert alert-info">
+
+                                <i class="fas fa-info-circle me-1"></i>
+
+                                PO attachments are visible only to
+                                Purchasing users.
+
+                            </div>
+
+
+                            <div class="mb-3">
+
+                                <label
+                                    for="po_attachments"
+                                    class="form-label fw-bold"
+                                >
+
+                                    Select PO Files
+
+                                </label>
+
+                                <input
+                                    type="file"
+                                    name="po_attachments[]"
+                                    id="po_attachments"
+                                    class="form-control"
+                                    multiple
+                                    accept=".jpg,.jpeg,.png,.pdf,.doc,.docx,.csv,.xls,.xlsx,.xlsm,.xlsb,.xlt,.xltx,.xltm,.ods"
+                                >
+
+                                <div class="form-text">
+
+                                    Maximum
+                                    <strong>
+                                        10 files and 10MB per upload
+                                    </strong>.
+
+                                    <br>
+
+                                    Allowed:
+                                    JPG, JPEG, PNG, PDF, DOC, DOCX, XLS.
+
+                                    <br>
+
+                                </div>
+
+                            </div>
+
+
+                            <div
+                                id="poAttachmentError"
+                                class="alert alert-danger d-none"
+                            ></div>
+
+
+                            <div
+                                id="selectedPOFilesContainer"
+                                class="mt-3"
+                            ></div>
+
+                        </div>
+
+
+                        <div class="modal-footer">
+
+                            <button
+                                type="button"
+                                class="btn btn-secondary"
+                                data-bs-dismiss="modal"
+                            >
+
+                                Cancel
+
+                            </button>
+
+
+                            <button
+                                type="submit"
+                                class="btn btn-primary"
+                                id="uploadPOAttachmentsBtn"
+                            >
+
+                                <i class="fas fa-upload me-1"></i>
+
+                                Upload PO Files
+
+                            </button>
+
+                        </div>
+
+                    </form>
 
                 </div>
 
             </div>
+
         </div>
+
+        <?php endif; ?>
+
+    <!-- =====================================================
+            ADD ATTACHMENTS MODAL
+        ====================================================== -->
+
+        <div
+                class="modal fade"
+                id="addAttachmentsModal"
+                tabindex="-1"
+                aria-labelledby="addAttachmentsModalLabel"
+                aria-hidden="true"
+            >
+
+                <div class="modal-dialog modal-lg modal-dialog-centered">
+
+                    <div class="modal-content">
+
+                        <div class="modal-header">
+
+                            <h5 class="modal-title" id="addAttachmentsModalLabel">
+
+                                <i class="fas fa-paperclip me-2"></i>
+                                Add Attachments
+
+                            </h5>
+
+                            <button
+                                type="button"
+                                class="btn-close"
+                                data-bs-dismiss="modal"
+                                aria-label="Close"
+                            ></button>
+
+                        </div>
+
+                        <form
+                            method="POST"
+                            enctype="multipart/form-data"
+                            id="addAttachmentsForm"
+                        >
+
+                            <div class="modal-body">
+
+                                <input
+                                    type="hidden"
+                                    name="request_id"
+                                    value="<?= (int)$request_id ?>"
+                                >
+
+                                <input
+                                    type="hidden"
+                                    name="add_attachments"
+                                    value="1"
+                                >
+
+                                <div class="mb-3">
+
+                                    <label
+                                        for="new_attachments"
+                                        class="form-label fw-bold"
+                                    >
+                                        Select Files
+                                    </label>
+
+                                    <input
+                                        type="file"
+                                        name="new_attachments[]"
+                                        id="new_attachments"
+                                        class="form-control"
+                                        multiple
+                                        accept=".jpg,.jpeg,.png,.pdf,.doc,.docx,.csv,.xls,.xlsx,.xlsm,.xlsb,.xlt,.xltx,.xltm,.ods"
+                                    >
+
+                                    <div class="form-text">
+
+                                        Maximum <strong>10 files AND 10MB per upload</strong>.
+
+                                        <br>
+
+                                        Allowed:
+                                        JPG, JPEG, PNG, PDF, DOC, DOCX, XLS.
+
+                                        <br>
+
+                                    </div>
+
+                                </div>
+
+                                <div
+                                    id="newAttachmentError"
+                                    class="alert alert-danger d-none"
+                                ></div>
+
+                                <div
+                                    id="selectedFilesContainer"
+                                    class="mt-3"
+                                ></div>
+
+                            </div>
+
+                            <div class="modal-footer">
+
+                                <button
+                                    type="button"
+                                    class="btn btn-secondary"
+                                    data-bs-dismiss="modal"
+                                >
+                                    Cancel
+                                </button>
+
+                                <button
+                                    type="submit"
+                                    class="btn btn-primary"
+                                    id="uploadAttachmentsBtn"
+                                >
+                                    <i class="fas fa-upload me-1"></i>
+                                    Upload Files
+                                </button>
+
+                            </div>
+
+                        </form>
+
+                    </div>
+
+                </div>
+
+
+
+            </div>
+        </div>
+
+<?php
+/*
+|--------------------------------------------------------------------------
+| GOODS RECEIVED CONFIRMATION MODAL
+|--------------------------------------------------------------------------
+*/
+
+$orderStatus = strtolower(
+    trim($request['order_status'] ?? '')
+);
+
+if ($orderStatus === 'goods received'):
+?>
+
+<div
+    class="modal fade"
+    id="goodsReceivedModal"
+    tabindex="-1"
+    aria-labelledby="goodsReceivedModalLabel"
+    aria-hidden="true"
+>
+
+    <div class="modal-dialog modal-dialog-centered">
+
+        <div class="modal-content">
+
+            <!-- HEADER -->
+
+            <div class="modal-header bg-success text-white">
+
+                <h5
+                    class="modal-title"
+                    id="goodsReceivedModalLabel"
+                >
+                    <i class="fas fa-box-open me-2"></i>
+                    Confirm Goods Received
+                </h5>
+
+                <button
+                    type="button"
+                    class="btn-close btn-close-white"
+                    data-bs-dismiss="modal"
+                    aria-label="Close"
+                ></button>
+
+            </div>
+
+
+            <!-- BODY -->
+
+            <form
+                method="POST"
+                action=""
+            >
+
+                <div class="modal-body">
+
+                    <input
+                        type="hidden"
+                        name="goods_received_confirmation"
+                        value="1"
+                    >
+
+                    <input
+                        type="hidden"
+                        name="request_id"
+                        value="<?= (int)$request['request_id'] ?>"
+                    >
+
+
+                    <!-- QUESTION -->
+
+                    <div class="mb-4">
+
+                        <label class="form-label fw-bold">
+
+                            Did you receive the item?
+
+                            <span class="text-danger">*</span>
+
+                        </label>
+
+
+                        <div class="form-check mb-2">
+
+                            <input
+                                class="form-check-input"
+                                type="radio"
+                                name="goods_received"
+                                id="goodsReceivedYes"
+                                value="yes"
+                                required
+                            >
+
+                            <label
+                                class="form-check-label"
+                                for="goodsReceivedYes"
+                            >
+                                <i class="fas fa-check-circle text-success me-1"></i>
+                                Yes, I received the item
+                            </label>
+
+                        </div>
+
+
+                        <div class="form-check">
+
+                            <input
+                                class="form-check-input"
+                                type="radio"
+                                name="goods_received"
+                                id="goodsReceivedNo"
+                                value="no"
+                                required
+                            >
+
+                            <label
+                                class="form-check-label"
+                                for="goodsReceivedNo"
+                            >
+                                <i class="fas fa-times-circle text-danger me-1"></i>
+                                No, I did not receive the item
+                            </label>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- COMMENT -->
+
+                    <div class="mb-3">
+
+                        <label
+                            for="goodsReceivedComment"
+                            class="form-label fw-bold"
+                        >
+
+                            Comments
+
+                            <span class="text-danger">*</span>
+
+                        </label>
+
+
+                        <textarea
+                            name="goods_received_comment"
+                            id="goodsReceivedComment"
+                            class="form-control"
+                            rows="5"
+                            placeholder="Please enter your comments regarding the received item..."
+                            required
+                        ></textarea>
+
+
+                        <div class="form-text">
+
+                            Please describe the condition of the item
+                            or explain why you did not receive it.
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- FOOTER -->
+
+                <div class="modal-footer">
+
+                    <button
+                        type="button"
+                        class="btn btn-secondary"
+                        data-bs-dismiss="modal"
+                    >
+                        Cancel
+                    </button>
+
+
+                    <button
+                        type="submit"
+                        class="btn btn-success"
+                    >
+
+                        <i class="fas fa-save me-1"></i>
+
+                        Submit Confirmation
+
+                    </button>
+
+                </div>
+
+            </form>
+
+        </div>
+
     </div>
+
 </div>
+
+<?php endif; ?>
+
 <script>
-$(document).on('click', '#showAllItemsBtn', function () {
+    $(document).on('click', '#showAllItemsBtn', function () {
 
-    const button = $(this);
-    const extraItems = $('.extra-item');
+        const button = $(this);
+        const extraItems = $('.extra-item');
 
-    if (extraItems.first().hasClass('d-none')) {
+        if (extraItems.first().hasClass('d-none')) {
 
-        // Show all items
-        extraItems.removeClass('d-none');
+            // Show all items
+            extraItems.removeClass('d-none');
 
-        button.html(`
-            <i class="fas fa-chevron-up me-1"></i>
-            Show Less
-        `);
+            button.html(`
+                <i class="fas fa-chevron-up me-1"></i>
+                Show Less
+            `);
 
-    } else {
+        } else {
 
-        // Hide items after the first 4
-        extraItems.addClass('d-none');
+            // Hide items after the first 4
+            extraItems.addClass('d-none');
 
-        button.html(`
-            <i class="fas fa-chevron-down me-1"></i>
-            Show All Items
-        `);
+            button.html(`
+                <i class="fas fa-chevron-down me-1"></i>
+                Show All Items
+            `);
 
-        $('html, body').animate({
-            scrollTop: $('#itemsContainer').offset().top - 100
-        }, 300);
-    }
-});
+            $('html, body').animate({
+                scrollTop: $('#itemsContainer').offset().top - 100
+            }, 300);
+        }
+    });
 </script>
 <script>
 
-document.getElementById('downloadAllAttachments')?.addEventListener('click', function () {
+    document.addEventListener('DOMContentLoaded', function () {
 
-    const attachmentIds = [
-        <?php foreach ($attachments as $attachment): ?>
-            <?= (int)$attachment['attachment_id'] ?>,
-        <?php endforeach; ?>
-    ];
+        const input =
+            document.getElementById('new_attachments');
 
-    if (attachmentIds.length === 0) {
-        alert('No attachments found.');
-        return;
-    }
+        const form =
+            document.getElementById('addAttachmentsForm');
 
-    const button = this;
+        const errorBox =
+            document.getElementById('newAttachmentError');
 
-    // Prevent double clicking
-    button.disabled = true;
+        const selectedFilesContainer =
+            document.getElementById('selectedFilesContainer');
 
-    button.innerHTML = `
-        <i class="fas fa-spinner fa-spin me-1"></i>
-        Downloading...
-    `;
+        const uploadButton =
+            document.getElementById('uploadAttachmentsBtn');
 
 
-    /*
-    |--------------------------------------------------------------------------
-    | Download each file separately
-    |--------------------------------------------------------------------------
-    */
+        if (!input || !form) {
+            return;
+        }
 
-    attachmentIds.forEach(function (attachmentId, index) {
 
-        setTimeout(function () {
+        /*
+        |--------------------------------------------------------------------------
+        | FILE SELECTION
+        |--------------------------------------------------------------------------
+        */
 
-            const link = document.createElement('a');
+        input.addEventListener('change', function () {
 
-            link.href =
-                'ticket/download_purch_attachment.php?attachment_id='
-                + attachmentId;
+            errorBox.classList.add('d-none');
+            errorBox.textContent = '';
 
-            link.download = '';
+            selectedFilesContainer.innerHTML = '';
 
-            document.body.appendChild(link);
+            const files = Array.from(input.files);
 
-            link.click();
+            if (files.length === 0) {
+                return;
+            }
 
-            document.body.removeChild(link);
 
-        }, index * 1200);
+            /*
+            |--------------------------------------------------------------------------
+            | MAXIMUM 10 FILES
+            |--------------------------------------------------------------------------
+            */
+
+            if (files.length > 10) {
+
+                errorBox.textContent =
+                    'You can select a maximum of 10 files per upload.';
+
+                errorBox.classList.remove('d-none');
+
+                input.value = '';
+
+                return;
+            }
+            // Maximum size per file: 10 MB
+            const maxFileSize = 10 * 1024 * 1024;
+
+            for (const file of files) {
+
+                if (file.size > maxFileSize) {
+
+                    errorBox.textContent =
+                        `"${file.name}" exceeds the maximum file size of 10 MB.`;
+
+                    errorBox.classList.remove('d-none');
+
+                    input.value = '';
+
+                    return;
+                }
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | ALLOWED EXTENSIONS
+            |--------------------------------------------------------------------------
+            */
+
+            const allowed = [
+                            'jpg',
+                            'jpeg',
+                            'png',
+                            'pdf',
+                            'doc',
+                            'docx',
+                            'csv',
+                            'xls',
+                            'xlsx',
+                            'xlsm',
+                            'xlsb',
+                            'xlt',
+                            'xltx',
+                            'xltm',
+                            'ods'
+            ];
+
+
+            let invalidFile = false;
+
+
+            files.forEach(function (file) {
+
+                const extension =
+                    file.name
+                        .split('.')
+                        .pop()
+                        .toLowerCase();
+
+
+                if (!allowed.includes(extension)) {
+
+                    invalidFile = true;
+
+                }
+
+            });
+
+
+            if (invalidFile) {
+
+                errorBox.textContent =
+                    'One or more selected files are not allowed. ';
+
+                errorBox.classList.remove('d-none');
+
+                input.value = '';
+
+                return;
+            }
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | SHOW SELECTED FILES
+            |--------------------------------------------------------------------------
+            */
+
+            const list =
+                document.createElement('div');
+
+            list.className =
+                'list-group';
+
+
+            files.forEach(function (file, index) {
+
+                const item =
+                    document.createElement('div');
+
+                item.className =
+                    'list-group-item d-flex justify-content-between align-items-center';
+
+
+                item.innerHTML = `
+
+                    <div>
+
+                        <i class="fas fa-file me-2 text-primary"></i>
+
+                        ${escapeHtml(file.name)}
+
+                    </div>
+
+                    <small class="text-muted">
+                        ${(file.size / 1024 / 1024).toFixed(2)} MB
+                    </small>
+
+                `;
+
+                list.appendChild(item);
+
+            });
+
+
+            selectedFilesContainer.appendChild(list);
+
+        });
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | FORM SUBMIT
+        |--------------------------------------------------------------------------
+        */
+
+        form.addEventListener('submit', function (e) {
+
+            const files =
+                Array.from(input.files);
+
+
+            errorBox.classList.add('d-none');
+            errorBox.textContent = '';
+
+
+            if (files.length === 0) {
+
+                e.preventDefault();
+
+                errorBox.textContent =
+                    'Please select at least one file.';
+
+                errorBox.classList.remove('d-none');
+
+                return;
+            }
+
+
+            if (files.length > 10) {
+
+                e.preventDefault();
+
+                errorBox.textContent =
+                    'You can upload a maximum of 10 files per action.';
+
+                errorBox.classList.remove('d-none');
+
+                return;
+            }
+
+
+            const allowed = [
+                            'jpg',
+                            'jpeg',
+                            'png',
+                            'pdf',
+                            'doc',
+                            'docx',
+                            'csv',
+                            'xls',
+                            'xlsx',
+                            'xlsm',
+                            'xlsb',
+                            'xlt',
+                            'xltx',
+                            'xltm',
+                            'ods'
+            ];
+
+
+            for (const file of files) {
+
+                const extension =
+                    file.name
+                        .split('.')
+                        .pop()
+                        .toLowerCase();
+
+
+                if (!allowed.includes(extension)) {
+
+                    e.preventDefault();
+
+                    errorBox.textContent =
+                        'Invalid file: ' +
+                        file.name +
+                        '. Excel files are not allowed.';
+
+                    errorBox.classList.remove('d-none');
+
+                    return;
+                }
+
+            }
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | PREVENT DOUBLE SUBMISSION
+            |--------------------------------------------------------------------------
+            */
+
+            uploadButton.disabled = true;
+
+            uploadButton.innerHTML = `
+                <i class="fas fa-spinner fa-spin me-1"></i>
+                Uploading...
+            `;
+
+        });
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | HTML ESCAPE
+        |--------------------------------------------------------------------------
+        */
+
+        function escapeHtml(value) {
+
+            return value
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+
+        }
 
     });
 
+</script>
+<script>
 
-    /*
-    |--------------------------------------------------------------------------
-    | Restore button
-    |--------------------------------------------------------------------------
-    */
+    document.getElementById('downloadAllAttachments')?.addEventListener('click', function () {
 
-    setTimeout(function () {
+        const attachmentIds = [
+            <?php foreach ($attachments as $attachment): ?>
+                <?= (int)$attachment['attachment_id'] ?>,
+            <?php endforeach; ?>
+        ];
 
-        button.disabled = false;
+        if (attachmentIds.length === 0) {
+            alert('No attachments found.');
+            return;
+        }
+
+        const button = this;
+
+        // Prevent double clicking
+        button.disabled = true;
 
         button.innerHTML = `
-            <i class="fas fa-download me-1"></i>
-            Download All
+            <i class="fas fa-spinner fa-spin me-1"></i>
+            Downloading...
         `;
 
-    }, attachmentIds.length * 1200 + 1000);
 
-});
+        /*
+        |--------------------------------------------------------------------------
+        | Download each file separately
+        |--------------------------------------------------------------------------
+        */
+
+        attachmentIds.forEach(function (attachmentId, index) {
+
+            setTimeout(function () {
+
+                const link = document.createElement('a');
+
+                link.href =
+                    'ticket/download_purch_attachment.php?attachment_id='
+                    + attachmentId;
+
+                link.download = '';
+
+                document.body.appendChild(link);
+
+                link.click();
+
+                document.body.removeChild(link);
+
+            }, index * 1200);
+
+        });
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Restore button
+        |--------------------------------------------------------------------------
+        */
+
+        setTimeout(function () {
+
+            button.disabled = false;
+
+            button.innerHTML = `
+                <i class="fas fa-download me-1"></i>
+                Download All
+            `;
+
+        }, attachmentIds.length * 1200 + 1000);
+
+    });
 
 </script>
+<script>
 
+    document.addEventListener('DOMContentLoaded', function () {
+
+        const input =
+            document.getElementById('po_attachments');
+
+        const form =
+            document.getElementById('addPOAttachmentsForm');
+
+        const errorBox =
+            document.getElementById('poAttachmentError');
+
+        const selectedContainer =
+            document.getElementById(
+                'selectedPOFilesContainer'
+            );
+
+        const uploadButton =
+            document.getElementById(
+                'uploadPOAttachmentsBtn'
+            );
+
+
+        if (!input || !form) {
+            return;
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | FILE SELECTION
+        |--------------------------------------------------------------------------
+        */
+
+        input.addEventListener(
+            'change',
+            function () {
+
+                errorBox.classList.add(
+                    'd-none'
+                );
+
+                errorBox.textContent = '';
+
+                selectedContainer.innerHTML = '';
+
+                const files =
+                    Array.from(input.files);
+
+
+                if (files.length === 0) {
+                    return;
+                }
+
+
+                /*
+                |--------------------------------------------------------------------------
+                | MAXIMUM 10 FILES
+                |--------------------------------------------------------------------------
+                */
+
+                if (files.length > 10) {
+
+                    errorBox.textContent =
+                        'You can select a maximum of 10 PO files per upload.';
+
+                    errorBox.classList.remove(
+                        'd-none'
+                    );
+
+                    input.value = '';
+
+                    return;
+
+                }
+                /*
+                |--------------------------------------------------------------------------
+                | MAXIMUM 10 MB PER PO FILE
+                |--------------------------------------------------------------------------
+                */
+
+                const maxFileSize = 10 * 1024 * 1024; // 10 MB
+
+                for (const file of files) {
+
+                    if (file.size > maxFileSize) {
+
+                        errorBox.textContent =
+                            `PO file "${file.name}" exceeds the maximum file size of 10 MB.`;
+
+                        errorBox.classList.remove('d-none');
+
+                        input.value = '';
+
+                        return;
+                    }
+
+                }
+
+                /*
+                |--------------------------------------------------------------------------
+                | ALLOWED FILE TYPES
+                |--------------------------------------------------------------------------
+                */
+
+                const allowed = [
+                            'jpg',
+                            'jpeg',
+                            'png',
+                            'pdf',
+                            'doc',
+                            'docx',
+                            'csv',
+                            'xls',
+                            'xlsx',
+                            'xlsm',
+                            'xlsb',
+                            'xlt',
+                            'xltx',
+                            'xltm',
+                            'ods'
+                ];
+
+
+                for (const file of files) {
+
+                    const extension =
+                        file.name
+                            .split('.')
+                            .pop()
+                            .toLowerCase();
+
+
+                    if (
+                        !allowed.includes(
+                            extension
+                        )
+                    ) {
+
+                        errorBox.textContent =
+                            'Invalid file: ' +
+                            file.name +
+                            '. Excel files are not allowed.';
+
+                        errorBox.classList.remove(
+                            'd-none'
+                        );
+
+                        input.value = '';
+
+                        return;
+
+                    }
+
+                }
+
+
+                /*
+                |--------------------------------------------------------------------------
+                | DISPLAY SELECTED FILES
+                |--------------------------------------------------------------------------
+                */
+
+                const list =
+                    document.createElement(
+                        'div'
+                    );
+
+                list.className =
+                    'list-group';
+
+
+                files.forEach(
+                    function (file) {
+
+                        const item =
+                            document.createElement(
+                                'div'
+                            );
+
+                        item.className =
+                            'list-group-item d-flex justify-content-between align-items-center';
+
+
+                        item.innerHTML = `
+
+                            <div>
+
+                                <i class="
+                                    fas
+                                    fa-file
+                                    me-2
+                                    text-primary
+                                "></i>
+
+                                ${escapeHtml(
+                                    file.name
+                                )}
+
+                            </div>
+
+                            <small class="text-muted">
+
+                                ${(
+                                    file.size /
+                                    1024 /
+                                    1024
+                                ).toFixed(2)} MB
+
+                            </small>
+
+                        `;
+
+
+                        list.appendChild(
+                            item
+                        );
+
+                    }
+                );
+
+
+                selectedContainer.appendChild(
+                    list
+                );
+
+            }
+        );
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | FORM SUBMIT
+        |--------------------------------------------------------------------------
+        */
+
+        form.addEventListener(
+            'submit',
+            function (e) {
+
+                const files =
+                    Array.from(
+                        input.files
+                    );
+
+
+                errorBox.classList.add(
+                    'd-none'
+                );
+
+                errorBox.textContent = '';
+
+
+                if (files.length === 0) {
+
+                    e.preventDefault();
+
+                    errorBox.textContent =
+                        'Please select at least one PO file.';
+
+                    errorBox.classList.remove(
+                        'd-none'
+                    );
+
+                    return;
+
+                }
+
+
+                if (files.length > 10) {
+
+                    e.preventDefault();
+
+                    errorBox.textContent =
+                        'You can upload a maximum of 10 PO files per action.';
+
+                    errorBox.classList.remove(
+                        'd-none'
+                    );
+
+                    return;
+
+                }
+
+
+                const allowed = [
+                            'jpg',
+                            'jpeg',
+                            'png',
+                            'pdf',
+                            'doc',
+                            'docx',
+                            'csv',
+                            'xls',
+                            'xlsx',
+                            'xlsm',
+                            'xlsb',
+                            'xlt',
+                            'xltx',
+                            'xltm',
+                            'ods'
+                ];
+
+
+                for (const file of files) {
+
+                    const extension =
+                        file.name
+                            .split('.')
+                            .pop()
+                            .toLowerCase();
+
+
+                    if (
+                        !allowed.includes(
+                            extension
+                        )
+                    ) {
+
+                        e.preventDefault();
+
+                        errorBox.textContent =
+                            'Invalid file: ' +
+                            file.name +
+                            '. Excel files are not allowed.';
+
+                        errorBox.classList.remove(
+                            'd-none'
+                        );
+
+                        return;
+
+                    }
+
+                }
+
+
+                /*
+                |--------------------------------------------------------------------------
+                | PREVENT DOUBLE SUBMISSION
+                |--------------------------------------------------------------------------
+                */
+
+                uploadButton.disabled = true;
+
+                uploadButton.innerHTML = `
+                    <i class="fas fa-spinner fa-spin me-1"></i>
+                    Uploading...
+                `;
+
+            }
+        );
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | HTML ESCAPE
+        |--------------------------------------------------------------------------
+        */
+
+        function escapeHtml(value) {
+
+            return value
+                .replace(
+                    /&/g,
+                    '&amp;'
+                )
+                .replace(
+                    /</g,
+                    '&lt;'
+                )
+                .replace(
+                    />/g,
+                    '&gt;'
+                )
+                .replace(
+                    /"/g,
+                    '&quot;'
+                )
+                .replace(
+                    /'/g,
+                    '&#039;'
+                );
+
+        }
+
+    });
+
+</script>
 <?php
 $conn->close();
 ?>
