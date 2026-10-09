@@ -626,19 +626,70 @@ if (!empty($requestIds)) {
 
                     if (empty($poUploadErrors)) {
 
-                        $poFiles =
-                            $_FILES['po_attachments'];
+                        $poFiles = $_FILES['po_attachments'];
 
-                        $poFileCount =
-                            count($poFiles['name']);
+                        $maxPoFiles = 10;
+                        $maxPoTotalSize = 10 * 1024 * 1024; // 10 MB total
+                        $maxPoFileSize = 10 * 1024 * 1024;  // 10 MB per file
 
-                        if ($poFileCount > 10) {
+                        $poFileCount = 0;
+                        $poTotalSize = 0;
 
-                            $poUploadErrors[] =
-                                'You can add a maximum of 10 PO attachments at a time.';
+                        foreach ($poFiles['name'] as $i => $name) {
 
+                            // Skip empty file inputs
+                            if (
+                                $name === '' ||
+                                $poFiles['error'][$i] === UPLOAD_ERR_NO_FILE
+                            ) {
+                                continue;
+                            }
+
+                            $poFileCount++;
+
+                            // Check upload errors
+                            if ($poFiles['error'][$i] !== UPLOAD_ERR_OK) {
+
+                                if (
+                                    $poFiles['error'][$i] === UPLOAD_ERR_INI_SIZE ||
+                                    $poFiles['error'][$i] === UPLOAD_ERR_FORM_SIZE
+                                ) {
+                                    $poUploadErrors[] =
+                                        'A PO attachment exceeds the server upload size limit.';
+                                } else {
+                                    $poUploadErrors[] =
+                                        'Failed to upload PO attachment: ' . basename($name);
+                                }
+
+                                break;
+                            }
+
+                            $fileSize = (int) $poFiles['size'][$i];
+
+                            // Check individual file size
+                            if ($fileSize > $maxPoFileSize) {
+                                $poUploadErrors[] =
+                                    basename($name) . ' exceeds the maximum file size of 10 MB.';
+                                break;
+                            }
+
+                            $poTotalSize += $fileSize;
                         }
 
+                        // Check maximum number of files
+                        if (empty($poUploadErrors) && $poFileCount > $maxPoFiles) {
+                            $poUploadErrors[] =
+                                'You can add a maximum of 10 PO attachments at a time.';
+                        }
+
+                        // Check combined file size
+                        if (
+                            empty($poUploadErrors) &&
+                            $poTotalSize > $maxPoTotalSize
+                        ) {
+                            $poUploadErrors[] =
+                                'The total size of all PO attachments must not exceed 10 MB.';
+                        }
                     }
 
                     /*
@@ -3100,7 +3151,7 @@ if ($orderStatus === 'goods received'):
 
                                     Maximum
                                     <strong>
-                                        10 files per upload
+                                        10 files and 10MB per upload
                                     </strong>.
 
                                     <br>
@@ -3240,7 +3291,7 @@ if ($orderStatus === 'goods received'):
 
                                     <div class="form-text">
 
-                                        Maximum <strong>10 files per upload</strong>.
+                                        Maximum <strong>10 files AND 10MB per upload</strong>.
 
                                         <br>
 
@@ -3594,7 +3645,23 @@ if ($orderStatus === 'goods received'):
 
                 return;
             }
+            // Maximum size per file: 10 MB
+            const maxFileSize = 10 * 1024 * 1024;
 
+            for (const file of files) {
+
+                if (file.size > maxFileSize) {
+
+                    errorBox.textContent =
+                        `"${file.name}" exceeds the maximum file size of 10 MB.`;
+
+                    errorBox.classList.remove('d-none');
+
+                    input.value = '';
+
+                    return;
+                }
+            }
 
             /*
             |--------------------------------------------------------------------------
@@ -3645,7 +3712,7 @@ if ($orderStatus === 'goods received'):
             if (invalidFile) {
 
                 errorBox.textContent =
-                    'One or more selected files are not allowed. Excel files (.xls and .xlsx) are not allowed.';
+                    'One or more selected files are not allowed. ';
 
                 errorBox.classList.remove('d-none');
 
@@ -3977,7 +4044,29 @@ if ($orderStatus === 'goods received'):
                     return;
 
                 }
+                /*
+                |--------------------------------------------------------------------------
+                | MAXIMUM 10 MB PER PO FILE
+                |--------------------------------------------------------------------------
+                */
 
+                const maxFileSize = 10 * 1024 * 1024; // 10 MB
+
+                for (const file of files) {
+
+                    if (file.size > maxFileSize) {
+
+                        errorBox.textContent =
+                            `PO file "${file.name}" exceeds the maximum file size of 10 MB.`;
+
+                        errorBox.classList.remove('d-none');
+
+                        input.value = '';
+
+                        return;
+                    }
+
+                }
 
                 /*
                 |--------------------------------------------------------------------------

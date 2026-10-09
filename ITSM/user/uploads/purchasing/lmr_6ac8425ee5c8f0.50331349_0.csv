@@ -1,0 +1,180 @@
+Ticket #,User,Category,Impact,Priority,Subject,Subject Details,Issue,Assigned To,Status,Date,Time,Action Taken
+TICKET-00677,James Angelo,Incident,Individual,High,Network,Internet Connection,"Greetings IT Team,
+
+We would like to log a support ticket regarding the LAN connection issues on our manager/department head's laptop, Ms. Zena Orinday.
+
+Specifically, the device continues to experience connectivity issues despite restarting, and she is consistently unable to log-in to SAP B1.
+
+Additionally, if deemed necessary upon diagnosis, we would like to request troubleshooting or a full replacement of the in-wall LAN cable to ensure a stable, uninterrupted connection for her workstation.
+
+Thank you very much for your prompt assistance and support.
+
+Best regards,
+James Angelo Victorino",Lenin Villarin,In Progress,9/29/2026,7:47 AM,"Sep 29 2026 08:06 AM - Aljon Cardeno updated assigned_to from Triage to Aljon Cardeno
+Note: Triage transferred the ticket to Aljon Cardeno
+
+Sep 29 2026 08:06 AM - Aljon Cardeno updated status from waiting for support to in progress
+Note: checking
+
+Oct 01 2026 03:50 PM - Lenin Villarin updated status from in progress to pending
+Note: Pending
+
+Oct 02 2026 08:09 AM - Lenin Villarin updated assigned_to from Aljon Cardeno to Lenin Villarin
+Note: Aljon Cardeno transferred the ticket to Lenin Villarin
+
+Oct 02 2026 08:10 AM - Lenin Villarin updated status from pending to in progress
+Note: In Progress
+"
+TICKET-00680,Hector Columbino,Service,Individual,Low,Network,Website Access,Requesting Access to Shopee and Lazada site for checking of remittances made. Trade Marketing already provided me the credentials but cannot access due to restrictions. Thank you.,Triage,In Progress,10/6/2026,2:21 PM,"Oct 06 2026 03:46 PM - Aljon Cardeno updated assigned_to from Triage to Aljon Cardeno
+Note: Triage transferred the ticket to Aljon Cardeno
+
+Oct 06 2026 03:46 PM - Aljon Cardeno updated status from waiting for support to in progress
+Note: checking
+
+Oct 07 2026 09:42 AM - Aljon Cardeno updated assigned_to from Aljon Cardeno to Triage
+Note: Aljon Cardeno transferred the ticket to Triage
+"
+TICKET-00679,Ray Marvin C. Labra,Service,Organization,High,System,"Get IT help
+",ETA REGISTRATION OF UNREGISTERED TEMPLATE,Lenin Villarin,Pending,9/29/2026,2:39 PM,"Sep 29 2026 03:43 PM - Kimberly Yu updated assigned_to from Triage to Aljon Cardeno
+Note: Triage transferred the ticket to Aljon Cardeno
+
+Sep 29 2026 03:43 PM - Kimberly Yu updated status from waiting for support to in progress
+Note: checking
+
+Oct 01 2026 01:02 PM - Lenin Villarin updated status from in progress to pending
+Note: Pending
+
+Oct 01 2026 01:03 PM - Lenin Villarin updated status from pending to pending
+Note: Pending
+
+Oct 02 2026 09:49 AM - Aljon Cardeno updated assigned_to from Aljon Cardeno to Lenin Villarin
+Note: Aljon Cardeno transferred the ticket to Lenin Villarin
+"
+TICKET-00681,Hector Columbino,Change,Organization,High,System,SAP B1 ,"BIR has released a new Revenue Regulation requiring that withholding tax be shown in the Invoice starting October 16, 2026. Currently, our invoice format in the SAP do not show the withholding tax. We are requesting to edit the printing format in SAP so that the withholding tax be shown. The total amount formula will also change as it will now be Total less withholding Tax. Please see attached for the sample Invoice. Thank you.",Triage,Pending,10/7/2026,9:17 AM,"Oct 07 2026 09:42 AM - Aljon Cardeno updated status from waiting for support to pending
+Note: fyi it team
+"
+TICKET-00666,Jayson Viray,Service,Department,Medium,Software and Application,"Get IT help
+",Cannot open the AutoCAD 2021 application. Need to reinstall the app based on the error. ,Lenin Villarin,Pending,9/22/2026,1:10 PM,"Sep 22 2026 01:36 PM - Aljon Cardeno updated assigned_to from Triage to Aljon Cardeno
+Note: Triage transferred the ticket to Aljon Cardeno
+
+Sep 22 2026 01:37 PM - Aljon Cardeno updated status from waiting for support to in progress
+Note: CHECKING
+
+Sep 24 2026 10:12 AM - Lenin Villarin updated status from in progress to pending
+Note: Pending
+
+Oct 07 2026 09:42 AM - Aljon Cardeno updated assigned_to from Aljon Cardeno to Lenin Villarin
+Note: Aljon Cardeno transferred the ticket to Lenin Villarin
+"
+TICKET-00649,Ronnie Amante,Service,Department,Medium,System,SAP B1 ,"Cannot see address on print out of PO on SAP B1
+",Triage,Pending,9/14/2026,7:43 AM,"Sep 14 2026 07:43 AM - Aljon Cardeno updated assigned_to from Triage to Aljon Cardeno
+Note: Triage transferred the ticket to Aljon Cardeno
+
+Sep 14 2026 07:43 AM - Aljon Cardeno updated status from waiting for support to in progress
+Note: checking
+
+Sep 14 2026 09:01 AM - Aljon Cardeno updated status from in progress to pending
+Note: waiting for ansi
+
+Oct 05 2026 04:48 PM - Aljon Cardeno updated assigned_to from Aljon Cardeno to Triage
+Note: Aljon Cardeno transferred the ticket to Triage
+"
+TICKET-00646,Hector Columbino,Change,Department,Medium,System,SAP B1 ,"Requesting for System setup update where when printing check, the check date should be the due date of the AP Invoice. In case of multiple AP invoices with different due dates, check date should be the latest of the due dates. Current Setup is that no date is captured when printing check. Check date is added manually thru the use of excel file. Please see attachment for illustration. Thanks.",Triage,Pending,9/11/2026,9:55 AM,"Sep 11 2026 10:03 AM - Aljon Cardeno updated assigned_to from Triage to Aljon Cardeno
+Note: Triage transferred the ticket to Aljon Cardeno
+
+Sep 11 2026 10:03 AM - Aljon Cardeno updated status from waiting for support to in progress
+Note: checking concern
+
+Sep 14 2026 01:14 PM - Aljon Cardeno updated status from in progress to pending
+Note: waiitng ansi
+
+Sep 18 2026 02:49 PM - Aljon Cardeno updated priority from high to medium
+Oct 05 2026 04:48 PM - Aljon Cardeno updated assigned_to from Aljon Cardeno to Triage
+Note: Aljon Cardeno transferred the ticket to Triage
+"
+TICKET-00600,Weng Vergara,Change,Department,Medium,System,SAP B1 ,wrong date of delivery on DR,Triage,Pending,8/25/2026,4:53 PM,"Aug 25 2026 04:53 PM - Aljon Cardeno updated assigned_to from Triage to Aljon Cardeno
+Note: Triage transferred the ticket to Aljon Cardeno
+
+Aug 25 2026 04:53 PM - Aljon Cardeno updated status from waiting for support to in progress
+Note: CHECKING
+
+Aug 25 2026 05:37 PM - Aljon Cardeno updated comment from  to 
+Note: coordinating with users in canlubang regarding this problem
+instructed them to check the time on the pc, rdp and barcode scanner
+
+Aug 26 2026 01:01 PM - Aljon Cardeno updated status from in progress to pending
+Note: waiting for sir lawrence update
+
+Sep 22 2026 05:26 PM - Aljon Cardeno updated ticket_category from service to change
+Oct 05 2026 04:49 PM - Aljon Cardeno updated assigned_to from Aljon Cardeno to Triage
+Note: Aljon Cardeno transferred the ticket to Triage
+"
+TICKET-00640,Lou Joseph Benzal,Service,Individual,Medium,System,SAP B1 ,Sir. Request ako access ng Bin Location Content List on SAP B1. Nirecommend ni Inventory(Sir Jayson Almadrones) para madali ko daw makita kung ano items ko.,Triage,Pending,9/10/2026,5:32 PM,"Sep 10 2026 05:37 PM - Lenin Villarin updated assigned_to from Triage to Aljon Cardeno
+Note: Triage transferred the ticket to Aljon Cardeno
+
+Sep 10 2026 05:37 PM - Lenin Villarin updated status from waiting for support to pending
+Note: Pending
+
+Sep 10 2026 05:37 PM - Lenin Villarin updated status from pending to pending
+Note: Pending
+
+Sep 18 2026 02:48 PM - Aljon Cardeno updated priority from low to medium
+Oct 05 2026 04:49 PM - Aljon Cardeno updated assigned_to from Aljon Cardeno to Triage
+Note: Aljon Cardeno transferred the ticket to Triage
+"
+TICKET-00478,Reynald Gapido,Incident,Department,Low,Hardware,Printer or Scanner,printer epson l1300 cannot print and has red light indicator on paper icon,Triage,Pending,7/2/2026,7:49 AM,"Jul 02 2026 07:49 AM - Aljon Cardeno updated assigned_to from Triage to Aljon Cardeno
+Note: Triage transferred the ticket to Aljon Cardeno
+
+Jul 02 2026 07:50 AM - Aljon Cardeno updated status from waiting for support to in progress
+Note: run troubleshooting, reinstall drivers
+
+Jul 02 2026 07:50 AM - Aljon Cardeno updated status from in progress to pending
+Note: subjected for printer service
+
+Jul 10 2026 02:35 PM - Aljon Cardeno updated comment from  to 
+Note: waiting for service technician schedule
+
+Aug 13 2026 10:00 AM - Aljon Cardeno updated comment from  to 
+Note: waiting for LMR approval
+
+Sep 18 2026 02:50 PM - Aljon Cardeno updated priority from medium to low
+Sep 21 2026 01:31 PM - Aljon Cardeno updated comment from  to 
+Note: currently checking other suppliers Quotation
+
+Oct 05 2026 04:48 PM - Aljon Cardeno updated comment from  to 
+Note: last update on this is to check other quotation for repair
+
+Oct 05 2026 04:49 PM - Aljon Cardeno updated assigned_to from Aljon Cardeno to Triage
+Note: Aljon Cardeno transferred the ticket to Triage
+"
+TICKET-00479,Rowylyn Diaz,Incident,Individual,Low,Hardware,Printer or Scanner,"having print out problem on printer lx -310, not clear print ",Triage,Pending,7/2/2026,7:51 AM,"Jul 02 2026 07:52 AM - Aljon Cardeno updated assigned_to from Triage to Aljon Cardeno
+Note: Triage transferred the ticket to Aljon Cardeno
+
+Jul 02 2026 07:52 AM - Aljon Cardeno updated status from waiting for support to in progress
+Note: reinstall driver, run troubleshooting, test if the ribbon is the problem.
+
+final assessment, printer head problem, temporary use ms cheng printer while waiting for printer head replacement
+
+Jul 02 2026 07:53 AM - Aljon Cardeno updated status from in progress to pending
+Note: pending
+
+Aug 13 2026 10:01 AM - Aljon Cardeno updated comment from  to 
+Note: waiting for LMR approval
+
+Sep 18 2026 02:48 PM - Aljon Cardeno updated priority from low to medium
+Sep 18 2026 02:49 PM - Aljon Cardeno updated priority from medium to low
+Sep 21 2026 01:32 PM - Aljon Cardeno updated comment from  to 
+Note: ticket on hold because the user is currently using maam cheng dot matix printer
+
+Oct 05 2026 04:48 PM - Aljon Cardeno updated comment from  to 
+Note: last update on this is to check other quotation for repair
+
+Oct 05 2026 04:49 PM - Aljon Cardeno updated assigned_to from Aljon Cardeno to Triage
+Note: Aljon Cardeno transferred the ticket to Triage
+"
+,,,,,,,,,,,,
+,,,,,,,,,,,,
+,,,,,,,,,,,,
+,,,,,,,,,,,,
+,,,,,,,,,,,,
+,,,,,,,,,,,,

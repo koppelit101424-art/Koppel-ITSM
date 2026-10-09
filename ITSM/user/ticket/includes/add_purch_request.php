@@ -471,19 +471,68 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     }
 
                     /*
-                    * Maximum 10 attachments
+                    * Validate attachment count and total size
                     */
                     if (empty($errors)) {
 
                         $files = $_FILES['attachments'];
 
-                        $fileCount = count($files['name']);
+                        $maxFiles = 10;
+                        $maxTotalSize = 10 * 1024 * 1024; // 10 MB
+                        $maxFileSize = 10 * 1024 * 1024;  // 10 MB per file
 
-                        if ($fileCount > 10) {
+                        $fileCount = 0;
+                        $totalSize = 0;
+
+                        foreach ($files['name'] as $i => $name) {
+
+                            // Skip empty file slots
+                            if (
+                                $name === '' ||
+                                $files['error'][$i] === UPLOAD_ERR_NO_FILE
+                            ) {
+                                continue;
+                            }
+
+                            $fileCount++;
+
+                            // Check upload errors
+                            if ($files['error'][$i] !== UPLOAD_ERR_OK) {
+
+                                if ($files['error'][$i] === UPLOAD_ERR_INI_SIZE ||
+                                    $files['error'][$i] === UPLOAD_ERR_FORM_SIZE) {
+
+                                    $errors[] = "A file exceeds the allowed upload size.";
+
+                                } else {
+                                    $errors[] = "Upload failed for file: " . basename($name);
+                                }
+
+                                break;
+                            }
+
+                            $fileSize = (int) $files['size'][$i];
+
+                            // Check individual file size
+                            if ($fileSize > $maxFileSize) {
+                                $errors[] = basename($name) .
+                                    " exceeds the maximum file size of 10 MB.";
+                                break;
+                            }
+
+                            $totalSize += $fileSize;
+                        }
+
+                        // Check maximum number of files
+                        if (empty($errors) && $fileCount > $maxFiles) {
                             $errors[] = "Maximum of 10 attachments is allowed.";
                         }
-                    }
 
+                        // Check combined attachment size
+                        if (empty($errors) && $totalSize > $maxTotalSize) {
+                            $errors[] = "The total size of all attachments must not exceed 10 MB.";
+                        }
+                    }
                     /*
                     * Process files
                     */
@@ -768,7 +817,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     >
 
     <small class="text-muted">
-        Maximum 10 files.
+        Maximum 10 files and Maximum 10MB PER FILE
         Allowed: JPG, JPEG, PNG, PDF, DOC, DOCX, CSV,
         XLS, XLSX, XLSM, XLSB, XLT, XLTX, XLTM, ODS.
     </small>
