@@ -83,12 +83,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_attachments'])) {
         */
 
         $allowedExtensions = [
-            'jpg',
-            'jpeg',
-            'png',
-            'pdf',
-            'doc',
-            'docx'
+                            'jpg',
+                            'jpeg',
+                            'png',
+                            'pdf',
+                            'doc',
+                            'docx',
+                            'csv',
+                            'xls',
+                            'xlsx',
+                            'xlsm',
+                            'xlsb',
+                            'xlt',
+                            'xltx',
+                            'xltm',
+                            'ods'
         ];
 
         $uploadedFiles = [];
@@ -686,7 +695,16 @@ if (!empty($requestIds)) {
                             'png',
                             'pdf',
                             'doc',
-                            'docx'
+                            'docx',
+                            'csv',
+                            'xls',
+                            'xlsx',
+                            'xlsm',
+                            'xlsb',
+                            'xlt',
+                            'xltx',
+                            'xltm',
+                            'ods'
                         ];
 
                         $uploadedPoFiles = [];
@@ -3075,7 +3093,7 @@ if ($orderStatus === 'goods received'):
                                     id="po_attachments"
                                     class="form-control"
                                     multiple
-                                    accept=".jpg,.jpeg,.png,.pdf,.doc,.docx"
+                                    accept=".jpg,.jpeg,.png,.pdf,.doc,.docx,.csv,.xls,.xlsx,.xlsm,.xlsb,.xlt,.xltx,.xltm,.ods"
                                 >
 
                                 <div class="form-text">
@@ -3088,13 +3106,9 @@ if ($orderStatus === 'goods received'):
                                     <br>
 
                                     Allowed:
-                                    JPG, JPEG, PNG, PDF, DOC, DOCX.
+                                    JPG, JPEG, PNG, PDF, DOC, DOCX, XLS.
 
                                     <br>
-
-                                    <span class="text-danger">
-                                        Excel files are not allowed.
-                                    </span>
 
                                 </div>
 
@@ -3221,7 +3235,7 @@ if ($orderStatus === 'goods received'):
                                         id="new_attachments"
                                         class="form-control"
                                         multiple
-                                        accept=".jpg,.jpeg,.png,.pdf,.doc,.docx"
+                                        accept=".jpg,.jpeg,.png,.pdf,.doc,.docx,.csv,.xls,.xlsx,.xlsm,.xlsb,.xlt,.xltx,.xltm,.ods"
                                     >
 
                                     <div class="form-text">
@@ -3231,13 +3245,9 @@ if ($orderStatus === 'goods received'):
                                         <br>
 
                                         Allowed:
-                                        JPG, JPEG, PNG, PDF, DOC, DOCX.
+                                        JPG, JPEG, PNG, PDF, DOC, DOCX, XLS.
 
                                         <br>
-
-                                        <span class="text-danger">
-                                            Excel files (.xls / .xlsx) are not allowed.
-                                        </span>
 
                                     </div>
 
@@ -3593,12 +3603,21 @@ if ($orderStatus === 'goods received'):
             */
 
             const allowed = [
-                'jpg',
-                'jpeg',
-                'png',
-                'pdf',
-                'doc',
-                'docx'
+                            'jpg',
+                            'jpeg',
+                            'png',
+                            'pdf',
+                            'doc',
+                            'docx',
+                            'csv',
+                            'xls',
+                            'xlsx',
+                            'xlsm',
+                            'xlsb',
+                            'xlt',
+                            'xltx',
+                            'xltm',
+                            'ods'
             ];
 
 
@@ -3727,12 +3746,21 @@ if ($orderStatus === 'goods received'):
 
 
             const allowed = [
-                'jpg',
-                'jpeg',
-                'png',
-                'pdf',
-                'doc',
-                'docx'
+                            'jpg',
+                            'jpeg',
+                            'png',
+                            'pdf',
+                            'doc',
+                            'docx',
+                            'csv',
+                            'xls',
+                            'xlsx',
+                            'xlsm',
+                            'xlsb',
+                            'xlt',
+                            'xltx',
+                            'xltm',
+                            'ods'
             ];
 
 
@@ -3958,12 +3986,21 @@ if ($orderStatus === 'goods received'):
                 */
 
                 const allowed = [
-                    'jpg',
-                    'jpeg',
-                    'png',
-                    'pdf',
-                    'doc',
-                    'docx'
+                            'jpg',
+                            'jpeg',
+                            'png',
+                            'pdf',
+                            'doc',
+                            'docx',
+                            'csv',
+                            'xls',
+                            'xlsx',
+                            'xlsm',
+                            'xlsb',
+                            'xlt',
+                            'xltx',
+                            'xltm',
+                            'ods'
                 ];
 
 
@@ -4129,12 +4166,21 @@ if ($orderStatus === 'goods received'):
 
 
                 const allowed = [
-                    'jpg',
-                    'jpeg',
-                    'png',
-                    'pdf',
-                    'doc',
-                    'docx'
+                            'jpg',
+                            'jpeg',
+                            'png',
+                            'pdf',
+                            'doc',
+                            'docx',
+                            'csv',
+                            'xls',
+                            'xlsx',
+                            'xlsm',
+                            'xlsb',
+                            'xlt',
+                            'xltx',
+                            'xltm',
+                            'ods'
                 ];
 
 

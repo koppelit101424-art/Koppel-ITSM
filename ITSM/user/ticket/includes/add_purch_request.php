@@ -495,7 +495,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             'png',
                             'pdf',
                             'doc',
-                            'docx'
+                            'docx',
+                            'csv',
+                            'xls',
+                            'xlsx',
+                            'xlsm',
+                            'xlsb',
+                            'xlt',
+                            'xltx',
+                            'xltm',
+                            'ods'
                         ];
 
                         for ($i = 0; $i < $fileCount; $i++) {
@@ -755,12 +764,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         id="attachments"
         class="form-control"
         multiple
-        accept=".jpg,.jpeg,.png,.pdf,.doc,.docx"
+        accept=".jpg,.jpeg,.png,.pdf,.doc,.docx,.csv,.xls,.xlsx,.xlsm,.xlsb,.xlt,.xltx,.xltm,.ods"
     >
 
     <small class="text-muted">
         Maximum 10 files.
-        Allowed: JPG, JPEG, PNG, PDF, DOC, DOCX.
+        Allowed: JPG, JPEG, PNG, PDF, DOC, DOCX, CSV,
+        XLS, XLSX, XLSM, XLSB, XLT, XLTX, XLTM, ODS.
     </small>
 
     <div id="attachmentError"
