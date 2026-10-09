@@ -17,31 +17,18 @@ if ($request_id <= 0) {
 
 /*
 |--------------------------------------------------------------------------
-| GET REQUEST INFORMATION
+| GET LMR INFORMATION
 |--------------------------------------------------------------------------
 */
 
 $stmt = $conn->prepare("
     SELECT
-        r.request_id,
-        r.requestor AS requestor_name,
-        r.department,
-        r.lmr_no,
-        r.item,
-        r.quantity,
-        r.date_created,
-        r.po_no,
-        r.category_id,
-        r.order_status,
-        u.fullname AS fullname,
-        u.department AS user_department,
-        c.category_name
-    FROM purch_request_tb r
-    LEFT JOIN user_tb u
-        ON r.requestor = u.user_id
-    LEFT JOIN request_category_tb c
-        ON r.category_id = c.category_id
-    WHERE r.request_id = ?
+        request_id,
+        lmr_no,
+        item,
+        date_created
+    FROM purch_request_tb
+    WHERE request_id = ?
     LIMIT 1
 ");
 
@@ -61,44 +48,67 @@ if (!$request) {
     die('Request not found.');
 }
 
-/*
-|--------------------------------------------------------------------------
-| BASIC REQUEST DETAILS
-|--------------------------------------------------------------------------
-*/
-
 $lmr_no = trim($request['lmr_no'] ?? '');
 $creationDate = $request['date_created'] ?? '';
 
-$requestorName = trim($request['requestor_name'] ?? '');
-
-$department = trim($request['user_department'] ?? '');
-
-if ($department === '') {
-    $department = trim($request['department'] ?? '');
-}
-
-$categoryName = trim($request['category_name'] ?? '');
-
-$poNumber = trim((string)($request['po_no'] ?? ''));
-$quantity = $request['quantity'] ?? '';
-
 /*
 |--------------------------------------------------------------------------
-| CURRENT ORDER STATUS
+| GET ACTIVITY LOGS
 |--------------------------------------------------------------------------
 */
 
-$currentOrderStatus = strtolower(
-    trim((string)($request['order_status'] ?? ''))
-);
+$stmt = $conn->prepare("
+    SELECT
+        h.history_id,
+        h.request_id,
+        h.changed_by,
+        h.comment,
+        h.changes_json,
+        h.date_created,
+        u.fullname,
+        r.item,
+        r.lmr_no
+    FROM purch_request_history_tb h
+    LEFT JOIN user_tb u
+        ON h.changed_by = u.user_id
+    LEFT JOIN purch_request_tb r
+        ON h.request_id = r.request_id
+    WHERE r.lmr_no = ?
+    ORDER BY
+        h.date_created ASC,
+        h.history_id ASC
+");
+
+if (!$stmt) {
+    die('Activity query failed: ' . $conn->error);
+}
+
+$stmt->bind_param("s", $lmr_no);
+$stmt->execute();
+
+$result = $stmt->get_result();
+
+/*
+|--------------------------------------------------------------------------
+| STATUS COLUMNS
+|--------------------------------------------------------------------------
+*/
+
+$statusColumns = [
+    'pending'                   => 'Pending',
+    'checking requirements'     => 'Checking Requirements',
+    'canvassing'                => 'Canvassing',
+    'negotiation'               => 'Negotiation',
+    'draft po under discussion' => 'Draft PO Under Discussion',
+    'draft po approved'         => 'Draft PO Approved',
+    'final po approved'         => 'Final PO Approved',
+    'rejected'                  => 'Rejected',
+    'closed'                    => 'Closed'
+];
 
 /*
 |--------------------------------------------------------------------------
 | WORKING DAYS CALCULATOR
-|--------------------------------------------------------------------------
-| Excludes the starting date.
-| Counts Monday through Friday only.
 |--------------------------------------------------------------------------
 */
 
@@ -111,10 +121,7 @@ function calculateWorkingDays($startDate, $endDate)
     $startTimestamp = strtotime($startDate);
     $endTimestamp = strtotime($endDate);
 
-    if (
-        $startTimestamp === false ||
-        $endTimestamp === false
-    ) {
+    if ($startTimestamp === false || $endTimestamp === false) {
         return '';
     }
 
@@ -131,7 +138,9 @@ function calculateWorkingDays($startDate, $endDate)
     $workingDays = 0;
 
     while ($current <= $end) {
-        if ((int)$current->format('N') <= 5) {
+        $dayOfWeek = (int)$current->format('N');
+
+        if ($dayOfWeek <= 5) {
             $workingDays++;
         }
 
@@ -143,62 +152,34 @@ function calculateWorkingDays($startDate, $endDate)
 
 /*
 |--------------------------------------------------------------------------
-| FORMAT DATE
-|--------------------------------------------------------------------------
-*/
-
-function formatExportDate($date, $format = 'm-d-Y H:i')
-{
-    if (empty($date)) {
-        return '';
-    }
-
-    $timestamp = strtotime($date);
-
-    if ($timestamp === false) {
-        return '';
-    }
-
-    return date($format, $timestamp);
-}
-
-/*
-|--------------------------------------------------------------------------
-| FORMAT WORKING DAYS
-|--------------------------------------------------------------------------
-*/
-
-function formatWorkingDays($days)
-{
-    if ($days === '' || $days === null) {
-        return '';
-    }
-
-    return $days .
-        ' working day' .
-        ($days != 1 ? 's' : '');
-}
-
-/*
-|--------------------------------------------------------------------------
-| INITIALIZE EXPORT DATA
+| PREPARE EXPORT DATA
 |--------------------------------------------------------------------------
 */
 
 $exportData = [];
 
+/*
+|--------------------------------------------------------------------------
+| INITIALIZE REQUEST
+|--------------------------------------------------------------------------
+|
+| These are export fields, not database column names.
+| Fields without a source in the existing code remain blank.
+|
+*/
+
 $exportData[$request_id] = [
     'request_id' => $request_id,
-    'requestor' => $requestorName,
-    'purchaser' => [],
-    'department' => $department,
+    'requestor' => '',
+    'changed_by' => [],
+    'department' => '',
     'lmr_no' => $lmr_no,
-    'category' => $categoryName,
+    'category' => '',
     'creation_date' => $creationDate,
     'item_code' => '',
     'item' => $request['item'] ?? '',
-    'qty' => $quantity,
-    'po_number' => $poNumber,
+    'qty' => '',
+    'po_number' => '',
     'goods_received_date' => '',
     'statuses' => [],
     'status_events' => []
@@ -206,40 +187,7 @@ $exportData[$request_id] = [
 
 /*
 |--------------------------------------------------------------------------
-| GET ACTIVITY HISTORY
-|--------------------------------------------------------------------------
-*/
-
-$stmt = $conn->prepare("
-    SELECT
-        h.history_id,
-        h.request_id,
-        h.changed_by,
-        h.comment,
-        h.changes_json,
-        h.date_created,
-        u.fullname AS purchaser_name
-    FROM purch_request_history_tb h
-    LEFT JOIN user_tb u
-        ON h.changed_by = u.user_id
-    WHERE h.request_id = ?
-    ORDER BY
-        h.date_created ASC,
-        h.history_id ASC
-");
-
-if (!$stmt) {
-    die('Activity query failed: ' . $conn->error);
-}
-
-$stmt->bind_param("i", $request_id);
-$stmt->execute();
-
-$result = $stmt->get_result();
-
-/*
-|--------------------------------------------------------------------------
-| PROCESS ACTIVITY HISTORY
+| PROCESS ACTIVITY LOGS
 |--------------------------------------------------------------------------
 */
 
@@ -253,27 +201,27 @@ while ($row = $result->fetch_assoc()) {
 
     /*
     |--------------------------------------------------------------------------
-    | PURCHASER
+    | CHANGED BY
     |--------------------------------------------------------------------------
     */
 
-    $purchaser = trim($row['purchaser_name'] ?? '');
+    $changedBy = trim($row['fullname'] ?? '');
 
-    if ($purchaser === '') {
-        $purchaser = 'Unknown User';
+    if ($changedBy === '') {
+        $changedBy = 'Unknown User';
     }
 
     if (!in_array(
-        $purchaser,
-        $exportData[$requestId]['purchaser'],
+        $changedBy,
+        $exportData[$requestId]['changed_by'],
         true
     )) {
-        $exportData[$requestId]['purchaser'][] = $purchaser;
+        $exportData[$requestId]['changed_by'][] = $changedBy;
     }
 
     /*
     |--------------------------------------------------------------------------
-    | DECODE CHANGES JSON
+    | GET CHANGES JSON
     |--------------------------------------------------------------------------
     */
 
@@ -281,24 +229,17 @@ while ($row = $result->fetch_assoc()) {
         continue;
     }
 
-    $changes = json_decode(
-        $row['changes_json'],
-        true
-    );
+    $changes = json_decode($row['changes_json'], true);
 
-    if (!is_array($changes)) {
+    if (!is_array($changes) || !isset($changes['status'])) {
         continue;
     }
 
     /*
     |--------------------------------------------------------------------------
-    | GET STATUS CHANGE
+    | GET NEW STATUS
     |--------------------------------------------------------------------------
     */
-
-    if (!isset($changes['status'])) {
-        continue;
-    }
 
     $statusChange = $changes['status'];
 
@@ -310,58 +251,15 @@ while ($row = $result->fetch_assoc()) {
 
     $newStatus = strtolower(trim((string)$newStatus));
 
+    if (!isset($statusColumns[$newStatus])) {
+        continue;
+    }
+
     $statusDate = $row['date_created'];
 
     /*
     |--------------------------------------------------------------------------
-    | GET GOODS RECEIVED DATE FROM HISTORY
-    |--------------------------------------------------------------------------
-    */
-
-    if ($newStatus === 'goods received') {
-        $exportData[$requestId]['goods_received_date'] = $statusDate;
-    }
-
-    /*
-    |--------------------------------------------------------------------------
-    | SAVE PENDING DATE
-    |--------------------------------------------------------------------------
-    | The first Pending status date becomes the creation date.
-    |--------------------------------------------------------------------------
-    */
-
-    if (
-        $newStatus === 'pending' &&
-        empty($exportData[$requestId]['pending_date'])
-    ) {
-        $exportData[$requestId]['pending_date'] = $statusDate;
-    }
-
-    /*
-    |--------------------------------------------------------------------------
-    | ACCEPT KNOWN STATUS VALUES
-    |--------------------------------------------------------------------------
-    */
-
-    $statusColumns = [
-        'pending',
-        'checking requirements',
-        'canvassing',
-        'negotiation',
-        'draft po under discussion',
-        'draft po approved',
-        'final po approved',
-        'rejected',
-        'closed'
-    ];
-
-    if (!in_array($newStatus, $statusColumns, true)) {
-        continue;
-    }
-
-    /*
-    |--------------------------------------------------------------------------
-    | SAVE STATUS OCCURRENCE
+    | SAVE ALL STATUS OCCURRENCES
     |--------------------------------------------------------------------------
     */
 
@@ -373,12 +271,12 @@ while ($row = $result->fetch_assoc()) {
 
     $exportData[$requestId]['statuses'][$newStatus][] = [
         'date' => $statusDate,
-        'purchaser' => $purchaser
+        'changed_by' => $changedBy
     ];
 
     /*
     |--------------------------------------------------------------------------
-    | SAVE STATUS EVENT
+    | SAVE STATUS EVENT FOR COMPLETION CALCULATIONS
     |--------------------------------------------------------------------------
     */
 
@@ -386,66 +284,20 @@ while ($row = $result->fetch_assoc()) {
         'status' => $newStatus,
         'date' => $statusDate,
         'history_id' => (int)$row['history_id'],
-        'purchaser' => $purchaser
-    ];
-}
-
-$stmt->close();
-
-/*
-|--------------------------------------------------------------------------
-| USE ORDER_STATUS AS A FALLBACK
-|--------------------------------------------------------------------------
-| order_status contains the current status, but does not contain
-| its change date. Use date_created as a fallback only when the
-| current status matches and no matching history date was found.
-|--------------------------------------------------------------------------
-*/
-
-if (
-    $currentOrderStatus === 'goods received' &&
-    empty($exportData[$request_id]['goods_received_date'])
-) {
-    $exportData[$request_id]['goods_received_date'] = $creationDate;
-}
-
-if (
-    $currentOrderStatus === 'closed' &&
-    empty($exportData[$request_id]['statuses']['closed'])
-) {
-    $exportData[$request_id]['statuses']['closed'][] = [
-        'date' => $creationDate,
-        'purchaser' => ''
+        'changed_by' => $changedBy
     ];
 }
 
 /*
 |--------------------------------------------------------------------------
-| SET DATE CREATED EQUAL TO PENDING DATE
-|--------------------------------------------------------------------------
-| If a Pending event exists, use its earliest recorded date.
-| Otherwise, retain purch_request_tb.date_created.
+| SORT EVENTS CHRONOLOGICALLY
 |--------------------------------------------------------------------------
 */
 
 foreach ($exportData as &$data) {
-
-    if (!empty($data['pending_date'])) {
-        $data['creation_date'] = $data['pending_date'];
-    } else {
-        $data['pending_date'] = $data['creation_date'];
-    }
-
-    /*
-    |--------------------------------------------------------------------------
-    | SORT STATUS EVENTS
-    |--------------------------------------------------------------------------
-    */
-
     usort(
         $data['status_events'],
         function ($a, $b) {
-
             $comparison = strcmp($a['date'], $b['date']);
 
             if ($comparison !== 0) {
@@ -455,25 +307,16 @@ foreach ($exportData as &$data) {
             return $a['history_id'] <=> $b['history_id'];
         }
     );
+}
+unset($data);
 
-    /*
-    |--------------------------------------------------------------------------
-    | ENSURE PENDING COLUMN MATCHES DATE CREATED
-    |--------------------------------------------------------------------------
-    */
+/*
+|--------------------------------------------------------------------------
+| CALCULATE COMPLETION TIMES
+|--------------------------------------------------------------------------
+*/
 
-    $data['statuses']['pending'] = [
-        [
-            'date' => $data['creation_date'],
-            'purchaser' => ''
-        ]
-    ];
-
-    /*
-    |--------------------------------------------------------------------------
-    | FIND COMPLETION DATES
-    |--------------------------------------------------------------------------
-    */
+foreach ($exportData as &$data) {
 
     $finalPoApprovedDate = null;
     $closedDate = null;
@@ -481,15 +324,15 @@ foreach ($exportData as &$data) {
     foreach ($data['status_events'] as $event) {
 
         if (
-            $event['status'] === 'final po approved' &&
-            $finalPoApprovedDate === null
+            $event['status'] === 'final po approved'
+            && $finalPoApprovedDate === null
         ) {
             $finalPoApprovedDate = $event['date'];
         }
 
         if (
-            $event['status'] === 'closed' &&
-            $closedDate === null
+            $event['status'] === 'closed'
+            && $closedDate === null
         ) {
             $closedDate = $event['date'];
         }
@@ -497,21 +340,7 @@ foreach ($exportData as &$data) {
 
     /*
     |--------------------------------------------------------------------------
-    | IF CLOSED EXISTS ONLY IN ORDER_STATUS
-    |--------------------------------------------------------------------------
-    */
-
-    if (
-        $closedDate === null &&
-        $currentOrderStatus === 'closed' &&
-        !empty($data['statuses']['closed'])
-    ) {
-        $closedDate = $data['statuses']['closed'][0]['date'];
-    }
-
-    /*
-    |--------------------------------------------------------------------------
-    | CALCULATE COMPLETION TIMES
+    | CREATION TO FINAL PO APPROVED
     |--------------------------------------------------------------------------
     */
 
@@ -523,16 +352,28 @@ foreach ($exportData as &$data) {
             )
             : '';
 
+    /*
+    |--------------------------------------------------------------------------
+    | FINAL PO APPROVED TO CLOSED
+    |--------------------------------------------------------------------------
+    */
+
     $data['po_approved_to_closed'] =
         (
-            $finalPoApprovedDate !== null &&
-            $closedDate !== null
+            $finalPoApprovedDate !== null
+            && $closedDate !== null
         )
             ? calculateWorkingDays(
                 $finalPoApprovedDate,
                 $closedDate
             )
             : '';
+
+    /*
+    |--------------------------------------------------------------------------
+    | CREATION TO CLOSED
+    |--------------------------------------------------------------------------
+    */
 
     $data['creation_to_closed'] =
         $closedDate !== null
@@ -542,7 +383,6 @@ foreach ($exportData as &$data) {
             )
             : '';
 }
-
 unset($data);
 
 /*
@@ -551,11 +391,7 @@ unset($data);
 |--------------------------------------------------------------------------
 */
 
-$safeLmr = preg_replace(
-    '/[^A-Za-z0-9_-]/',
-    '_',
-    $lmr_no
-);
+$safeLmr = preg_replace('/[^A-Za-z0-9_-]/', '_', $lmr_no);
 
 $filename =
     'Purchasing_Status_History_' .
@@ -595,10 +431,7 @@ $output = fopen('php://output', 'w');
 |--------------------------------------------------------------------------
 */
 
-fprintf(
-    $output,
-    chr(0xEF) . chr(0xBB) . chr(0xBF)
-);
+fprintf($output, chr(0xEF) . chr(0xBB) . chr(0xBF));
 
 /*
 |--------------------------------------------------------------------------
@@ -615,12 +448,16 @@ fputcsv($output, []);
 |--------------------------------------------------------------------------
 | EXPORT COLUMN HEADERS
 |--------------------------------------------------------------------------
+|
+| These labels are only for the exported Excel/CSV file.
+| They do not need to match database column names.
+|
 */
 
 $headers = [
     'Request ID',
     'Requestor',
-    'Purchaser',
+    'Changed by',
     'Department',
     'LMR#',
     'Category',
@@ -646,7 +483,7 @@ fputcsv($output, $headers);
 
 /*
 |--------------------------------------------------------------------------
-| STATUS COLUMNS IN EXPORT ORDER
+| STATUS COLUMNS IN THE REQUIRED EXPORT ORDER
 |--------------------------------------------------------------------------
 */
 
@@ -662,6 +499,42 @@ $exportStatusKeys = [
 
 /*
 |--------------------------------------------------------------------------
+| FORMAT WORKING DAYS
+|--------------------------------------------------------------------------
+*/
+
+function formatWorkingDays($days)
+{
+    if ($days === '') {
+        return '';
+    }
+
+    return $days . ' working day' . ($days != 1 ? 's' : '');
+}
+
+/*
+|--------------------------------------------------------------------------
+| FORMAT DATE
+|--------------------------------------------------------------------------
+*/
+
+function formatExportDate($date, $format = 'm-d-Y H:i')
+{
+    if (empty($date)) {
+        return '';
+    }
+
+    $timestamp = strtotime($date);
+
+    if ($timestamp === false) {
+        return '';
+    }
+
+    return date($format, $timestamp);
+}
+
+/*
+|--------------------------------------------------------------------------
 | WRITE EXPORT DATA
 |--------------------------------------------------------------------------
 */
@@ -672,26 +545,37 @@ foreach ($exportData as $data) {
     |--------------------------------------------------------------------------
     | BASIC INFORMATION
     |--------------------------------------------------------------------------
+    |
+    | Unknown fields remain blank because no database source was
+    | specified for them in the original code.
+    |
     */
 
     $rowData = [
-        $data['request_id'],
-        $data['requestor'],
-        implode(' / ', $data['purchaser']),
-        $data['department'],
-        $data['lmr_no'],
-        $data['category'],
-        formatExportDate($data['creation_date'], 'm-d-Y'),
+        $data['request_id'],                         // Request ID
+        $data['requestor'],                          // Requestor
+        implode(' / ', $data['changed_by']),         // Changed by
+        $data['department'],                         // Department
+        $data['lmr_no'],                             // LMR#
+        $data['category'],                           // Category
+        formatExportDate(
+            $data['creation_date'],
+            'm-d-Y'
+        ),                                           // Date Created
         $data['item_code'] !== ''
             ? $data['item_code']
-            : $data['item'],
-        $data['qty']
+            : $data['item'],                         // Item Code/item code
+        $data['qty']                                 // Qty
     ];
 
     /*
     |--------------------------------------------------------------------------
-    | STATUS DATE COLUMNS
+    | STATUS COLUMNS
     |--------------------------------------------------------------------------
+    |
+    | All occurrences of each status are written into one cell,
+    | separated by line breaks.
+    |
     */
 
     foreach ($exportStatusKeys as $statusKey) {
@@ -700,10 +584,7 @@ foreach ($exportData as $data) {
         $dates = [];
 
         foreach ($occurrences as $event) {
-
-            $formattedDate = formatExportDate(
-                $event['date']
-            );
+            $formattedDate = formatExportDate($event['date']);
 
             if ($formattedDate !== '') {
                 $dates[] = $formattedDate;
@@ -734,7 +615,7 @@ foreach ($exportData as $data) {
 
     /*
     |--------------------------------------------------------------------------
-    | CLOSED DATES
+    | CLOSED
     |--------------------------------------------------------------------------
     */
 
@@ -742,7 +623,6 @@ foreach ($exportData as $data) {
     $closedDates = [];
 
     foreach ($closedOccurrences as $event) {
-
         $formattedDate = formatExportDate($event['date']);
 
         if ($formattedDate !== '') {
@@ -772,7 +652,7 @@ foreach ($exportData as $data) {
 
     /*
     |--------------------------------------------------------------------------
-    | WRITE CSV ROW
+    | WRITE ROW
     |--------------------------------------------------------------------------
     */
 
@@ -781,12 +661,13 @@ foreach ($exportData as $data) {
 
 /*
 |--------------------------------------------------------------------------
-| CLOSE OUTPUT AND DATABASE
+| CLOSE
 |--------------------------------------------------------------------------
 */
 
 fclose($output);
 
+$stmt->close();
 $conn->close();
 
 exit;
