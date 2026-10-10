@@ -1,3 +1,4 @@
+
 <?php
 
 include '../includes/auth.php';
@@ -28,6 +29,7 @@ $stmt = $conn->prepare("
         r.department,
         r.lmr_no,
         r.item,
+        r.description,
         r.quantity,
         r.date_created,
         r.po_no,
@@ -79,15 +81,8 @@ if ($department === '') {
 }
 
 $categoryName = trim($request['category_name'] ?? '');
-
 $poNumber = trim((string)($request['po_no'] ?? ''));
 $quantity = $request['quantity'] ?? '';
-
-/*
-|--------------------------------------------------------------------------
-| CURRENT ORDER STATUS
-|--------------------------------------------------------------------------
-*/
 
 $currentOrderStatus = strtolower(
     trim((string)($request['order_status'] ?? ''))
@@ -99,7 +94,6 @@ $currentOrderStatus = strtolower(
 |--------------------------------------------------------------------------
 | Excludes the starting date.
 | Counts Monday through Friday only.
-|--------------------------------------------------------------------------
 */
 
 function calculateWorkingDays($startDate, $endDate)
@@ -111,10 +105,7 @@ function calculateWorkingDays($startDate, $endDate)
     $startTimestamp = strtotime($startDate);
     $endTimestamp = strtotime($endDate);
 
-    if (
-        $startTimestamp === false ||
-        $endTimestamp === false
-    ) {
+    if ($startTimestamp === false || $endTimestamp === false) {
         return '';
     }
 
@@ -174,9 +165,7 @@ function formatWorkingDays($days)
         return '';
     }
 
-    return $days .
-        ' working day' .
-        ($days != 1 ? 's' : '');
+    return $days . ' working day' . ($days != 1 ? 's' : '');
 }
 
 /*
@@ -197,9 +186,10 @@ $exportData[$request_id] = [
     'creation_date' => $creationDate,
     'item_code' => '',
     'item' => $request['item'] ?? '',
+    'description' => $request['description'] ?? '',
     'qty' => $quantity,
     'po_number' => $poNumber,
-    'goods_received_date' => '',
+    'order_statuses' => [],
     'statuses' => [],
     'status_events' => []
 ];
@@ -281,148 +271,118 @@ while ($row = $result->fetch_assoc()) {
         continue;
     }
 
-    $changes = json_decode(
-        $row['changes_json'],
-        true
-    );
+    $changes = json_decode($row['changes_json'], true);
 
     if (!is_array($changes)) {
         continue;
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | GET STATUS CHANGE
-    |--------------------------------------------------------------------------
-    */
-
-    if (!isset($changes['status'])) {
-        continue;
-    }
-
-    $statusChange = $changes['status'];
-
-    if (is_array($statusChange)) {
-        $newStatus = $statusChange['new'] ?? '';
-    } else {
-        $newStatus = $statusChange;
-    }
-
-    $newStatus = strtolower(trim((string)$newStatus));
-
     $statusDate = $row['date_created'];
 
     /*
     |--------------------------------------------------------------------------
-    | GET GOODS RECEIVED DATE FROM HISTORY
+    | REGULAR STATUS CHANGES
     |--------------------------------------------------------------------------
     */
 
-    if ($newStatus === 'goods received') {
-        $exportData[$requestId]['goods_received_date'] = $statusDate;
+    if (isset($changes['status'])) {
+
+        $statusChange = $changes['status'];
+
+        $newStatus = is_array($statusChange)
+            ? ($statusChange['new'] ?? '')
+            : $statusChange;
+
+        $newStatus = strtolower(trim((string)$newStatus));
+
+        $statusColumns = [
+            'pending',
+            'checking requirements',
+            'canvassing',
+            'negotiation',
+            'draft po under discussion',
+            'draft po approved',
+            'final po approved',
+            'rejected',
+            'closed'
+        ];
+
+        if (
+            $newStatus === 'pending' &&
+            empty($exportData[$requestId]['pending_date'])
+        ) {
+            $exportData[$requestId]['pending_date'] = $statusDate;
+        }
+
+        if (in_array($newStatus, $statusColumns, true)) {
+
+            if (!isset(
+                $exportData[$requestId]['statuses'][$newStatus]
+            )) {
+                $exportData[$requestId]['statuses'][$newStatus] = [];
+            }
+
+            $exportData[$requestId]['statuses'][$newStatus][] = [
+                'date' => $statusDate,
+                'purchaser' => $purchaser
+            ];
+
+            $exportData[$requestId]['status_events'][] = [
+                'status' => $newStatus,
+                'date' => $statusDate,
+                'history_id' => (int)$row['history_id'],
+                'purchaser' => $purchaser
+            ];
+        }
     }
 
     /*
     |--------------------------------------------------------------------------
-    | SAVE PENDING DATE
-    |--------------------------------------------------------------------------
-    | The first Pending status date becomes the creation date.
+    | ORDER STATUS CHANGES
     |--------------------------------------------------------------------------
     */
 
-    if (
-        $newStatus === 'pending' &&
-        empty($exportData[$requestId]['pending_date'])
-    ) {
-        $exportData[$requestId]['pending_date'] = $statusDate;
+    if (isset($changes['order_status'])) {
+
+        $orderStatusChange = $changes['order_status'];
+
+        $newOrderStatus = is_array($orderStatusChange)
+            ? ($orderStatusChange['new'] ?? '')
+            : $orderStatusChange;
+
+        $newOrderStatus = strtolower(
+            trim((string)$newOrderStatus)
+        );
+
+        $orderStatusColumns = [
+            'order acknowledged',
+            'goods received',
+            'payment processing',
+            'payment issued',
+            'closed'
+        ];
+
+        if (in_array($newOrderStatus, $orderStatusColumns, true)) {
+
+            if (!isset(
+                $exportData[$requestId]['order_statuses'][$newOrderStatus]
+            )) {
+                $exportData[$requestId]['order_statuses'][$newOrderStatus] = [];
+            }
+
+            $exportData[$requestId]['order_statuses'][$newOrderStatus][] = [
+                'date' => $statusDate,
+                'purchaser' => $purchaser
+            ];
+        }
     }
-
-    /*
-    |--------------------------------------------------------------------------
-    | ACCEPT KNOWN STATUS VALUES
-    |--------------------------------------------------------------------------
-    */
-
-    $statusColumns = [
-        'pending',
-        'checking requirements',
-        'canvassing',
-        'negotiation',
-        'draft po under discussion',
-        'draft po approved',
-        'final po approved',
-        'rejected',
-        'closed'
-    ];
-
-    if (!in_array($newStatus, $statusColumns, true)) {
-        continue;
-    }
-
-    /*
-    |--------------------------------------------------------------------------
-    | SAVE STATUS OCCURRENCE
-    |--------------------------------------------------------------------------
-    */
-
-    if (!isset(
-        $exportData[$requestId]['statuses'][$newStatus]
-    )) {
-        $exportData[$requestId]['statuses'][$newStatus] = [];
-    }
-
-    $exportData[$requestId]['statuses'][$newStatus][] = [
-        'date' => $statusDate,
-        'purchaser' => $purchaser
-    ];
-
-    /*
-    |--------------------------------------------------------------------------
-    | SAVE STATUS EVENT
-    |--------------------------------------------------------------------------
-    */
-
-    $exportData[$requestId]['status_events'][] = [
-        'status' => $newStatus,
-        'date' => $statusDate,
-        'history_id' => (int)$row['history_id'],
-        'purchaser' => $purchaser
-    ];
 }
 
 $stmt->close();
 
-
 /*
 |--------------------------------------------------------------------------
-| USE ORDER_STATUS AS A FALLBACK
-|--------------------------------------------------------------------------
-| Use history dates when available.
-| If the current order status matches but its history date is missing,
-| leave the date blank rather than using the request creation date.
-|--------------------------------------------------------------------------
-*/
-
-if (
-    $currentOrderStatus === 'goods received' &&
-    empty($exportData[$request_id]['goods_received_date'])
-) {
-    $exportData[$request_id]['goods_received_date'] = '';
-}
-
-if (
-    $currentOrderStatus === 'closed' &&
-    empty($exportData[$request_id]['statuses']['closed'])
-) {
-    $exportData[$request_id]['statuses']['closed'] = [];
-}
-
-/*
-|--------------------------------------------------------------------------
-| SET DATE CREATED EQUAL TO PENDING DATE
-|--------------------------------------------------------------------------
-| If a Pending event exists, use its earliest recorded date.
-| Otherwise, retain purch_request_tb.date_created.
+| PREPARE CREATION DATE AND STATUS EVENTS
 |--------------------------------------------------------------------------
 */
 
@@ -436,14 +396,13 @@ foreach ($exportData as &$data) {
 
     /*
     |--------------------------------------------------------------------------
-    | SORT STATUS EVENTS
+    | SORT REGULAR STATUS EVENTS CHRONOLOGICALLY
     |--------------------------------------------------------------------------
     */
 
     usort(
         $data['status_events'],
         function ($a, $b) {
-
             $comparison = strcmp($a['date'], $b['date']);
 
             if ($comparison !== 0) {
@@ -469,12 +428,11 @@ foreach ($exportData as &$data) {
 
     /*
     |--------------------------------------------------------------------------
-    | FIND COMPLETION DATES
+    | FIND FIRST FINAL PO APPROVED DATE
     |--------------------------------------------------------------------------
     */
 
     $finalPoApprovedDate = null;
-    $closedDate = null;
 
     foreach ($data['status_events'] as $event) {
 
@@ -484,32 +442,57 @@ foreach ($exportData as &$data) {
         ) {
             $finalPoApprovedDate = $event['date'];
         }
-
-        if (
-            $event['status'] === 'closed' &&
-            $closedDate === null
-        ) {
-            $closedDate = $event['date'];
-        }
     }
 
     /*
     |--------------------------------------------------------------------------
-    | IF CLOSED EXISTS ONLY IN ORDER_STATUS
+    | FIND FIRST CLOSED DATE
+    |--------------------------------------------------------------------------
+    | Check BOTH regular Status and Order Status history.
+    | Use whichever applicable Closed event occurred first.
     |--------------------------------------------------------------------------
     */
 
-    if (
-        $closedDate === null &&
-        $currentOrderStatus === 'closed' &&
-        !empty($data['statuses']['closed'])
-    ) {
-        $closedDate = $data['statuses']['closed'][0]['date'];
+    $closedDates = [];
+
+    // Closed events from regular Status history.
+    foreach (($data['statuses']['closed'] ?? []) as $event) {
+
+        if (!empty($event['date'])) {
+            $closedDates[] = $event['date'];
+        }
+    }
+
+    // Closed events from Order Status history.
+    foreach (($data['order_statuses']['closed'] ?? []) as $event) {
+
+        if (!empty($event['date'])) {
+            $closedDates[] = $event['date'];
+        }
+    }
+
+    $closedDate = null;
+
+    if (!empty($closedDates)) {
+
+        usort($closedDates, function ($a, $b) {
+            return strtotime($a) <=> strtotime($b);
+        });
+
+        $closedDate = $closedDates[0];
     }
 
     /*
     |--------------------------------------------------------------------------
     | CALCULATE COMPLETION TIMES
+    |--------------------------------------------------------------------------
+    |
+    | 1. Creation to Final PO Approved
+    | 2. Final PO Approved to Closed
+    | 3. Creation to Closed
+    |
+    | Uses working days, Monday through Friday.
+    | Excludes the starting date.
     |--------------------------------------------------------------------------
     */
 
@@ -624,6 +607,7 @@ $headers = [
     'Category',
     'Date Created',
     'Item Code/item code',
+    'Description',
     'Qty',
     'Pending',
     'Checking Requirements',
@@ -633,7 +617,11 @@ $headers = [
     'Draft PO Approved',
     'Final PO Approved',
     'PO Number',
-    'Goods received date',
+    'Order Acknowledged',
+    'Goods Received',
+    'Payment Processing',
+    'Payment Issued',
+    'Closed',
     'Closed',
     'Creation to Final PO Approved',
     'Final PO Approved to Closed',
@@ -644,7 +632,7 @@ fputcsv($output, $headers);
 
 /*
 |--------------------------------------------------------------------------
-| STATUS COLUMNS IN EXPORT ORDER
+| REGULAR STATUS COLUMNS IN EXPORT ORDER
 |--------------------------------------------------------------------------
 */
 
@@ -656,6 +644,22 @@ $exportStatusKeys = [
     'draft po under discussion',
     'draft po approved',
     'final po approved'
+];
+
+/*
+|--------------------------------------------------------------------------
+| ORDER STATUS COLUMNS IN EXPORT ORDER
+|--------------------------------------------------------------------------
+| Excludes N/A.
+|--------------------------------------------------------------------------
+*/
+
+$orderStatusKeys = [
+    'order acknowledged',
+    'goods received',
+    'payment processing',
+    'payment issued',
+    'closed'
 ];
 
 /*
@@ -683,12 +687,13 @@ foreach ($exportData as $data) {
         $data['item_code'] !== ''
             ? $data['item_code']
             : $data['item'],
+        $data['description'],
         $data['qty']
     ];
 
     /*
     |--------------------------------------------------------------------------
-    | STATUS DATE COLUMNS
+    | REGULAR STATUS DATE COLUMNS
     |--------------------------------------------------------------------------
     */
 
@@ -699,9 +704,7 @@ foreach ($exportData as $data) {
 
         foreach ($occurrences as $event) {
 
-            $formattedDate = formatExportDate(
-                $event['date']
-            );
+            $formattedDate = formatExportDate($event['date']);
 
             if ($formattedDate !== '') {
                 $dates[] = $formattedDate;
@@ -721,34 +724,50 @@ foreach ($exportData as $data) {
 
     /*
     |--------------------------------------------------------------------------
-    | GOODS RECEIVED DATE
+    | ORDER STATUS DATE COLUMNS
     |--------------------------------------------------------------------------
     */
 
-    $rowData[] = formatExportDate(
-        $data['goods_received_date'],
-        'm-d-Y'
-    );
+    foreach ($orderStatusKeys as $orderStatusKey) {
+
+        $orderDates = [];
+
+        $occurrences =
+            $data['order_statuses'][$orderStatusKey] ?? [];
+
+        foreach ($occurrences as $event) {
+
+            $formattedDate = formatExportDate($event['date']);
+
+            if ($formattedDate !== '') {
+                $orderDates[] = $formattedDate;
+            }
+        }
+
+        $rowData[] = implode("\n", $orderDates);
+    }
 
     /*
     |--------------------------------------------------------------------------
-    | CLOSED DATES
+    | REGULAR STATUS CLOSED DATE COLUMN
+    |--------------------------------------------------------------------------
+    | This is separate from the Order Status Closed column.
     |--------------------------------------------------------------------------
     */
 
     $closedOccurrences = $data['statuses']['closed'] ?? [];
-    $closedDates = [];
+    $closedStatusDates = [];
 
     foreach ($closedOccurrences as $event) {
 
         $formattedDate = formatExportDate($event['date']);
 
         if ($formattedDate !== '') {
-            $closedDates[] = $formattedDate;
+            $closedStatusDates[] = $formattedDate;
         }
     }
 
-    $rowData[] = implode("\n", $closedDates);
+    $rowData[] = implode("\n", $closedStatusDates);
 
     /*
     |--------------------------------------------------------------------------
