@@ -392,13 +392,14 @@ while ($row = $result->fetch_assoc()) {
 
 $stmt->close();
 
+
 /*
 |--------------------------------------------------------------------------
 | USE ORDER_STATUS AS A FALLBACK
 |--------------------------------------------------------------------------
-| order_status contains the current status, but does not contain
-| its change date. Use date_created as a fallback only when the
-| current status matches and no matching history date was found.
+| Use history dates when available.
+| If the current order status matches but its history date is missing,
+| leave the date blank rather than using the request creation date.
 |--------------------------------------------------------------------------
 */
 
@@ -406,17 +407,14 @@ if (
     $currentOrderStatus === 'goods received' &&
     empty($exportData[$request_id]['goods_received_date'])
 ) {
-    $exportData[$request_id]['goods_received_date'] = $creationDate;
+    $exportData[$request_id]['goods_received_date'] = '';
 }
 
 if (
     $currentOrderStatus === 'closed' &&
     empty($exportData[$request_id]['statuses']['closed'])
 ) {
-    $exportData[$request_id]['statuses']['closed'][] = [
-        'date' => $creationDate,
-        'purchaser' => ''
-    ];
+    $exportData[$request_id]['statuses']['closed'] = [];
 }
 
 /*
