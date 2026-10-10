@@ -568,7 +568,7 @@ include 'includes/db.php';
 
         <div class="table-responsive">
             <table id="requestsTable" class="table table-hover align-middle">
-                <thead>
+                <thead >
                     <tr>
                         <th>
                             <input type="checkbox" id="selectAllRequests">
@@ -577,13 +577,13 @@ include 'includes/db.php';
                         <th>ID</th>
                         <th style="min-width: 160px; width: 180px;">LMR No.</th>
                         <th>PO</th>
-                        <th>Requester</th>
+                        <th style="min-width: 150px; width: 180px;">Requester</th>
                         <th>Department</th>
-                        <th style="min-width: 100px; width: 120px;">Item</th>
-                        <th style="min-width: 100px; width: 120px;">Category</th>
+                        <th style="min-width: 200px; width: 250px;">Item</th>
+                        <th style="min-width: 200px; width: 250px;">Category</th>
                         <!-- <th>Qty</th> -->
                         <!-- <th>UoM</th> -->
-                        <th>Assigned to</th>
+                        <th style="min-width: 150px; width: 180px;">Assigned to</th>
                         <th>Urgency</th>
                         <th style="min-width: 150px; width: 160px;">Status</th>
                         <th>Order Status</th>
