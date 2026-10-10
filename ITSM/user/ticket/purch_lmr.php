@@ -38,6 +38,8 @@ include 'includes/db.php';
         ) {
 
         // Purchasing users and admins can see all requests
+  
+
         $sql = "
             SELECT 
                 r.request_id,
@@ -66,10 +68,23 @@ include 'includes/db.php';
                 ON r.created_by = u.user_id
             LEFT JOIN request_category_tb rc
                 ON r.category_id = rc.category_id
+            WHERE
+                (
+                    LOWER(TRIM(?)) = 'koppel inc.'
+                    AND LOWER(TRIM(u.company)) = 'koppel inc.'
+                )
+                OR
+                (
+                    LOWER(TRIM(?)) IN ('heec', 'himc', 'hi-aire')
+                    AND LOWER(TRIM(u.company)) IN ('heec', 'himc', 'hi-aire')
+                )
             ORDER BY r.date_created ASC
         ";
 
         $stmt = $conn->prepare($sql);
+        $stmt->bind_param("ss", $currentCompany, $currentCompany);
+        $stmt->execute();
+
 
 
     }else {
