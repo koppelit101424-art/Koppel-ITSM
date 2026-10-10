@@ -233,6 +233,10 @@ include 'includes/db.php';
         background-color: #6c757d;
         color: white;
     }
+    #requestsTable thead th {
+    text-align: center !important;
+    vertical-align: middle !important;
+}
 </style>
 
 <div class="card ">
