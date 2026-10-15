@@ -3,7 +3,7 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-$timeout = 1440; // 15 minutes
+// $timeout = 1440; 15 minutes
 
 $currentPage = $_GET['page'] ?? '';
 
@@ -19,17 +19,17 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 /* CHECK INACTIVITY */
-if (isset($_SESSION['LAST_ACTIVITY']) && (time() - $_SESSION['LAST_ACTIVITY']) > $timeout) {
+// if (isset($_SESSION['LAST_ACTIVITY']) && (time() - $_SESSION['LAST_ACTIVITY']) > $timeout) {
 
-    session_unset();
-    session_destroy();
+//     session_unset();
+//     session_destroy();
 
-    header("Location: index.php?page=login&msg=timeout");
-    exit;
-}
+//     header("Location: index.php?page=login&msg=timeout");
+//     exit;
+// }
 
 /* UPDATE ACTIVITY */
-$_SESSION['LAST_ACTIVITY'] = time();
+// $_SESSION['LAST_ACTIVITY'] = time();
 
 /* ROLE CHECK */
 // if ($_SESSION['user_type'] !== 'user') {

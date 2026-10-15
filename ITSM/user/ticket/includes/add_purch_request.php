@@ -65,6 +65,7 @@ $company = strtoupper(trim($user['company'] ?? ''));
 
 $departmentPrefixes = [
     'Marketing'              => 'MKTG',
+    'VRF'              => 'VRF',
     'Sales'                  => 'SD',
     'Service'                => 'SVC',
     'PDED'                   => 'PDED',

@@ -843,7 +843,6 @@ include 'includes/db.php';
                                 </a>
                             <?php endif; ?>
 
-                            <?php if (!$isPurchasing): ?>
                                 <button
                                     type="button"
                                     class="btn btn-sm btn-success btn-print"
@@ -852,7 +851,6 @@ include 'includes/db.php';
                                     title="Print">
                                     <i class="fas fa-print"></i>
                                 </button>
-                            <?php endif; ?>
 
                         </td>
 

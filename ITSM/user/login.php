@@ -4,7 +4,7 @@ include 'includes/db.php';
 // include '../includes/auth.php';
 
 $message = "";
-$_SESSION['LAST_ACTIVITY'] = time();
+// $_SESSION['LAST_ACTIVITY'] = time();
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
@@ -36,7 +36,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $_SESSION['fullname'] = $user['fullname'];
             $_SESSION['user_type'] = $user['user_type'];
             $_SESSION['department'] = $user['department'];
-            $_SESSION['LAST_ACTIVITY'] = time();
+            // $_SESSION['LAST_ACTIVITY'] = time();
 
             // after successful login
             header("Location: index.php?page=announcement/announcements"); // redirect to router
@@ -214,7 +214,8 @@ $conn->close();
 <body>
   
   <div class="login-container">
-    <?php if(isset($_GET['msg']) && $_GET['msg'] == "timeout"): ?>
+    <?php 
+    if(isset($_GET['msg']) && $_GET['msg'] == "timeout"): ?>
     <div class="alert alert-warning">
         Session expired due to inactivity. Please login again.
     </div>
