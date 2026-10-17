@@ -776,44 +776,68 @@ include 'includes/db.php';
                         <?= date('m-d-Y', strtotime($row['date_created'])) ?>
                     </td>
 
+
                     <td>
                         <?php
                             $createdDate = new DateTime(
                                 date('Y-m-d', strtotime($row['date_created']))
                             );
 
-                            $today = new DateTime();
+                            $today = new DateTime('today');
 
-                            // Start counting AFTER the request date
-                            $checkDate = clone $createdDate;
-                            $checkDate->modify('+1 day');
+                            $status = strtolower(trim($row['status'] ?? ''));
 
-                            $workingDaysElapsed = 0;
+                            // Stop counting when Final PO Approved
+                            $isFinalPOApproved = ($status === 'final po approved');
 
-                            while ($checkDate < $today) {
+                            if ($isFinalPOApproved) {
 
-                                $dayOfWeek = (int)$checkDate->format('N');
+                                // Count working days only up to the approval date
+                                // Replace date_created with the actual approval date
+                                // if you have a dedicated status history/date field.
+                                $workingDaysElapsed = 0;
 
-                                // Monday = 1, Friday = 5
-                                if ($dayOfWeek <= 5) {
-                                    $workingDaysElapsed++;
+                                $checkDate = clone $createdDate;
+                                $checkDate->modify('+1 day');
+
+                                while ($checkDate < $today) {
+                                    if ((int)$checkDate->format('N') <= 5) {
+                                        $workingDaysElapsed++;
+                                    }
+
+                                    $checkDate->modify('+1 day');
                                 }
 
-                                $checkDate->modify('+1 day');
-                            }
+                                $daysBadgeClass = 'bg-success';
 
-                            // Red if more than 15 working days
-                            $daysBadgeClass =
-                                $workingDaysElapsed > 15
+                            } else {
+
+                                // Continue counting for other statuses
+                                $checkDate = clone $createdDate;
+                                $checkDate->modify('+1 day');
+
+                                $workingDaysElapsed = 0;
+
+                                while ($checkDate < $today) {
+                                    if ((int)$checkDate->format('N') <= 5) {
+                                        $workingDaysElapsed++;
+                                    }
+
+                                    $checkDate->modify('+1 day');
+                                }
+
+                                $daysBadgeClass = $workingDaysElapsed > 15
                                     ? 'bg-danger'
                                     : 'bg-warning text-dark';
+                            }
                         ?>
 
                         <span class="badge <?= $daysBadgeClass ?>">
                             <?= $workingDaysElapsed ?>
-                             day<?= $workingDaysElapsed != 1 ? 's' : '' ?>
+                            day<?= $workingDaysElapsed != 1 ? 's' : '' ?>
                         </span>
                     </td>
+
 
                     <td>
                         <?= date('m-d-Y', strtotime($row['date_needed'])) ?>
