@@ -834,15 +834,6 @@ include 'includes/db.php';
                             $isPending =
                                 strcasecmp(trim($row['status']), 'pending') === 0;
                             ?>
-
-                            <?php if ($isLocalUser && $isPending): ?>
-                                <a href="?page=ticket/includes/edit_request&request_id=<?= (int)$row['request_id'] ?>"
-                                class="btn btn-sm btn-warning"
-                                title="Edit">
-                                    <i class="fas fa-edit"></i>
-                                </a>
-                            <?php endif; ?>
-
                                 <button
                                     type="button"
                                     class="btn btn-sm btn-success btn-print"
@@ -851,7 +842,39 @@ include 'includes/db.php';
                                     title="Print">
                                     <i class="fas fa-print"></i>
                                 </button>
+                                    <br>
+                                <?php if ($isLocalUser && $isPending): ?>
+                                <a href="?page=ticket/includes/edit_request&request_id=<?= (int)$row['request_id'] ?>"
+                                class="btn btn-sm btn-warning"
+                                title="Edit">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                            <?php endif; ?>
+                                <?php
+                                $isLocalUser =
+                                    (int)$row['created_by'] === (int)$_SESSION['user_id'];
 
+                                $isPending =
+                                    strcasecmp(trim($row['status']), 'pending') === 0;
+                                ?>
+
+                                <?php if ($isLocalUser && $isPending): ?>
+                                    <form method="POST"
+                                        action="ticket/includes/delete_purch_request.php"
+                                        style="display:inline;"
+                                        onsubmit="return confirm('Are you sure you want to delete LMR <?= htmlspecialchars($row['lmr_no'], ENT_QUOTES, 'UTF-8') ?>? This action cannot be undone.');">
+
+                                        <input type="hidden"
+                                            name="request_id"
+                                            value="<?= (int)$row['request_id'] ?>">
+
+                                        <button type="submit"
+                                                class="btn btn-sm btn-danger"
+                                                title="Delete">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
+                                <?php endif; ?>
                         </td>
 
                     </tr>
