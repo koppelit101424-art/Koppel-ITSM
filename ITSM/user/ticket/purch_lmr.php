@@ -19,6 +19,7 @@ include 'includes/db.php';
     $currentUser = $userResult->fetch_assoc();
 
     $currentDepartment = trim($currentUser['department'] ?? '');
+    $currentPosition = trim($currentUser['position'] ?? '');
     $currentCompany = trim($currentUser['company'] ?? '');
 
     $userQuery->close();
@@ -86,6 +87,49 @@ include 'includes/db.php';
         $stmt->execute();
 
 
+
+        } elseif (
+            strcasecmp(trim($currentDepartment), 'Purchasing') === 0
+            && (isset($_SESSION['user_type'])
+                && strcasecmp(trim($_SESSION['user_type']), 'user') === 0 )
+            && strcasecmp(trim($currentPosition ?? ''), 'Corporate Secretary') === 0
+        ) {
+
+        // Corporate Secretary / Purchasing Manager
+        // Show ALL requests, regardless of company.
+
+        $sql = "
+            SELECT
+                r.request_id,
+                r.user_id,
+                r.lmr_no,
+                u.fullname,
+                u.company,
+                r.department,
+                r.item,
+                r.category_id,
+                rc.category_name,
+                r.description,
+                r.quantity,
+                r.UoM,
+                r.date_needed,
+                r.remarks,
+                r.date_created,
+                r.status,
+                r.order_status,
+                r.priority,
+                r.po_no,
+                r.created_by,
+                r.purchaser_id
+            FROM purch_request_tb r
+            LEFT JOIN user_tb u
+                ON r.created_by = u.user_id
+            LEFT JOIN request_category_tb rc
+                ON r.category_id = rc.category_id
+            ORDER BY r.date_created ASC
+        ";
+
+        $stmt = $conn->prepare($sql);
 
     }else {
 
