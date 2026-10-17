@@ -155,6 +155,7 @@ $recStmt->close();
     <div class="row">
       <div class="col-8">
         <p class="caps">REQUISITIONING DEPT: &emsp;&emsp; <u><?= $shared['department'] ?></u></p>
+        <p class="caps">REQUESTOR NAME: &emsp;&emsp; &emsp;<u><?= $fullname?></u></p>
         <p class="caps">PROJECT/CUSTOMER: &emsp;&emsp; &emsp;<u><?= $shared['requestor'] ?></u></p>
       </div>
       <div class="col-4">

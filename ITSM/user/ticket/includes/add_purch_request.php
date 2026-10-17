@@ -178,7 +178,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // Get these from SESSION instead of trusting hidden fields
     $user_id = (int)($_SESSION['user_id'] ?? 0);
-    $requestor = trim($user['fullname'] ?? '');
+    $requestor = trim($_POST['requestor'] ?? '');
     $department = trim($user['department'] ?? '');
     $created_by = $user_id;
     $area = trim($user['area'] ?? '');
@@ -197,10 +197,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($user_id <= 0) {
         $errors[] = "Invalid user.";
-    }
-
-    if ($requestor === '') {
-        $errors[] = "Requestor is required.";
     }
 
     if ($department === '') {
@@ -734,7 +730,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       enctype="multipart/form-data">
 
 <div class="row mb-4">
-<div class="col-md-4">
+<div class="col-md-3">
 <label class="form-label">LMR No *</label>
 <input type="text"
        class="form-control"
@@ -743,12 +739,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
        >
 </div>
 
-<div class="col-md-4">
+<div class="col-md-3">
     <label class="form-label">Fullname</label>
     <input type="hidden" name="user_id" value="<?= $_SESSION['user_id'] ?>">
     <input type="text" class="form-control" value="<?= $_SESSION['fullname'] ?>">
 </div>
-<div class="col-md-4">
+<div class="col-md-3">
+    <label class="form-label">Project/Customer</label>
+    <input type="text" name="requestor" class="form-control" value="">
+</div>
+<div class="col-md-3">
     <label class="form-label">Department</label>
     <input type="hidden" name="user_id" value="<?= $_SESSION['user_id'] ?>">
     <input type="text" class="form-control" value="<?= $_SESSION['department'] ?>">
@@ -764,7 +764,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <div class="col-md-4">
 <label class="form-label">Department *</label> </div>-->
-<input type="hidden" name="requestor" value="<?= htmlspecialchars($user['fullname'] ?? '') ?>">
 <input type="hidden" name="department" value="<?= htmlspecialchars($user['department'] ?? '') ?>">
 
 </div>
