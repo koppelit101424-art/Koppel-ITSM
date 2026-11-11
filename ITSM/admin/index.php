@@ -1,9 +1,17 @@
 <?php
-session_start();
+
 
 $page = $_GET['page'] ?? 'dashboard';
 
 include "../includes/auth.php";
+
+
+/* KEEPALIVE: tinatawag ng JS habang may ginagawa ang user */
+if (($_GET['ajax'] ?? '') === 'keepalive') {
+    http_response_code(204); // OK, walang laman
+    exit;
+}
+
 
 /* PRINT PAGES (NO SIDEBAR / HEADER) */
 $print_pages = [
@@ -504,5 +512,38 @@ document.addEventListener("DOMContentLoaded", function() {
 
 });
 </script>
+
+<?php if ($page !== 'login'): ?>
+<script>
+/* HEARTBEAT: sinasabi sa server na may ginagawa pa ang user */
+(function () {
+    const PING_EVERY = 5 * 60 * 1000; // max 1 ping kada 5 minuto
+    let lastPing = Date.now();
+    let active = false;
+    let warned = false;
+
+    ['keydown', 'input', 'click', 'scroll', 'mousemove', 'touchstart'].forEach(function (evt) {
+        document.addEventListener(evt, function () { active = true; }, { passive: true });
+    });
+
+    setInterval(function () {
+        if (!active || Date.now() - lastPing < PING_EVERY) return;
+        active = false;
+        lastPing = Date.now();
+
+        fetch('index.php?ajax=keepalive', { credentials: 'same-origin', cache: 'no-store' })
+            .then(function (r) {
+                if (r.status !== 204 && !warned) {
+                    warned = true;
+                    alert('Session Expired. Please log in again.');
+                }
+            })
+            .catch(function () {});
+    }, 30 * 1000); // check kada 30 segundo
+})();
+</script>
+<?php endif; ?>
+
+
 </body>
 </html>

@@ -1,9 +1,22 @@
 <?php
+
 if (session_status() === PHP_SESSION_NONE) {
+    ini_set('session.gc_maxlifetime', 28800); // 8 hours, dapat mas mahaba sa $timeout
+    $env = (strpos(__DIR__, 'staging') !== false) ? 'STG' : 'PRD';
+    if ($env === 'STG') {
+        session_save_path('/var/lib/php/session/staging');
+    }
+    session_name("ITSM_{$env}_USER");         // cookie name: ITSM_STG_USER
+    session_set_cookie_params([
+        'lifetime' => 0,
+        'path'     => '/',
+        'httponly' => true,
+        'samesite' => 'Lax',
+    ]);
     session_start();
 }
 
-$timeout = 1440; // 15 minutes
+$timeout = 3600; // 15 minutes
 
 $currentPage = $_GET['page'] ?? '';
 

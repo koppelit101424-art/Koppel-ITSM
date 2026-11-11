@@ -1,5 +1,5 @@
 <?php
-// session_start(); 
+include_once __DIR__ . '/../includes/auth.php';
 include '../includes/db.php';
 // include '../includes/auth.php';
 
@@ -215,7 +215,7 @@ $conn->close();
   <div class="login-container">
     <?php if(isset($_GET['msg']) && $_GET['msg'] == "timeout"): ?>
     <div class="alert alert-warning">
-        Session expired due to 15 minutes inactivity. Please login again.
+        Session expired due to inactivity. Please login again.
     </div>
     <?php endif; ?>
     <div class="login-card">

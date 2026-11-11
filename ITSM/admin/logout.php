@@ -1,5 +1,6 @@
 <?php
-session_start();
+include "../includes/auth.php";
+
 
 // Clear all session variables
 $_SESSION = [];
