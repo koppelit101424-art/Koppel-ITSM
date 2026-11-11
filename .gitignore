@@ -1,0 +1,80 @@
+# ============================================================
+# Koppel ITSM - source code only. No user data, no secrets.
+# ============================================================
+
+# ---------- Credentials / config with secrets ----------
+# DB connection files (contain host/user/password).
+# Copy db.example.php -> db.php on each server.
+**/db.php
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+id_rsa*
+*.secret
+secrets/
+credentials.json
+auth.json
+
+# ---------- User-uploaded files ----------
+**/uploads/**
+!**/uploads/**/
+!**/uploads/**/.gitkeep
+
+# Saved signatures
+ITSM/admin/signature/*.png
+ITSM/admin/signature/*.jpg
+ITSM/admin/signature/*.jpeg
+**/signatures/
+
+# Generated inventory QR codes
+ITSM/admin/inventory/qrcodes/**
+!ITSM/admin/inventory/qrcodes/**/
+!ITSM/admin/inventory/qrcodes/**/.gitkeep
+
+# ---------- Data dumps / exports / backups ----------
+*.sql
+*.sql.gz
+*.dump
+*.db
+*.sqlite
+*.sqlite3
+*.csv
+*.xls
+*.xlsx
+*.zip
+*.rar
+*.7z
+*.tar
+*.tar.gz
+*.tgz
+*.bak
+*.backup
+*.orig
+*.swp
+*~
+* - Copy.*
+
+# ---------- Logs / temp / sessions ----------
+*.log
+error_log
+logs/
+tmp/
+temp/
+sessions/
+
+# ---------- Dependencies ----------
+vendor/
+node_modules/
+
+# ---------- OS / editor ----------
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+*.code-workspace
