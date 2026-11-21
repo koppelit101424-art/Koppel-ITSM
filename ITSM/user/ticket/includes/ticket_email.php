@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/../../../includes/app_config.php';
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 date_default_timezone_set('Asia/Manila');
@@ -10,14 +11,14 @@ $mail = new PHPMailer(true);
 
 try {
     $mail->isSMTP();
-    $mail->Host       = 'smtp.gmail.com';
+    $mail->Host       = MAIL_HOST;
     $mail->SMTPAuth   = true;
-    $mail->Username   = 'koppelit101424@gmail.com';
-    $mail->Password   = 'mxos dkkk glen syhu'; // not your real password
+    $mail->Username   = MAIL_USERNAME;
+    $mail->Password   = MAIL_PASSWORD_TICKETS; // not your real password
     $mail->SMTPSecure = 'tls';
-    $mail->Port       = 587;
+    $mail->Port       = MAIL_PORT;
 
-    $mail->setFrom('koppelit101424@gmail.com', 'IT Support');
+    $mail->setFrom(MAIL_USERNAME, 'IT Support');
     $mail->addAddress($user['email'], $user['fullname']);
     $mail->addCC('itticketing@koppel.ph');
 

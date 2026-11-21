@@ -1,0 +1,22 @@
+# Secrets / local config - never commit
+ITSM/config.local.php
+.env
+.env.*
+!.env.example
+
+# Database dumps and backups
+*.sql.gz
+*.bak
+backups/
+
+# Logs and cache
+*.log
+ITSM/phpqrcode/cache/
+
+# OS / editor files
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+*.swp

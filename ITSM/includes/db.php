@@ -1,15 +1,11 @@
 <?php
-    // Database connection
-    // $host = "localhost";
-    // $user = "root";
-    // $pass = "";
-    // $db   = "inventory_db";
+    // Database connection - credentials come from ITSM/config.local.php
+    require_once __DIR__ . '/app_config.php';
 
-
-    $host = "localhost";
-    $user = "root";
-    $pass = "Koppels3cur1ty";
-    $db   = "inventory_db";
+    $host = DB_HOST;
+    $user = DB_USER;
+    $pass = DB_PASS;
+    $db   = DB_NAME;
 
     $conn = new mysqli($host, $user, $pass, $db);
 

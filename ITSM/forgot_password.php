@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/includes/app_config.php';
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
@@ -46,19 +47,19 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
             $mail->isSMTP();
 
-            $mail->Host = 'smtp.gmail.com';
+            $mail->Host = MAIL_HOST;
 
             $mail->SMTPAuth = true;
 
-            $mail->Username = 'koppelit101424@gmail.com';
+            $mail->Username = MAIL_USERNAME;
 
-            $mail->Password = 'qmol klsu mdqb itpk';
+            $mail->Password = MAIL_PASSWORD;
 
             $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
 
-            $mail->Port = 587;
+            $mail->Port = MAIL_PORT;
 
-            $mail->setFrom('koppelit101424@gmail.com', 'Koppel ITSM');
+            $mail->setFrom(MAIL_USERNAME, 'Koppel ITSM');
 
             $mail->addAddress($email, $user['fullname']);
 

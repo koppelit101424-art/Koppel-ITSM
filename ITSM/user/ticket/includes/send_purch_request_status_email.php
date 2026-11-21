@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/../../../includes/app_config.php';
 
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
@@ -1102,13 +1103,13 @@ if ($newStatus === 'goods received') {
         $mail->isSMTP();
 
         $mail->Host =
-            'smtp.gmail.com';
+            MAIL_HOST;
 
         $mail->SMTPAuth =
             true;
 
         $mail->Username =
-            'koppelit101424@gmail.com';
+            MAIL_USERNAME;
 
 
         /*
@@ -1118,20 +1119,20 @@ if ($newStatus === 'goods received') {
          *
          * Example:
          *
-         * $mail->Password = 'abcdabcdabcdabcd';
+         * $mail->Password = 'xxxx xxxx xxxx xxxx';
          *
          * Do NOT use your normal Gmail password.
          */
 
         $mail->Password =
-            'qmol klsu mdqb itpk';
+            MAIL_PASSWORD;
 
 
         $mail->SMTPSecure =
             PHPMailer::ENCRYPTION_STARTTLS;
 
         $mail->Port =
-            587;
+            MAIL_PORT;
 
 
         /*
@@ -1151,7 +1152,7 @@ if ($newStatus === 'goods received') {
         */
 
         $mail->setFrom(
-            'koppelit101424@gmail.com',
+            MAIL_USERNAME,
             'IT Support'
         );
 
